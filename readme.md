@@ -104,23 +104,24 @@ If you want to save either the layer images or the whole image you need to provi
 ### Class GimpParser
 
 #### Static methods
-##### parseImage(string: filename, function: callback)
+**parseImage(string: filename, function: callback)**
 
 `filename` the file to parse
 
 `callback` function(Error:err , GimpParser: xcfReader) called when the parsing has completed.
 #### Properties
 
-<table>
-    <tr><th>width</th><td>The width of the image</td></tr>
-    <tr><th>height</th><td>The height of the image</td></tr>
-    <tr><th>layers</th><td>An array of GimpLayer objects</td></tr>
-</table>
+**`width`**The width of the image
+
+**`height`**The height of the image
+
+**`layers`**An array of GimpLayer objects
 
 ### Class GimpLayer
 
 #### Methods
-##### makeImage(XCFImage image: , boolean: useOffset)
+**makeImage(XCFImage image: , boolean: useOffset)**
+
 `image` instance of a class derived from the above interface.
 
 `useOffset` (defaults to false) wether to use the layer offset.
@@ -128,10 +129,13 @@ If you want to save either the layer images or the whole image you need to provi
 Given an image instance which conforms to the above XCFImage interface apply the current layer data
 
 #### Properties
-<table>
-    <tr><th>name</th><td>The name of the layer</td></tr>
-    <tr><th>width</th><td>The width of the layer</td></tr>
-    <tr><th>height</th><td>The height of the layer</td></tr>
-    <tr><th>x</th><td>The x offset of the layer on the base image</td></tr>
-    <tr><th>y</th><td>The y offset of the layer on the base image</td></tr>
+**`name`**The name of the layer
+
+**`width`**The width of the layer
+
+**`height`**The height of the layer
+
+**`x`**The x offset of the layer on the base image
+
+**`y`**The y offset of the layer on the base image
 </table>
