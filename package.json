@@ -1,0 +1,34 @@
+{
+  "name": "xcfreader",
+  "version": "0.0.1",
+  "description": "Reads in GIMP xcf files",
+  "main": "src/gimpparser.js",
+  "dependencies": {
+    "binary-parser": "^1.1.5",
+    "lazy.js": "^0.4.2"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.11.4",
+    "babel-preset-es2015": "^6.9.0",
+    "nodemon": "^1.9.2",
+    "pngjs": "^2.3.1",
+    "pngjs-image": "^0.11.6"
+  },
+  "scripts": {
+    "multi": "nodemon --exec babel-node examples/multi.js",
+    "single": "nodemon --exec babel-node examples/single.js",
+    "build": "babel src --out-dir dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/crazyapesoftware/xcfreader.git"
+  },
+  "keywords": [
+    "gimp",
+    "xcf",
+    "parser"
+  ],
+  "author": "Andi McLean",
+  "license": "MIT",
+  "homepage": "https://bitbucket.org/crazyapesoftware/xcfreader#readme"
+}
