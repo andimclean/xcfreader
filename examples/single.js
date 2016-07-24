@@ -1,4 +1,4 @@
-import GimpParser from '../src/gimpparser';
+import {XCFParser as GimpParser} from '../src/gimpparser';
 import PNGImage from 'pngjs-image';
 
 GimpParser.parseFile('/home/andi/development/xcfReader/examples/single.xcf',function(err, parser) {

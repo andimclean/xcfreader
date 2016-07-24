@@ -85,7 +85,7 @@ Saving an Image
 If you want to save either the layer images or the whole image you need to provide a class instance that implements the folling interface
 
 ```js
-  XCFImage interface {
+  XCFImageInterface {
 
       //set a pixel at a given position.
       // @param x the x co-ordinate to set (Can be outside of the image);
@@ -101,7 +101,7 @@ If you want to save either the layer images or the whole image you need to provi
   }
 ```
   
-### Class GimpParser
+### Class XCFParser
 
 #### Static methods
 **parseImage(string: filename, function: callback)**
@@ -109,6 +109,14 @@ If you want to save either the layer images or the whole image you need to provi
 `filename` the file to parse
 
 `callback` function(Error:err , GimpParser: xcfReader) called when the parsing has completed.
+
+#### Methods
+**createImage(XCFImage image)**
+
+`image` instance of a class derived from the above interface.
+
+Returns the image with all visible layers flattened. If `image` if null then an XCFImage is created of the correct width and height
+
 #### Properties
 
 **`width`**The width of the image
@@ -120,13 +128,22 @@ If you want to save either the layer images or the whole image you need to provi
 ### Class GimpLayer
 
 #### Methods
-**makeImage(XCFImage image: , boolean: useOffset)**
+**makeImage(XCFImage: image , boolean: useOffset)**
 
 `image` instance of a class derived from the above interface.
 
 `useOffset` (defaults to false) wether to use the layer offset.
 
-Given an image instance which conforms to the above XCFImage interface apply the current layer data
+Returns:
+
+| image      | useOffset    | layer is visible|Action        |
+|------------|--------------|-----------------|--------------|
+| null       | true / false | false           | returns null |
+| null       | true         | true            | returns a `XCFImage` the width and height of the main image, with the layer rendered in the correct location|
+| null       | false        | true            | returns a `XCFImage` the width and height of the layer|
+| `XCFImage` | true / false | false           | returns the passed `XCFImage` unaltered|
+| `XCFImage` | true         | true            | returns the passed `XCFImage` with the layer rendered  in the correct location|
+| `XCFImage` | false        | true            | returns the passed `XCFImage` with the layer rendered  in the top left |
 
 #### Properties
 **`name`**The name of the layer
@@ -138,4 +155,9 @@ Given an image instance which conforms to the above XCFImage interface apply the
 **`x`**The x offset of the layer on the base image
 
 **`y`**The y offset of the layer on the base image
-</table>
+
+
+### Class XCFImage
+The `XCFImage` wraps round a [pngjs-image](https://www.npmjs.com/package/pngjs-image) object. See the docs of [pngjs-image](https://www.npmjs.com/package/pngjs-image) for details
+
+The `XCFImage` overwrites setAt(x,y,color) and getAt(x,y,colour) to provide functionality describe above

@@ -1,9 +1,9 @@
 
 import {Parser} from 'binary-parser';
 import FS from 'fs';
-//const Buffer = require('buffer');
 import {Buffer} from 'buffer';
 import Lazy from 'lazy.js';
+import PNGImage from 'pngjs-image';
 
 const PROP_END                =  0;
 const PROP_COLORMAP           =  1;
@@ -113,6 +113,7 @@ var propertyListParser = new Parser()
             [PROP_END]: new Parser().uint32('length',{assert:0}),//0
             [PROP_COLORMAP]:  prop_colorMapParser, //1
             [PROP_MODE]:  prop_modeParser, //7
+            [PROP_VISIBLE] : new parser().uint('length',{assert:4}).uint('b'), // 8
             [PROP_LOCK_ALPHA]: propLengthB,//10
             [PROP_APPLY_MASK]: propLengthB,//11
             [PROP_EDIT_MASK]: propLengthB,//12
@@ -265,6 +266,10 @@ class GimpLayer {
         return this.getProps(PROP_OFFSETS,'dy');
     }
 
+    get isVisible() {
+        return this.getProps(PROP_VISIBLE,'b') !== 0;
+    }
+
     getProps(prop, index) {
         if (!this._compiled) {
             this.compile();
@@ -284,37 +289,44 @@ class GimpLayer {
     }
 
     makeImage(image , useOffset) {
-        var x = 0, y = 0;
-        var hDetails, levels, tilesAcross;
-        if (useOffset) {
-            x = this.x;
-            y = this.y;
-        }
-        if (image['setMode']) {
-            image.setMode(this.getProps(PROP_MODE, 'm'));
-        }
-        hDetails = hirerarchyParser.parse(this._parent.getBufferForPointer(this._details.hptr));
-        levels = levelParser.parse(this._parent.getBufferForPointer(hDetails.lptr));
+        if (isVisible) {
+            var x = 0, y = 0;
+            var hDetails, levels, tilesAcross;
+            var w = this.width, h = this.height;
+            if (useOffset) {
+                x = this.x;
+                y = this.y;
+                w = this._parent.width;
+                h = this._parent.height;
+            }
+            if (isUnset(image)) {
+                image = new XCFImage(w,h);
+                image.fillRect(0,0,w,h,{red:0,green:0,blue:0,alpha:1});
+            }
+            hDetails = hirerarchyParser.parse(this._parent.getBufferForPointer(this._details.hptr));
+            levels = levelParser.parse(this._parent.getBufferForPointer(hDetails.lptr));
 
-        tilesAcross = Math.ceil(this.width / 64);
-        Lazy(levels.tptr).each(function(tptr , index){
-            var xIndex = (index % tilesAcross) * 64;
-            var yIndex = Math.floor(index / tilesAcross) * 64;
-            var xpoints = Math.min(64, this.width - xIndex);
-            var ypoints = Math.min(64, this.height - yIndex);
-            this.copyTile(
-                image, 
-                this.uncompress(
-                    this._parent.getBufferForPointer(tptr),
-                    xpoints,
-                    ypoints,
-                    hDetails.bpp),
-                 x + xIndex , 
-                 y + yIndex, 
-                 xpoints, 
-                 ypoints, 
-                 hDetails.bpp);
-        }.bind(this));
+            tilesAcross = Math.ceil(this.width / 64);
+            Lazy(levels.tptr).each(function(tptr , index){
+                var xIndex = (index % tilesAcross) * 64;
+                var yIndex = Math.floor(index / tilesAcross) * 64;
+                var xpoints = Math.min(64, this.width - xIndex);
+                var ypoints = Math.min(64, this.height - yIndex);
+                this.copyTile(
+                    image, 
+                    this.uncompress(
+                        this._parent.getBufferForPointer(tptr),
+                        xpoints,
+                        ypoints,
+                        hDetails.bpp),
+                    x + xIndex , 
+                    y + yIndex, 
+                    xpoints, 
+                    ypoints, 
+                    hDetails.bpp);
+            }.bind(this));
+        }
+        return image;
     }
 
     uncompress(compressedData, xpoints, ypoints, bpp) {
@@ -402,9 +414,9 @@ class GimpChannel {
         this._compiled = false;
     }
 }
-class GimpParser {
+class XCFParser {
     static parseFile(file, callback) {
-        var parser = new GimpParser;
+        var parser = new XCFParser();
         FS.readFile(file, function(err, data) {
             if (err) callback(err);
             
@@ -458,6 +470,52 @@ class GimpParser {
     get layers() {
         return this._layers;
     }
+
+    createImage(image) {
+        if (isUnset(image)) {
+            image = new XCFImage(this.width, this.height);
+            image.fillRect(0,0,this.width,this.height,{red:0,green:0,blue:0,alpha:1});
+        }
+
+        Lazy(this.layers).reverse().each(function(layer) {
+            layer.makeImage(image,false);
+        });
+        return image;
+    }
 }
 
-export default GimpParser;
+var XCFImage = function(width, height) {
+    this._width = width;
+    this._height = height;
+    this._image = PNGImage.createImage(width,height);
+}
+
+for(var key in PNGImage.prototype) {
+    if (typeof PNGImage.prototype[key] === 'function') {
+        (function(key) {
+            XCFImage.prototype[key] = function() {
+                return this._image[key].apply(this._image,arguments);
+            }
+        })(key);
+    }
+}
+ 
+XCFImage.prototype.setAt = function(x,y,colour) {
+    if (x< 0 || x > this._width || y < 0 || y> this._height) {
+        return;
+    }
+    this._image.setAt(x,y,colour);
+}
+
+XCFImage.prototype.getAt = function(x,y) {
+    var idx = this._image.getIndex(x,y);
+
+    return {
+        red  : this._image.getRed(idx),
+        green: this._image.getGreen(idx),
+        blue : this._image.getBlue(idx),
+        alpha: this._image.getAlpha(idx)
+    }
+}
+
+export { XCFParser, XCFImage};
