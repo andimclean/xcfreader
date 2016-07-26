@@ -5,11 +5,11 @@ import Lazy from 'lazy.js';
 GimpParser.parseFile('/home/andi/development/xcfReader/examples/multi.xcf',function(err, parser) {
     if (err) throw err;
     var layers = parser.layers;
-    var image  = PNGImage.createImage(parser.width,parser.height);
+    var image  = new XCFImage(parser.width,parser.height);
 
     Lazy(layers).reverse().each(function(layer) {        
         var layerImage = layer.makeImage();
-        
+        console.log(layer.name);
         layer.makeImage(image,true);
         layerImage.writeImage('/home/andi/development/xcfReader/examples/output/'+ layer.name+ '.png');
     });

@@ -4,6 +4,7 @@ import FS from 'fs';
 import {Buffer} from 'buffer';
 import Lazy from 'lazy.js';
 import PNGImage from 'pngjs-image';
+import XCFCompositer from './lib/xcfcompositer';
 
 const PROP_END                =  0;
 const PROP_COLORMAP           =  1;
@@ -39,30 +40,6 @@ const PROP_ITEM_PATH          = 30;
 const PROP_GROUP_ITEM_FLAGS   = 31;
 const PROP_LOCK_POSITION      = 32;
 const PROP_FLOAT_OPACITY      = 33;
-
-const PROP_MODE_NORMAL        = 0;
-const PROP_MODE_DISSOLVE      = 1;
-const PROP_MODE_BEHIND        = 2;
-const PROP_MODE_MULTIPLY      = 3;
-const PROP_MODE_SCREEN        = 4;
-const PROP_MODE_OVERLAY       = 5;
-const PROP_MODE_DIFFERENCE    = 6;
-const PROP_MODE_ADDITION      = 7;
-const PROP_MODE_SUBTRACT      = 8;
-const PROP_MODE_DRAKEN_ONLY   = 9;
-const PROP_MODE_LIGHTEN_ONLY  = 10;
-const PROP_MODE_HUE           = 11;
-const PROP_MODE_SATURATION    = 12;
-const PROP_MODE_COLOR         = 13;
-const PROP_MODE_COLOUR        = 13;
-const PROP_MODE_VALUE         = 14;
-const PROP_MODE_DIVIDE        = 15;
-const PROP_MODE_DODGE         = 16;
-const PROP_MODE_BURN          = 17;
-const PROP_MODE_HARD_LIGHT    = 18;
-const PROP_MODE_SOFT_LIGHT    = 19;
-const PROP_MODE_GRAIN_EXTRACT = 20;
-const PROP_MODE_GRAIN_MERGE   = 21;
 
 var itemIsZero = function(item, buffer) {
     return item === 0;
@@ -100,7 +77,7 @@ var prop_guidesParser = new Parser()
 
 var prop_modeParser = new Parser()
     .uint32('length',{assert:4})
-    .uint32('m');
+    .uint32('mode');
 
 var parasiteParser = new Parser()
     .uint32('length')
@@ -160,7 +137,6 @@ var layerParser = new Parser()
         {
             type : propertyListParser,
             readUntil: function(item,buffer) {
-                //console.log(item);
                 return item.type === 0;
             }
         }
@@ -252,7 +228,6 @@ class GimpLayer {
 
     compile() {
         this._details = layerParser.parse(this._buffer);
-        //console.log(this._details);
         this._compiled = true;
     }
 
@@ -317,6 +292,14 @@ class GimpLayer {
         return this.getProps(PROP_GROUP_ITEM) != null;
     }
 
+    get colourMode() {
+        return this.getProps(PROP_MODE,'mode');
+    }
+
+    get opacity() {
+        return this.getProps(PROP_OPACITY,'opacity');
+    }
+
     getProps(prop, index) {
         if (!this._compiled) {
             this.compile();
@@ -343,6 +326,7 @@ class GimpLayer {
             var x = 0, y = 0;
             var hDetails, levels, tilesAcross;
             var w = this.width, h = this.height;
+            var mode = XCFCompositer.makeCompositer(this.mode , this.opacity);
             if (useOffset) {
                 x = this.x;
                 y = this.y;
@@ -373,7 +357,8 @@ class GimpLayer {
                     y + yIndex, 
                     xpoints, 
                     ypoints, 
-                    hDetails.bpp);
+                    hDetails.bpp,
+                    mode);
             }.bind(this));
         }
         return image;
@@ -437,7 +422,7 @@ class GimpLayer {
         }
         return tileBuffer;
     }
-    copyTile(image, tileBuffer, xoffset, yoffset, xpoints, ypoints, bpp) {
+    copyTile(image, tileBuffer, xoffset, yoffset, xpoints, ypoints, bpp, mode) {
         var bufferOffset = 0;
         
         for(var yloop = 0; yloop < ypoints; yloop +=1) {
@@ -450,7 +435,18 @@ class GimpLayer {
                 if (bpp === 4) {
                     colour.alpha = tileBuffer[bufferOffset + 3];
                 }
-                image.setAt(xoffset + xloop , yoffset + yloop, colour);
+                var bgCol = image.getAt(
+                                xoffset + xloop, 
+                                yoffset + yloop);
+                if (mode) {
+                    colour = mode.compose(
+                                bgCol,
+                                colour);
+                }
+                image.setAt(
+                    xoffset + xloop, 
+                    yoffset + yloop,
+                    colour);
                 bufferOffset += bpp;
             }
         }
