@@ -143,7 +143,7 @@ Returns:
 | null       | false        | true            | returns a `XCFImage` the width and height of the layer|
 | `XCFImage` | true / false | false           | returns the passed `XCFImage` unaltered|
 | `XCFImage` | true         | true            | returns the passed `XCFImage` with the layer rendered  in the correct location|
-| `XCFImage` | false        | true            | returns the passed `XCFImage` with the layer rendered  in the top left |
+| `XCFImage` | false        | true            | returns the passed `XCFImage` with the layer rendered  in the top left corner|
 
 #### Properties
 **`name`**The name of the layer

@@ -37,6 +37,8 @@ const PROP_LOCK_CONTENT       = 28;
 const PROP_GROUP_ITEM         = 29;
 const PROP_ITEM_PATH          = 30;
 const PROP_GROUP_ITEM_FLAGS   = 31;
+const PROP_LOCK_POSITION      = 32;
+const PROP_FLOAT_OPACITY      = 33;
 
 const PROP_MODE_NORMAL        = 0;
 const PROP_MODE_DISSOLVE      = 1;
@@ -100,7 +102,9 @@ var prop_modeParser = new Parser()
     .uint32('length',{assert:4})
     .uint32('m');
 
-var propLengthB = new Parser().uint32('length',{assert:4}).uint32('b');
+var parasiteParser = new Parser()
+    .uint32('length')
+    .buffer('parasite',{length:'length'});
 
 var propLengthF = new Parser().uint32('length',{assert:4}).uint32('f');
 
@@ -112,19 +116,32 @@ var propertyListParser = new Parser()
         choices : {
             [PROP_END]: new Parser().uint32('length',{assert:0}),//0
             [PROP_COLORMAP]:  prop_colorMapParser, //1
+            [PROP_ACTIVE_LAYER] : new Parser().uint32('length',{assert:0}), //2
+            [PROP_ACTIVE_CHANNEL] : new Parser().uint32('length',{assert:0}),//3
+            [PROP_SELECTION] : new Parser().uint32('length', {assert:0}),//4
+            [PROP_FLOATING_SELECTION] : new Parser().uint32('length',{assert:4}).uint32('layerPtr'), // 5 
+            [PROP_OPACITY] : new Parser().uint32('length').uint32('opacity'), // 6
             [PROP_MODE]:  prop_modeParser, //7
-            [PROP_VISIBLE] : new parser().uint('length',{assert:4}).uint('b'), // 8
-            [PROP_LOCK_ALPHA]: propLengthB,//10
-            [PROP_APPLY_MASK]: propLengthB,//11
-            [PROP_EDIT_MASK]: propLengthB,//12
-            [PROP_SHOW_MASK]: propLengthB,// 13
+            [PROP_VISIBLE] : new Parser().uint32('length',{assert:4}).uint32('isVisible'), // 8
+            [PROP_LINKED] : new Parser().uint32('length',{assert:4}).uint32('isLinked'), // 9
+            [PROP_LOCK_ALPHA]: new Parser().uint32('length',{assert:4}).uint32('alpha'),//10
+            [PROP_APPLY_MASK]: new Parser().uint32('length',{assert:4}).uint32('mask'),//11
+            [PROP_EDIT_MASK]: new Parser().uint32('length',{assert:4}).uint32('editmask'),//12
+            [PROP_SHOW_MASK]: new Parser().uint32('length',{assert:4}).uint32('showmask'),// 13
+            [PROP_SHOW_MASKED]: new Parser().uint32('length',{assert:4}).uint32('showmasked'),// 14
             [PROP_OFFSETS]: new Parser().uint32('length',{assert:8}).int32('dx').int32('dy'), // 15
+            [PROP_COLOR] : new Parser().uint32('length',{assert:3}).int8('r').int8('g').int8('b'), // 16
             [PROP_COMPRESSION]: new Parser().uint32('length',{assert:1}).uint8('compressionType'),//17
             [PROP_GUIDES]: prop_guidesParser,//18
             [PROP_RESOLUTION]: new Parser().uint32('length').float('x').float('y'),//19
-            [PROP_PARASITES] : new Parser().uint32('length').buffer('parasite',{length:'length'}),
+            [PROP_TATTOO] : new Parser().uint32('length').uint32('tattoo'),//20
+            [PROP_PARASITES] : parasiteParser,//21
             [PROP_UNIT]: new Parser().uint32('length').uint32('c'),//22
             [PROP_TEXT_LAYER_FLAGS]: propLengthF, // 26
+            [PROP_LOCK_CONTENT] : new Parser().uint32('length').uint32('isLocked'),
+            [PROP_GROUP_ITEM] : new Parser().uint32('length', {assert:0}),
+            [PROP_ITEM_PATH] : new Parser().uint32('length', {formatter: function(value) { return value / 4;}}).array('items',{ type: 'uint32be', length: 'length'}), // 30
+            [PROP_GROUP_ITEM_FLAGS] : new Parser().uint32('length').uint32('flags')
         },
         defaultChoice: new Parser().uint32('length').buffer('buffer', {length:function() {return this.length;}})
     })
@@ -143,6 +160,7 @@ var layerParser = new Parser()
         {
             type : propertyListParser,
             readUntil: function(item,buffer) {
+                //console.log(item);
                 return item.type === 0;
             }
         }
@@ -234,6 +252,7 @@ class GimpLayer {
 
     compile() {
         this._details = layerParser.parse(this._buffer);
+        //console.log(this._details);
         this._compiled = true;
     }
 
@@ -244,6 +263,30 @@ class GimpLayer {
         return this._details.name;
     }
 
+    get groupName() {
+        if (!this._compiled) {
+            this.compile();
+        }
+        var pathInfo = this.getProps(PROP_ITEM_PATH);
+        if (isUnset(pathInfo)) {
+            return this.name;
+        }
+        var index = 0;
+        
+        var layers = this._parent.layers;
+        
+        return Lazy(pathInfo.data.items).map(function(offset){
+            var name = layers[index + offset].name;
+            index += offset +1;
+            return name;
+        }).reduce(function(prev,curr) { 
+            if (prev.length == 0) {
+                return curr;
+            }
+            return prev + "/" + curr;
+        },'');
+
+    }
     get width() {
         if (!this._compiled) {
             this.compile();
@@ -267,7 +310,11 @@ class GimpLayer {
     }
 
     get isVisible() {
-        return this.getProps(PROP_VISIBLE,'b') !== 0;
+        return this.getProps(PROP_VISIBLE,'isVisible') !== 0;
+    }
+
+    get isGroup() {
+        return this.getProps(PROP_GROUP_ITEM) != null;
     }
 
     getProps(prop, index) {
@@ -289,7 +336,10 @@ class GimpLayer {
     }
 
     makeImage(image , useOffset) {
-        if (isVisible) {
+        if (useOffset && this.isGroup) {
+            return image;
+        }
+        if (this.isVisible) {
             var x = 0, y = 0;
             var hDetails, levels, tilesAcross;
             var w = this.width, h = this.height;
@@ -443,7 +493,6 @@ class XCFParser {
         this._layers = {};
         this._channels = {};
         this._header = gimpHeader.parse(buffer);
-        
         this._layers = Lazy(this._header.layerList).filter(remove_empty).map(function(layerPointer){
             return new GimpLayer(this,this._buffer.slice(layerPointer));
         }.bind(this)).toArray();
@@ -478,7 +527,7 @@ class XCFParser {
         }
 
         Lazy(this.layers).reverse().each(function(layer) {
-            layer.makeImage(image,false);
+            layer.makeImage(image,true);
         });
         return image;
     }

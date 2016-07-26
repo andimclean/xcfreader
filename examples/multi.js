@@ -7,9 +7,9 @@ GimpParser.parseFile('/home/andi/development/xcfReader/examples/multi.xcf',funct
     var layers = parser.layers;
     var image  = PNGImage.createImage(parser.width,parser.height);
 
-    Lazy(layers).reverse().each(function(layer) {
+    Lazy(layers).reverse().each(function(layer) {        
         var layerImage = layer.makeImage();
-
+        
         layer.makeImage(image,true);
         layerImage.writeImage('/home/andi/development/xcfReader/examples/output/'+ layer.name+ '.png');
     });
