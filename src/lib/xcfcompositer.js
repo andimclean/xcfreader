@@ -333,7 +333,7 @@ class XCFCompositer {
             green: green,
             blue: blue,
             
-            alpha: 1-(1-a1)*(1-a2)
+            alpha: floatToXcf(1-(1-a1)*(1-a2))
         };
     }
 
@@ -401,7 +401,7 @@ class GeneralCompositer extends XCFCompositer {
             green: green,
             blue: blue,
             
-            alpha: a1
+            alpha: floatToXcf(a1)
         };
     }
 
