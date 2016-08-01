@@ -252,28 +252,34 @@ class GimpLayer {
         return this._name;
     }
 
+    get pathInfo() {
+        return this.getProps(PROP_ITEM_PATH);
+    }
+
     get groupName() {
         if (!this._compiled) {
             this.compile();
         }
-        var pathInfo = this.getProps(PROP_ITEM_PATH);
+        var pathInfo = this.pathInfo;
+
         if (isUnset(pathInfo)) {
             return this.name;
         }
-        var index = 0;
-        
-        var layers = this._parent.layers;
-        
-        return Lazy(pathInfo.data.items).map(function(offset){
-            var name = layers[index + offset].name;
-            index += offset +1;
-            return name;
-        }).reduce(function(prev,curr) { 
-            if (prev.length == 0) {
-                return curr;
+
+        pathInfo = pathInfo.data.items;
+        var item = this._parent._groupLayers;
+        var name = [];
+        for(var index = 0; index < pathInfo.length; index +=1 ) {
+            
+            if (item.children) {
+                item = item.children[pathInfo[index]];
+            } else {
+                item = item[pathInfo[index]];
             }
-            return prev + "/" + curr;
-        },'');
+            name.push(item.layer.name);
+        }
+
+        return name.join('/');
 
     }
     get width() {
@@ -503,8 +509,35 @@ class XCFParser {
         this._layers = {};
         this._channels = {};
         this._header = gimpHeader.parse(buffer);
+        this._groupLayers = {layer: null, children:[]};
+
         this._layers = Lazy(this._header.layerList).filter(remove_empty).map(function(layerPointer){
-            return new GimpLayer(this,this._buffer.slice(layerPointer));
+            var layer = new GimpLayer(this,this._buffer.slice(layerPointer));
+            var path = layer.pathInfo;
+            if (!path) {
+                console.log(this._groupLayers);
+                this._groupLayers.children.push({layer: layer,children: []});
+                
+            } else {
+                var item = this._groupLayers;
+                var toCall = function(item , index) {
+                    console.log(item);
+                    if (index == path.data.length) {
+                        console.log(item);
+                        item.layer = layer;
+                    } else {
+                        if (isUnset(item.children[path.data.items[index]])) {
+                            item.children[path.data.items[index]] = {layer:null,children:[]};
+                        }
+                        item.children[path.data.items[index]] = toCall.call(this, item.children[path.data.items[index]], index + 1);
+                    }
+
+                    return item;
+                };
+
+               this._groupLayers = toCall.call(this, this._groupLayers, 0);
+            }            
+            return layer;
         }.bind(this)).toArray();
         
         this._channels = Lazy(this._header.channelList).filter(remove_empty).map(function(channelPointer){
@@ -549,6 +582,7 @@ class XCFParser {
 
         return this._groupLayers;
     }
+
     createImage(image) {
         if (isUnset(image)) {
             image = new XCFImage(this.width, this.height);
