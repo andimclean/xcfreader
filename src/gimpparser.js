@@ -515,15 +515,12 @@ class XCFParser {
             var layer = new GimpLayer(this,this._buffer.slice(layerPointer));
             var path = layer.pathInfo;
             if (!path) {
-                console.log(this._groupLayers);
                 this._groupLayers.children.push({layer: layer,children: []});
                 
             } else {
                 var item = this._groupLayers;
                 var toCall = function(item , index) {
-                    console.log(item);
                     if (index == path.data.length) {
-                        console.log(item);
                         item.layer = layer;
                     } else {
                         if (isUnset(item.children[path.data.items[index]])) {
