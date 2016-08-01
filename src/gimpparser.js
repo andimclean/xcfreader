@@ -235,7 +235,21 @@ class GimpLayer {
         if (!this._compiled) {
             this.compile();
         }
-        return this._details.name;
+        if (isUnset(this._name)) {
+            this._name = this._details.name;
+            var pos = this._name.indexOf(' copy');
+            
+            if (pos > 0) {
+                this._name = this._name.substr(0,pos);
+            }
+            pos = this._name.indexOf(' #');
+            if (pos > 0) {
+                this._name = this._name.substr(0,pos);
+            }
+
+            this._name = this._name.trim();
+        }
+        return this._name;
     }
 
     get groupName() {
