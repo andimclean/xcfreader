@@ -6,6 +6,7 @@ GimpParser.parseFile('/home/andi/development/xcfReader/examples/multi.xcf',funct
     if (err) throw err;
     var layers = parser.layers;
     var image  = new XCFImage(parser.width,parser.height);
+    console.log(parser.groupLayers);
 
     Lazy(layers).reverse().each(function(layer) {        
         var layerImage = layer.makeImage();

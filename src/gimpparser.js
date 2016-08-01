@@ -516,6 +516,25 @@ class XCFParser {
         return this._layers;
     }
 
+    get groupLayers() {
+        if (isUnset(this._groupLayers)) {
+            this._groupLayers = {};
+            Lazy(this.layers).each((layer) => {
+                var segments = layer.groupName.split('/');
+                var cursor = this._groupLayers;
+                
+                for (var i = 0; i < segments.length - 1; ++i) {
+                    cursor[segments[i]] = cursor[segments[i]] || {};
+                    cursor[segments[i]].children = cursor[segments[i]].children || {};
+                    cursor = cursor[segments[i]].children;
+                }
+                cursor[segments[segments.length - 1]] = cursor[segments[segments.length - 1]] || {};
+                cursor[segments[segments.length - 1]].layer = layer; 
+            });
+        }
+
+        return this._groupLayers;
+    }
     createImage(image) {
         if (isUnset(image)) {
             image = new XCFImage(this.width, this.height);
