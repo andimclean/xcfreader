@@ -1,6 +1,6 @@
 {
   "name": "xcfreader",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Reads in GIMP xcf files",
   "main": "lib/gimpparser.js",
   "dependencies": {
@@ -19,6 +19,7 @@
     "multi": "nodemon --exec babel-node examples/multi.js",
     "single": "nodemon --exec babel-node examples/single.js",
     "map": "nodemon --exec babel-node examples/map.js",
+    "text": "nodemon --exec babel-node examples/text.js",
     "compile": "babel -d lib src/",
     "prepublish": "npm run compile"
   },

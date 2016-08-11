@@ -45,6 +45,10 @@ var itemIsZero = function(item, buffer) {
     return item === 0;
 };
 
+
+var stringParser = new Parser()
+    .string('data', {zeroTerminated: true});
+
 var rgbParser = new Parser()
     .uint8('red')
     .uint8('greed')
@@ -82,6 +86,22 @@ var prop_modeParser = new Parser()
 var parasiteParser = new Parser()
     .uint32('length')
     .buffer('parasite',{length:'length'});
+
+var parasiteArrayItemParser = new Parser()
+    .uint32('name_length')
+    .string('name',{
+        encoding: 'ascii',
+        zeroTerminated: true
+    })
+    .uint32('flags')
+    .uint32('length')
+    .buffer('details',{length:'length'});
+
+var fullParasiteParser = new Parser()
+    .array('items',{
+        type:parasiteArrayItemParser,
+        readUntil:'eof' 
+    })
 
 var propLengthF = new Parser().uint32('length',{assert:4}).uint32('f');
 
@@ -318,6 +338,33 @@ class GimpLayer {
 
     get opacity() {
         return this.getProps(PROP_OPACITY,'opacity');
+    }
+
+    get parasites() {
+        if (this._parasites === undefined ) {
+            var parasite = this.getProps(PROP_PARASITES);
+            this._parasites = {};
+            if (parasite) {
+                parasite = parasite.data.parasite;
+                parasite =fullParasiteParser.parse(parasite);
+                Lazy(parasite.items).each((parasite) => {                    
+                    var name = parasite.name;
+                    if (name == 'gimp-text-layer') {
+                        console.log(parasite.details);
+                        var text = stringParser.parse(parasite.details).data;
+                        var fields = {};
+                        Lazy(text.match(/(\(.*\))+/g)).each((item) => {
+                            item = item.substr(1,item.length-2).split(' ');
+                            var key = item[0];
+                            item = item.splice(1).join(' '); 
+                            fields[key] = item.replace(/^[\"]+/,'').replace(/[\"]+$/,'');
+                        });;
+                        this._parasites[name] = fields;
+                    }
+                });
+            }
+        }
+        return this._parasites;
     }
 
     getProps(prop, index) {
