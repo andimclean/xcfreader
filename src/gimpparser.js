@@ -350,7 +350,6 @@ class GimpLayer {
                 Lazy(parasite.items).each((parasite) => {                    
                     var name = parasite.name;
                     if (name == 'gimp-text-layer') {
-                        console.log(parasite.details);
                         var text = stringParser.parse(parasite.details).data;
                         var fields = {};
                         Lazy(text.match(/(\(.*\))+/g)).each((item) => {
