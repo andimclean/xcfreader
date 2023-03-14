@@ -12,6 +12,7 @@ GimpParser.parseFile('/home/andi/development/xcfreader/examples/single.xcf', fun
 
 
     var image = PNGImage.createImage(layers[0].width, layers[0].height);
+    console.log(image);
     layers[0].makeImage(image, true);
     image.writeImage('/home/andi/development/xcfreader/examples/output/single.png', function (err) {
         if (err) throw err;

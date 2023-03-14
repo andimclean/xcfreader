@@ -1,5 +1,4 @@
 import { XCFParser as GimpParser, XCFImage } from '../src/gimpparser';
-import PNGImage from 'pngjs-image';
 import Lazy from 'lazy.js';
 
 GimpParser.parseFile('/home/andi/development/xcfreader/examples/text.xcf', function (err, parser) {
