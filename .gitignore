@@ -3,3 +3,4 @@ node_modules
 examples/output/*.png
 lib/
 .browse*
+examples/map1

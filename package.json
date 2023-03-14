@@ -13,7 +13,7 @@
     "babel-preset-es2015": "^6.9.0",
     "jsonfile": "^2.3.1",
     "mkdirp": "^0.5.1",
-    "nodemon": "^1.9.2"
+    "nodemon": "^2.0.21"
   },
   "scripts": {
     "multi": "nodemon --exec babel-node examples/multi.js",
@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/crazyapesoftware/xcfreader.git"
+    "url": "git+ssh://git@bitbucket.org/andimclean/xcfreader.git"
   },
   "keywords": [
     "gimp",
@@ -34,5 +34,5 @@
   ],
   "author": "Andi McLean",
   "license": "MIT",
-  "homepage": "https://bitbucket.org/crazyapesoftware/xcfreader#readme"
+  "homepage": "https://bitbucket.org/andimclean/xcfreader#readme"
 }
