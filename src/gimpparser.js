@@ -597,7 +597,6 @@ class XCFParser {
     }
 
     get width() {
-
         return this._header.width;
     }
 
