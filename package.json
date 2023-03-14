@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/andimclean/xcfreader.git"
+    "url": "git+ssh://git@github.com:andimclean/xcfreader.git"
   },
   "keywords": [
     "gimp",
@@ -34,5 +34,5 @@
   ],
   "author": "Andi McLean",
   "license": "MIT",
-  "homepage": "https://bitbucket.org/andimclean/xcfreader#readme"
+  "homepage": "https://github.com/andimclean/xcfreader#readme"
 }
