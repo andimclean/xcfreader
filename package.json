@@ -8,5 +8,9 @@
   "description": "Monorepo for xcfreader and related packages",
   "devDependencies": {
     "nx": "22.4.4"
+  },
+  "scripts": {
+    "test:browser": "playwright test packages/xcfreader/tests/browser-demo.spec.ts",
+    "coverage": "c8 npm test && c8 report --reporter=lcov && c8 report --reporter=text-summary"
   }
 }

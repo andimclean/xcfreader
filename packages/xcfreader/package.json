@@ -55,6 +55,7 @@
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
+    "@playwright/test": "^1.58.1",
     "@types/node": "^20.10.0",
     "@types/pngjs": "^6.0.5",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
@@ -64,6 +65,7 @@
     "eslint": "^8.56.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
+    "playwright": "^1.58.1",
     "pngjs": "^7.0.0",
     "typedoc": "^0.25.4",
     "typescript": "^5.3.3"
@@ -87,9 +89,8 @@
     "fullColour": "npm run build && node dist/examples/fullColour.js",
     "test": "npm run build && node dist/tests/runner.js",
     "test:coverage": "npm run build && c8 node dist/tests/runner.js",
-    "coverage": "npm run test:coverage",
-    "prepublishOnly": "npm run build:all",
-    "int32": "npm run build && node dist/examples/int32.js"
+    "test:browser": "playwright test tests/browser-demo.spec.ts",
+    "coverage": "c8 npm test && c8 report --reporter=lcov && c8 report --reporter=text-summary"
   },
   "repository": {
     "type": "git",
