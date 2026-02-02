@@ -16,23 +16,34 @@
 
 ## Where to look (key files)
 
-- [../src/gimpparser.ts](../src/gimpparser.ts) — main parser implementation with `GimpLayer`, `XCFParser`, `XCFImage` classes; types and interfaces defined here.
+- [../src/gimpparser.ts](../src/gimpparser.ts) — main parser implementation with `GimpLayer`, `XCFParser` classes; types and error classes.
+- [../src/node.ts](../src/node.ts) — Node.js entry point; exports `XCFPNGImage` for PNG file output.
+- [../src/browser.ts](../src/browser.ts) — Browser entry point; exports `XCFDataImage` for canvas rendering.
+- [../src/lib/xcfpngimage.ts](../src/lib/xcfpngimage.ts) — PNG-based image class using `pngjs` (Node.js only).
+- [../src/lib/xcfdataimage.ts](../src/lib/xcfdataimage.ts) — ImageData-based image class for browsers.
 - [../src/lib/xcfcompositer.ts](../src/lib/xcfcompositer.ts) — compositing mode implementations (HSV, General, Dissolve).
+- [../src/types/index.ts](../src/types/index.ts) — TypeScript type definitions including `IXCFImage` interface.
 - [../src/examples/](../src/examples/) — TypeScript example scripts (single, multi, map, text, empty) showing public API usage.
 - [../src/tests/](../src/tests/) — TypeScript test files; [tests/runner.ts](../src/tests/runner.ts) dynamically imports numbered tests.
 - [../tsconfig.json](../tsconfig.json) — TypeScript compiler configuration; targets ES2020, declaration files enabled.
-- [../readme.md](../readme.md) — user-facing API docs and `XCFImage` interface contract.
+- [../readme.md](../readme.md) — user-facing API docs with entry points and image class documentation.
 
 ## Architecture & implementation notes
 
 - **Binary parsing**: Uses `binary-parser` library to construct parser instances (`layerParser`, `levelParser`, `gimpHeader`, etc.).
-  - `PROP_*` constants near the top of [gimpparser.ts](../src/gimpparser.ts) define property types.
+  - `XCF_PropType` enum in [types/index.ts](../src/types/index.ts) defines property types.
   - Each property type is mapped to a `Parser` choice in `propertyListParser`.
 - **Buffer management**: XCF is a single binary Buffer; offsets/pointers index into it. Use `XCFParser.getBufferForPointer(offset)` to slice.
-- **Tiled rendering**: Layers use 64×64 tile blocks. `GimpLayer.uncompress()` decompresses tile data; `copyTile()` writes pixels to `XCFImage`.
+- **Tiled rendering**: Layers use 64×64 tile blocks. `GimpLayer.uncompress()` decompresses tile data; `copyTile()` writes pixels to image.
 - **Compositing**: `XCFCompositer.makeCompositer(mode, opacity)` returns compositing logic (blend modes); used in `GimpLayer.makeImage()`.
-- **XCFImage**: Thin wrapper around `pngjs` with `setAt(x, y, colour)` / `getAt(x, y)` interface. Methods (`fillRect`, `writeImage`) delegate to wrapped image; tests use explicit `setAt`/`getAt` contract.
-- **Type safety**: Full TypeScript with strict mode; interfaces for `Color`, `ColorRGBA`, `RGB`, `HSV`, Parser result types.
+- **Image classes**: Two implementations of `IXCFImage` interface:
+  - `XCFPNGImage` (Node.js) - wraps `pngjs`, has `writeImage()` for file output
+  - `XCFDataImage` (Browser) - uses `Uint8ClampedArray`, has `imageData` getter for canvas
+- **Entry points**: Separate modules for different environments:
+  - `gimpparser.ts` - base module with parser, no image classes
+  - `node.ts` - re-exports everything plus `XCFPNGImage`
+  - `browser.ts` - re-exports everything plus `XCFDataImage`
+- **Type safety**: Full TypeScript with strict mode; interfaces for `ColorRGBA`, `IXCFImage`, Parser result types.
 
 ## Conventions & patterns
 
@@ -77,7 +88,7 @@ npm run watch
 
 - Tests are in [../src/tests/](../src/tests/) and run via `npm test`.
 - Test files are numbered (`01-parse-single.ts`, etc.) and auto-imported by [runner.ts](../src/tests/runner.ts).
-- Each test imports the compiled `dist/gimpparser.js` and uses project-relative paths to example files.
+- Each test imports from `../node.js` (for `XCFPNGImage`) or `../gimpparser.js` (parser only).
 - Add new tests as `src/tests/NN-description.ts` and export a `testNNFunction` with signature: `async function testNN(): Promise<void>`.
 - Add the test to the imports in [runner.ts](../src/tests/runner.ts).
 
@@ -99,8 +110,8 @@ npm run watch
 **Adding an example**:
 
 1. Create [../src/examples/myexample.ts](../src/examples/).
-2. Import `{ XCFParser as GimpParser, XCFImage } from '../gimpparser.js'`.
-3. Use `GimpParser.parseFileAsync(path)` and layer `.makeImage()` methods.
+2. Import `{ XCFParser as GimpParser, XCFPNGImage } from '../node.js'`.
+3. Use `GimpParser.parseFileAsync(path)`, create `new XCFPNGImage(w, h)`, and call `parser.createImage(image)`.
 4. Add script to [package.json](../package.json) scripts: `"myexample": "npm run build && nodemon --exec node dist/examples/myexample.js"`.
 5. Export or log results.
 
