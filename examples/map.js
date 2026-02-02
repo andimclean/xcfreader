@@ -1,5 +1,5 @@
 import { XCFParser, XCFImage } from '../src/gimpparser.js';
-import Lazy from 'lazy.js';
+// replaced lazy.js usage with native array methods
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -18,7 +18,7 @@ function saveLayer(dir, callback) {
 
     var details = {};
 
-    Lazy(parser.layers).each(function (layer) {
+    (parser.layers || []).forEach(function (layer) {
       var groupName = layer.groupName;
 
       var groupPath = path.dirname(groupName);

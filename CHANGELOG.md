@@ -16,8 +16,19 @@ All notable changes to this project will be documented in this file.
 
 ## 2026-02-02
 
-- Add comprehensive ESM migration, tests, examples and CI (see Unreleased section).
-- Add tests and small test-runner; multiple commits to expand test coverage across examples.
+- Commits (selection):
+  - `42c1eeb` — AI Added more tests (expanded tests and fixed examples)
+  - `a7f7e97` — AI added tests (test runner and additional test cases)
+  - `e0905cb` — AI updated to latest Javascript (native ESM, package.json, example fixes)
+
+- Summary of changes:
+  - Migrated to native ESM: added `type: "module"`, updated `main` to `src/gimpparser.js`, and used explicit `.js` imports.
+  - Replaced `lazy.js` usages with native array methods.
+  - Added a simple ESM test suite and runner under `tests/`, covering all example XCF files.
+  - Updated `examples/*` to use project-relative paths and `fs` for directory creation.
+  - Added GitHub Actions workflow to run tests on push/PR.
+  - Removed unused devDeps and cleaned up `package.json` scripts.
+  - Updated `readme.md` and `.github/copilot-instructions.md` with new run/test instructions.
 
 ## 2023-03-14
 

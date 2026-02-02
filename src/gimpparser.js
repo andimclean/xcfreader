@@ -1,7 +1,7 @@
 import { Parser } from 'binary-parser';
 import FS from 'fs';
 import { Buffer } from 'buffer';
-import Lazy from 'lazy.js';
+// replaced lazy.js usages with native array methods
 import PNGImage from 'pngjs-image';
 import XCFCompositer from './lib/xcfcompositer.js';
 
@@ -244,14 +244,12 @@ var isUnset = function (value) {
   return value === null || value === undefined;
 };
 
-var findProperty = function (propertyList, prop) {
-  var prop = Lazy(propertyList).find(function (property) {
-    return property.type == prop;
+var findProperty = function (propertyList, propType) {
+  if (!propertyList) return null;
+  var found = propertyList.find(function (property) {
+    return property.type == propType;
   });
-  if (prop) {
-    return prop.data;
-  }
-  return null;
+  return found ? found.data : null;
 };
 
 class GimpLayer {
@@ -361,12 +359,13 @@ class GimpLayer {
       if (parasite) {
         parasite = parasite.data.parasite;
         parasite = fullParasiteParser.parse(parasite);
-        Lazy(parasite.items).each((parasite) => {
+        (parasite.items || []).forEach((parasite) => {
           var name = parasite.name;
           if (name == 'gimp-text-layer') {
             var text = stringParser.parse(parasite.details).data;
             var fields = {};
-            Lazy(text.match(/(\(.*\))+/g)).each((item) => {
+            var matches = text.match(/(\(.*\))+/g) || [];
+            matches.forEach((item) => {
               item = item.substr(1, item.length - 2).split(' ');
               var key = item[0];
               item = item.splice(1).join(' ');
@@ -387,7 +386,7 @@ class GimpLayer {
 
     if (isUnset(this._props)) {
       this._props = {};
-      Lazy(this._details.propertyList).each(
+      (this._details.propertyList || []).forEach(
         function (property) {
           this._props[property.type] = property;
         }.bind(this)
@@ -429,7 +428,7 @@ class GimpLayer {
       );
 
       tilesAcross = Math.ceil(this.width / 64);
-      Lazy(levels.tptr).each(
+      (levels.tptr || []).forEach(
         function (tptr, index) {
           var xIndex = (index % tilesAcross) * 64;
           var yIndex = Math.floor(index / tilesAcross) * 64;
@@ -581,51 +580,45 @@ class XCFParser {
     this._header = gimpHeader.parse(buffer);
     this._groupLayers = { layer: null, children: [] };
 
-    this._layers = Lazy(this._header.layerList)
-      .filter(remove_empty)
-      .map(
-        function (layerPointer) {
-          var layer = new GimpLayer(this, this._buffer.slice(layerPointer));
-          var path = layer.pathInfo;
-          if (!path) {
-            this._groupLayers.children.push({ layer: layer, children: [] });
-          } else {
-            var item = this._groupLayers;
-            var toCall = function (item, index) {
-              if (index == path.data.length) {
-                item.layer = layer;
-              } else {
-                if (isUnset(item.children[path.data.items[index]])) {
-                  item.children[path.data.items[index]] = {
-                    layer: null,
-                    children: []
-                  };
-                }
-                item.children[path.data.items[index]] = toCall.call(
-                  this,
-                  item.children[path.data.items[index]],
-                  index + 1
-                );
+    this._layers = (this._header.layerList || []).filter(remove_empty).map(
+      function (layerPointer) {
+        var layer = new GimpLayer(this, this._buffer.slice(layerPointer));
+        var path = layer.pathInfo;
+        if (!path) {
+          this._groupLayers.children.push({ layer: layer, children: [] });
+        } else {
+          var item = this._groupLayers;
+          var toCall = function (item, index) {
+            if (index == path.data.length) {
+              item.layer = layer;
+            } else {
+              if (isUnset(item.children[path.data.items[index]])) {
+                item.children[path.data.items[index]] = {
+                  layer: null,
+                  children: []
+                };
               }
+              item.children[path.data.items[index]] = toCall.call(
+                this,
+                item.children[path.data.items[index]],
+                index + 1
+              );
+            }
 
-              return item;
-            };
+            return item;
+          };
 
-            this._groupLayers = toCall.call(this, this._groupLayers, 0);
-          }
-          return layer;
-        }.bind(this)
-      )
-      .toArray();
+          this._groupLayers = toCall.call(this, this._groupLayers, 0);
+        }
+        return layer;
+      }.bind(this)
+    );
 
-    this._channels = Lazy(this._header.channelList)
-      .filter(remove_empty)
-      .map(
-        function (channelPointer) {
-          return new GimpChannel(this, this._buffer.slice(channelPointer));
-        }.bind(this)
-      )
-      .toArray();
+    this._channels = (this._header.channelList || []).filter(remove_empty).map(
+      function (channelPointer) {
+        return new GimpChannel(this, this._buffer.slice(channelPointer));
+      }.bind(this)
+    );
   }
 
   getBufferForPointer(offset) {
@@ -647,7 +640,7 @@ class XCFParser {
   get groupLayers() {
     if (isUnset(this._groupLayers)) {
       this._groupLayers = {};
-      Lazy(this.layers).each((layer) => {
+      (this.layers || []).forEach((layer) => {
         var segments = layer.groupName.split('/');
         var cursor = this._groupLayers;
 
@@ -676,9 +669,10 @@ class XCFParser {
       });
     }
 
-    Lazy(this.layers)
+    (this.layers || [])
+      .slice()
       .reverse()
-      .each(function (layer) {
+      .forEach(function (layer) {
         layer.makeImage(image, true);
       });
     return image;

@@ -1,6 +1,6 @@
 import { XCFParser as GimpParser, XCFImage } from '../src/gimpparser.js';
 import PNGImage from 'pngjs-image';
-import Lazy from 'lazy.js';
+// replaced lazy.js usage with native array methods
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -18,9 +18,10 @@ GimpParser.parseFile(xcfPath, function (err, parser) {
   var image = new XCFImage(parser.width, parser.height);
   console.log(parser.groupLayers);
 
-  Lazy(layers)
+  layers
+    .slice()
     .reverse()
-    .each(function (layer) {
+    .forEach(function (layer) {
       var layerImage = layer.makeImage();
       console.log(layer.name);
       layer.makeImage(image, true);
