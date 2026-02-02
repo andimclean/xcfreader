@@ -18,12 +18,24 @@ interface BenchmarkResult {
 async function benchmark(): Promise<void> {
   const results: BenchmarkResult[] = [];
 
-  const files = ["single.xcf", "multi.xcf", "text.xcf", "empty.xcf"];
+  // Include all example XCF files, including high bit-depth and indexed
+  const files = [
+    "single.xcf",
+    "multi.xcf",
+    "text.xcf",
+    "empty.xcf",
+    "fullColour.xcf",
+    "float32.xcf",
+    "int32.xcf",
+    "grey.xcf",
+    "indexed.xcf"
+  ];
 
   Logger.log("Performance Benchmark - xcfreader v0.0.8\n");
   Logger.log("Parsing and rendering XCF files...\n");
 
   for (const filename of files) {
+
     const filePath = path.resolve(__dirname, `../../examples/${filename}`);
 
     // Measure parse time
@@ -42,13 +54,23 @@ async function benchmark(): Promise<void> {
 
     const totalTime = parseTime + renderTime;
 
+    // Use actual file size on disk
+    let fileSize = 0;
+    try {
+      const fs = await import("fs");
+      const stat = fs.statSync(filePath);
+      fileSize = stat.size;
+    } catch (e) {
+      fileSize = parser.width * parser.height * 4;
+    }
+
     results.push({
       name: filename,
       file: filePath,
       parseTime,
       renderTime,
       totalTime,
-      fileSize: parser.width * parser.height * 4, // approximate pixel data
+      fileSize,
     });
   }
 
