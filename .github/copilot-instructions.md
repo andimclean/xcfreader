@@ -31,7 +31,7 @@
 - **Buffer management**: XCF is a single binary Buffer; offsets/pointers index into it. Use `XCFParser.getBufferForPointer(offset)` to slice.
 - **Tiled rendering**: Layers use 64×64 tile blocks. `GimpLayer.uncompress()` decompresses tile data; `copyTile()` writes pixels to `XCFImage`.
 - **Compositing**: `XCFCompositer.makeCompositer(mode, opacity)` returns compositing logic (blend modes); used in `GimpLayer.makeImage()`.
-- **XCFImage**: Thin wrapper around `pngjs-image` with `setAt(x, y, colour)` / `getAt(x, y)` interface. Methods (`fillRect`, `writeImage`) delegate to wrapped image; tests use explicit `setAt`/`getAt` contract.
+- **XCFImage**: Thin wrapper around `pngjs` with `setAt(x, y, colour)` / `getAt(x, y)` interface. Methods (`fillRect`, `writeImage`) delegate to wrapped image; tests use explicit `setAt`/`getAt` contract.
 - **Type safety**: Full TypeScript with strict mode; interfaces for `Color`, `ColorRGBA`, `RGB`, `HSV`, Parser result types.
 
 ## Conventions & patterns

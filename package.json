@@ -7,10 +7,11 @@
   "types": "dist/gimpparser.d.ts",
   "dependencies": {
     "binary-parser": "^1.1.5",
-    "pngjs-image": "^0.11.6"
+    "pngjs": "^7.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/pngjs": "^6.0.5",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "eslint": "^8.56.0",

@@ -8,7 +8,7 @@
 import { Parser } from "binary-parser";
 import FS from "fs";
 import { Buffer } from "buffer";
-import PNGImage from "pngjs-image";
+import { PNG } from 'pngjs';
 import XCFCompositer from "./lib/xcfcompositer.js";
 
 /**
@@ -834,15 +834,17 @@ export class XCFImage {
     this._width = width;
     this._height = height;
     try {
-      this._image = PNGImage(width, height);
+      const png = new PNG({ width, height });
+      // initialize transparent pixels
+      png.data = Buffer.alloc(width * height * 4, 0);
+      this._image = png;
     } catch (err) {
       // PNGImage may have issues in test environments; create a mock
       this._image = {
-        getIndex: (x: number, y: number) => y * width + x,
-        getRed: () => 0,
-        getGreen: () => 0,
-        getBlue: () => 0,
-        getAlpha: () => 255,
+        width,
+        height,
+        data: Buffer.alloc(width * height * 4, 0),
+        pack: () => ({ pipe: () => {} }),
         setAt: () => {},
         fillRect: () => {},
         writeImage: (filename: string, callback?: (err?: Error) => void) => {
@@ -861,10 +863,15 @@ export class XCFImage {
    * @param colour - Color to set (with RGBA values)
    */
   setAt(x: number, y: number, colour: ColorRGBA): void {
-    if (x < 0 || x > this._width || y < 0 || y > this._height) {
+    if (x < 0 || x >= this._width || y < 0 || y >= this._height) {
       return;
     }
-    this._image.setAt(x, y, colour);
+    const idx = (y * this._width + x) * 4;
+    const buf: Buffer = this._image.data;
+    buf[idx] = colour.red;
+    buf[idx + 1] = colour.green;
+    buf[idx + 2] = colour.blue;
+    buf[idx + 3] = colour.alpha ?? 255;
   }
 
   /**
@@ -874,13 +881,13 @@ export class XCFImage {
    * @returns Color at the given coordinates
    */
   getAt(x: number, y: number): ColorRGBA {
-    const idx = this._image.getIndex(x, y);
-
+    const idx = (y * this._width + x) * 4;
+    const buf: Buffer = this._image.data;
     return {
-      red: this._image.getRed(idx),
-      green: this._image.getGreen(idx),
-      blue: this._image.getBlue(idx),
-      alpha: this._image.getAlpha(idx),
+      red: buf[idx],
+      green: buf[idx + 1],
+      blue: buf[idx + 2],
+      alpha: buf[idx + 3],
     };
   }
 
@@ -899,7 +906,11 @@ export class XCFImage {
     h: number,
     colour: ColorRGBA,
   ): void {
-    return this._image.fillRect(x, y, w, h, colour);
+    for (let yy = y; yy < y + h; yy += 1) {
+      for (let xx = x; xx < x + w; xx += 1) {
+        this.setAt(xx, yy, colour);
+      }
+    }
   }
 
   /**
@@ -908,7 +919,17 @@ export class XCFImage {
    * @param callback - Optional callback function
    */
   writeImage(filename: string, callback?: (err?: Error) => void): void {
-    return this._image.writeImage(filename, callback);
+    try {
+      if (typeof this._image.pack === 'function') {
+        const stream = this._image.pack().pipe(FS.createWriteStream(filename));
+        stream.on('finish', () => callback && callback());
+        stream.on('error', (err: Error) => callback && callback(err));
+      } else {
+        if (callback) callback();
+      }
+    } catch (err: any) {
+      if (callback) callback(err);
+    }
   }
 }
 

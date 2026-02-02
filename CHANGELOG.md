@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **JSDoc Comments**: Comprehensive documentation for all public APIs
 - **Type Exports**: `ColorRGB`, `ColorRGBA`, `Parasite` interfaces now exported for TypeScript consumers
 - **GitHub Actions CI**: Automated test workflow on every commit
-- **Type Declarations**: Added `pngjs-image.d.ts` and `xcfcompositer.d.ts` for better type safety
+- **Type Declarations**: Added `xcfcompositer.d.ts` for better type safety
 
 ### Changed
 
