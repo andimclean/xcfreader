@@ -159,6 +159,12 @@ image.getAt(x, y);              // Returns ColorRGBA
 image.fillRect(x, y, w, h, color);
 image.getPixelData();           // Returns Uint8Array
 image.imageData;                // Returns ImageData-compatible object
+
+// Export methods (browser only)
+const blob = await image.toBlob();           // Returns Promise<Blob>
+const blob = await image.toBlob('image/jpeg', 0.9);  // JPEG with quality
+const dataUrl = image.toDataURL();           // Returns data URL string
+const dataUrl = image.toDataURL('image/jpeg', 0.8); // JPEG data URL
 \`\`\`
 
 ### \`IXCFImage\` Interface
