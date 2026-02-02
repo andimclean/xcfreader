@@ -16,15 +16,12 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     const layers = parser.layers;
     const image = new XCFImage(parser.width, parser.height);
 
-    layers
-      .slice()
-      .reverse()
-      .forEach((layer: any) => {
-        const layerImage = layer.makeImage();
-        layer.makeImage(image, true);
-        layerImage.writeImage(path.resolve(outDir, layer.name + ".png"));
-        console.log(layer.parasites);
-      });
+    for (const layer of layers.slice().reverse()) {
+      const layerImage = layer.makeImage();
+      layer.makeImage(image, true);
+      await layerImage.writeImage(path.resolve(outDir, layer.name + ".png"));
+      console.log(layer.parasites);
+    }
 
     await image.writeImage(path.resolve(outDir, "multi1.png"));
     console.log("Image 1 saved");
