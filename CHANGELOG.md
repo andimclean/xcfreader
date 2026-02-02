@@ -49,6 +49,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `parser.baseType` getter to check image color mode
     - Automatic grayscale-to-RGB conversion during rendering
     - Test 14 verifies grayscale support
+  - **XCF v011 (GIMP 2.10+) support**: Full support for 64-bit pointer format
+    - `parser.isV11` getter to detect XCF version (v011 uses 64-bit pointers)
+    - Separate parsers for v010 (32-bit) and v011 (64-bit) pointer formats
+    - Automatic version detection and parser selection
+    - `grey.xcf` example file and `npm run grey` script for testing
+    - Backward compatible with older v010 XCF files
 
 ### Changed
 
