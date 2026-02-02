@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const xcfPath = path.resolve(__dirname, "../../examples/map1.xcf");
-const outDir = path.resolve(__dirname, "../examples/output");
+const outDir = path.resolve(__dirname, "../examples/output/map");
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
 async function saveLayer(file: string, groupName: string): Promise<void> {

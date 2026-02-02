@@ -11,6 +11,9 @@ src/**/*.d.ts.map
 
 # Generated files
 examples/output/*.png
+examples/output/*/
+packages/xcfreader/examples/output/*.png
+packages/xcfreader/examples/output/*/
 examples/map1
 docs/
 
@@ -25,4 +28,3 @@ docs/
 
 .nx/cache
 .nx/workspace-data
-packages/xcfreader/examples/output/grey-output.png

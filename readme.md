@@ -218,6 +218,7 @@ npm run multi
 npm run map
 npm run text
 npm run grey      # grayscale v011 example
+npm run indexed   # indexed color example
 \`\`\`
 
 ## Troubleshooting

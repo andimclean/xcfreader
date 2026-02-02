@@ -11,9 +11,13 @@ import { XCFParser, XCFPNGImage, XCF_BaseType } from "../node.js";
 import { Logger } from "../lib/logger.js";
 import FS from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main(): Promise<void> {
-  const xcfPath = "./examples/grey.xcf";
+  const xcfPath = path.resolve(__dirname, "../../examples/grey.xcf");
 
   Logger.log(`Parsing ${xcfPath}...`);
   const parser = await XCFParser.parseFileAsync(xcfPath);
@@ -38,12 +42,12 @@ async function main(): Promise<void> {
   for (const layer of parser.layers) {
     const visibility = layer.isVisible ? "👁️" : "🚫";
     Logger.log(
-      `  ${visibility} ${layer.name} (${layer.width}x${layer.height})`
+      `  ${visibility} ${layer.name} (${layer.width}x${layer.height})`,
     );
   }
 
   // Render to PNG (grayscale will be converted to RGB automatically)
-  const outputDir = "./examples/output";
+  const outputDir = path.resolve(__dirname, "../../examples/output/grey");
   if (!FS.existsSync(outputDir)) {
     FS.mkdirSync(outputDir, { recursive: true });
   }
@@ -51,7 +55,7 @@ async function main(): Promise<void> {
   const image = new XCFPNGImage(parser.width, parser.height);
   parser.createImage(image);
 
-  const outputPath = path.join(outputDir, "grey-output.png");
+  const outputPath = path.join(outputDir, "output.png");
   await image.writeImage(outputPath);
   Logger.log(`\nImage saved to ${outputPath}`);
 }
