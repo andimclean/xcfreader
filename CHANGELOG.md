@@ -27,8 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `dist/xcfreader.browser.mjs` - ES Module bundle (~208KB minified)
     - `dist/xcfreader.browser.js` - IIFE bundle for `<script>` tags
     - `XCFParser.parseBuffer(arrayBuffer)` - Parse from ArrayBuffer/Uint8Array
-    - `XCFImage.getPixelData()` - Get pixel data for Canvas ImageData
     - `examples/browser-demo.html` - Interactive browser demo
+  - **`XCFDataImage` class**: Browser-based image implementation using `ImageData`
+    - Located in `src/lib/xcfdataimage.ts`
+    - Implements `IXCFImage` interface
+    - `imageData` getter returns ImageData-compatible object for canvas rendering
+    - No Node.js dependencies (works in browsers)
+  - **Separate entry points** for Node.js and browser:
+    - `xcfreader/node` - Exports `XCFPNGImage` for PNG file output
+    - `xcfreader/browser` - Exports `XCFDataImage` for canvas rendering
+    - `xcfreader` - Base types only (bring your own `IXCFImage`)
   - **Test coverage reporting**: c8 integration
     - `npm run coverage` - Generate coverage reports
     - HTML, LCOV, and text output formats
@@ -42,8 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added `IXCFImage` interface in `src/types/index.ts` for image abstraction
     - `createImage()` and `makeImage()` now require an `IXCFImage` parameter
     - Enables future alternative implementations (e.g., browser Canvas-based)
+  - **Restructured package exports**: 
+    - Image classes removed from base `gimpparser.ts` module
+    - Added `src/node.ts` entry point for Node.js usage
+    - Added `src/browser.ts` entry point for browser usage
+    - Updated `package.json` exports for `./node` and `./browser` paths
   - New scripts: `npm run build`, `npm run watch`, `npm run build:browser`, `npm run build:all`
   - Examples and tests now compile before running
+  - Examples and tests import from `node.ts` instead of `gimpparser.ts`
   - `getProps()` now uses generics to return correctly typed results based on property type
   - Internal `_props` cache uses `Partial<XCF_PropTypeMap>` for type safety
   - All `any` types replaced with proper TypeScript types throughout codebase
