@@ -37,6 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+  - **Renamed `XCFImage` to `XCFPNGImage`**: Better reflects its PNG-specific implementation
+    - Extracted to dedicated file `src/lib/xcfpngimage.ts`
+    - Added `IXCFImage` interface in `src/types/index.ts` for image abstraction
+    - `createImage()` and `makeImage()` now require an `IXCFImage` parameter
+    - Enables future alternative implementations (e.g., browser Canvas-based)
   - New scripts: `npm run build`, `npm run watch`, `npm run build:browser`, `npm run build:all`
   - Examples and tests now compile before running
   - `getProps()` now uses generics to return correctly typed results based on property type

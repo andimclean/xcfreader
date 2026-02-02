@@ -1,5 +1,5 @@
 import { Logger } from "../lib/logger.js";
-import { XCFParser as GimpParser } from "../gimpparser.js";
+import { XCFParser as GimpParser, XCFPNGImage } from "../gimpparser.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -14,7 +14,8 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 (async function main() {
   try {
     const parser = await GimpParser.parseFileAsync(xcfPath);
-    const image = parser.createImage();
+    const image = new XCFPNGImage(parser.width, parser.height);
+    parser.createImage(image);
     await image.writeImage(path.resolve(outDir, "single1.png"));
     Logger.log("Image 1 saved");
   } catch (err) {

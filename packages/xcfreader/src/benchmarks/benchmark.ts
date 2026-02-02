@@ -1,4 +1,4 @@
-import { XCFParser } from "../gimpparser.js";
+import { XCFParser, XCFPNGImage } from "../gimpparser.js";
 import { Logger } from "../lib/logger.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -35,7 +35,8 @@ async function benchmark(): Promise<void> {
     // Measure render time
     const renderStart = performance.now();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const image = parser.createImage();
+    const image = new XCFPNGImage(parser.width, parser.height);
+    parser.createImage(image);
     const renderEnd = performance.now();
     const renderTime = renderEnd - renderStart;
 

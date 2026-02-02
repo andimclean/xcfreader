@@ -438,3 +438,51 @@ export interface XCF_PropTypeMap {
  * Helper type to get the parsed property type for a given XCF_PropType
  */
 export type PropTypeFor<T extends XCF_PropType> = XCF_PropTypeMap[T];
+
+// ============================================
+// Image interface
+// ============================================
+
+/**
+ * Interface for XCF image rendering output.
+ * Implementations provide pixel manipulation and export functionality.
+ */
+export interface IXCFImage {
+  /** Image width in pixels */
+  readonly width: number;
+  /** Image height in pixels */
+  readonly height: number;
+
+  /**
+   * Set a pixel color at the specified coordinates
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param colour - Color to set (with RGBA values)
+   */
+  setAt(x: number, y: number, colour: ColorRGBA): void;
+
+  /**
+   * Get the color of a pixel at the specified coordinates
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @returns Color at the given coordinates
+   */
+  getAt(x: number, y: number): ColorRGBA;
+
+  /**
+   * Fill a rectangle with a color
+   * @param x - X coordinate of top-left corner
+   * @param y - Y coordinate of top-left corner
+   * @param w - Width of rectangle
+   * @param h - Height of rectangle
+   * @param colour - Color to fill with
+   */
+  fillRect(x: number, y: number, w: number, h: number, colour: ColorRGBA): void;
+
+  /**
+   * Get the raw RGBA pixel data as a Uint8Array.
+   * Useful for browser environments where you want to draw the image to a canvas.
+   * @returns Uint8Array of RGBA pixel data (4 bytes per pixel)
+   */
+  getPixelData(): Uint8Array;
+}

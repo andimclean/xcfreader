@@ -1,4 +1,4 @@
-import { XCFParser as GimpParser } from "../gimpparser.js";
+import { XCFParser as GimpParser, XCFPNGImage } from "../gimpparser.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -16,7 +16,8 @@ async function saveLayer(file: string, groupName: string): Promise<void> {
   const parser = await GimpParser.parseFileAsync(file);
   const layer = parser.getLayerByName(groupName);
   if (layer) {
-    const layerImage = layer.makeImage();
+    const layerImage = new XCFPNGImage(layer.width, layer.height);
+    layer.makeImage(layerImage);
     await layerImage.writeImage(path.resolve(outDir, groupName + ".png"));
     Logger.log(`Layer ${groupName} saved`);
   }
