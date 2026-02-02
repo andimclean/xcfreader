@@ -4,6 +4,8 @@ import { test03ParseMulti } from './03-parse-multi.js';
 import { test04Map1Layers } from './04-map1-layers.js';
 import { test05TextParasites } from './05-text-parasites.js';
 import { test06ParseEmpty } from './06-parse-empty.js';
+import { test07ErrorHandling } from './07-error-handling.js';
+import { test08GetLayerByName } from './08-get-layer-by-name.js';
 
 const tests = [
   { name: '01-parse-single.ts', fn: test01ParseSingle },
@@ -11,7 +13,9 @@ const tests = [
   { name: '03-parse-multi.ts', fn: test03ParseMulti },
   { name: '04-map1-layers.ts', fn: test04Map1Layers },
   { name: '05-text-parasites.ts', fn: test05TextParasites },
-  { name: '06-parse-empty.ts', fn: test06ParseEmpty }
+  { name: '06-parse-empty.ts', fn: test06ParseEmpty },
+  { name: '07-error-handling.ts', fn: test07ErrorHandling },
+  { name: '08-get-layer-by-name.ts', fn: test08GetLayerByName }
 ];
 
 async function runTests(): Promise<void> {

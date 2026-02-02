@@ -4,6 +4,26 @@ import { Buffer } from 'buffer';
 import PNGImage from 'pngjs-image';
 import XCFCompositer from './lib/xcfcompositer.js';
 
+/**
+ * Error thrown when XCF file parsing fails
+ */
+export class XCFParseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'XCFParseError';
+  }
+}
+
+/**
+ * Error thrown when unsupported XCF format is encountered
+ */
+export class UnsupportedFormatError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnsupportedFormatError';
+  }
+}
+
 const PROP_END = 0;
 const PROP_COLORMAP = 1;
 const PROP_ACTIVE_LAYER = 2;
@@ -39,17 +59,26 @@ const PROP_GROUP_ITEM_FLAGS = 31;
 const PROP_LOCK_POSITION = 32;
 const PROP_FLOAT_OPACITY = 33;
 
-interface ColorRGB {
+/**
+ * RGB color with red, green, blue components (0-255)
+ */
+export interface ColorRGB {
   red: number;
   green: number;
   blue: number;
 }
 
-interface ColorRGBA extends ColorRGB {
+/**
+ * RGBA color with red, green, blue, alpha components (0-255)
+ */
+export interface ColorRGBA extends ColorRGB {
   alpha: number;
 }
 
-interface Parasite {
+/**
+ * GIMP parasite (metadata) attached to layers or images
+ */
+export interface Parasite {
   name: string;
   flags: number;
   details: Buffer;
@@ -266,6 +295,9 @@ const findProperty = (propertyList: any[], propType: number): any => {
   return found ? found.data : null;
 };
 
+/**
+ * Represents a single layer in a GIMP XCF file
+ */
 class GimpLayer {
   private _parent: XCFParser;
   private _buffer: Buffer;
@@ -287,6 +319,9 @@ class GimpLayer {
     this._compiled = true;
   }
 
+  /**
+   * Get the name of this layer
+   */
   get name(): string {
     if (!this._compiled) {
       this.compile();
@@ -312,6 +347,9 @@ class GimpLayer {
     return this.getProps(PROP_ITEM_PATH);
   }
 
+  /**
+   * Get the full path name of this layer in the layer hierarchy
+   */
   get groupName(): string {
     if (!this._compiled) {
       this.compile();
@@ -337,6 +375,9 @@ class GimpLayer {
     return name.join('/');
   }
 
+  /**
+   * Get the width of this layer in pixels
+   */
   get width(): number {
     if (!this._compiled) {
       this.compile();
@@ -344,6 +385,9 @@ class GimpLayer {
     return this._details.width;
   }
 
+  /**
+   * Get the height of this layer in pixels
+   */
   get height(): number {
     if (!this._compiled) {
       this.compile();
@@ -351,34 +395,58 @@ class GimpLayer {
     return this._details.height;
   }
 
+  /**
+   * Get the X offset of this layer
+   */
   get x(): number {
     return this.getProps(PROP_OFFSETS, 'dx');
   }
 
+  /**
+   * Get the Y offset of this layer
+   */
   get y(): number {
     return this.getProps(PROP_OFFSETS, 'dy');
   }
 
+  /**
+   * Check if this layer is visible
+   */
   get isVisible(): boolean {
     return this.getProps(PROP_VISIBLE, 'isVisible') !== 0;
   }
 
+  /**
+   * Check if this layer is a group (folder)
+   */
   get isGroup(): boolean {
     return this.getProps(PROP_GROUP_ITEM) !== null;
   }
 
+  /**
+   * Get the color/blend mode of this layer
+   */
   get colourMode(): number {
     return this.getProps(PROP_MODE, 'mode');
   }
 
+  /**
+   * Get the blend mode (alias for colourMode)
+   */
   get mode(): number {
     return this.colourMode;
   }
 
+  /**
+   * Get the opacity of this layer (0-100)
+   */
   get opacity(): number {
     return this.getProps(PROP_OPACITY, 'opacity');
   }
 
+  /**
+   * Get parasites (metadata) attached to this layer
+   */
   get parasites(): Record<string, any> {
     if (this._parasites === undefined) {
       const parasite = this.getProps(PROP_PARASITES);
@@ -600,6 +668,12 @@ export class XCFParser {
   private _header: any = null;
   _groupLayers: any = null;
 
+  /**
+   * Parse an XCF file with callback (legacy API)
+   * @param file - Path to the .xcf file
+   * @param callback - Callback function (err, parser)
+   * @deprecated Use parseFileAsync instead
+   */
   static parseFile(
     file: string,
     callback: (err: any, parser?: XCFParser) => void
@@ -609,11 +683,35 @@ export class XCFParser {
       .catch((err) => callback(err));
   }
 
+  /**
+   * Parse an XCF file asynchronously
+   * @param file - Path to the .xcf file
+   * @returns Promise resolving to XCFParser instance
+   * @throws XCFParseError if file cannot be read or parsed
+   */
   static async parseFileAsync(file: string): Promise<XCFParser> {
-    const data = await FS.promises.readFile(file);
-    const parser = new XCFParser();
-    parser.parse(data);
-    return parser;
+    try {
+      // Validate file exists
+      await FS.promises.access(file, FS.constants.R_OK);
+
+      const data = await FS.promises.readFile(file);
+
+      // Validate XCF magic bytes
+      if (data.length < 14 || data.toString('utf-8', 0, 4) !== 'gimp') {
+        throw new UnsupportedFormatError(
+          'Invalid XCF file: missing GIMP magic bytes'
+        );
+      }
+
+      const parser = new XCFParser();
+      parser.parse(data);
+      return parser;
+    } catch (err: any) {
+      if (err instanceof UnsupportedFormatError) {
+        throw err;
+      }
+      throw new XCFParseError(`Failed to parse XCF file: ${err.message}`);
+    }
   }
 
   parse(buffer: Buffer): void {
@@ -700,6 +798,15 @@ export class XCFParser {
     return this._groupLayers;
   }
 
+  /**
+   * Find a layer by name
+   * @param name - The name of the layer to find
+   * @returns The matching GimpLayer or undefined
+   */
+  getLayerByName(name: string): GimpLayer | undefined {
+    return this.layers.find((layer) => layer.name === name);
+  }
+
   createImage(image?: XCFImage): XCFImage {
     let resultImage: XCFImage = image || new XCFImage(this.width, this.height);
 
@@ -713,11 +820,19 @@ export class XCFParser {
   }
 }
 
+/**
+ * Represents a composited XCF image with flattened layers
+ */
 export class XCFImage {
   private _width: number;
   private _height: number;
   _image: any;
 
+  /**
+   * Create a new XCF image
+   * @param width - Image width in pixels
+   * @param height - Image height in pixels
+   */
   constructor(width: number, height: number) {
     this._width = width;
     this._height = height;
@@ -742,6 +857,12 @@ export class XCFImage {
 
   [key: string]: any;
 
+  /**
+   * Set a pixel color at the specified coordinates
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param colour - Color to set (with RGBA values)
+   */
   setAt(x: number, y: number, colour: ColorRGBA): void {
     if (x < 0 || x > this._width || y < 0 || y > this._height) {
       return;
@@ -749,6 +870,12 @@ export class XCFImage {
     this._image.setAt(x, y, colour);
   }
 
+  /**
+   * Get the color of a pixel at the specified coordinates
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @returns Color at the given coordinates
+   */
   getAt(x: number, y: number): ColorRGBA {
     const idx = this._image.getIndex(x, y);
 
@@ -760,6 +887,14 @@ export class XCFImage {
     };
   }
 
+  /**
+   * Fill a rectangle with a color
+   * @param x - X coordinate of top-left corner
+   * @param y - Y coordinate of top-left corner
+   * @param w - Width of rectangle
+   * @param h - Height of rectangle
+   * @param colour - Color to fill with
+   */
   fillRect(
     x: number,
     y: number,
@@ -770,6 +905,11 @@ export class XCFImage {
     return this._image.fillRect(x, y, w, h, colour);
   }
 
+  /**
+   * Write the image to a PNG file
+   * @param filename - Path where to save the PNG file
+   * @param callback - Optional callback function
+   */
   writeImage(filename: string, callback?: (err?: Error) => void): void {
     return this._image.writeImage(filename, callback);
   }
