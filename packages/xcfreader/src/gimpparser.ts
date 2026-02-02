@@ -11,6 +11,10 @@ import FS from "fs";
 import { Buffer } from "buffer";
 import { PNG } from "pngjs";
 import XCFCompositer from "./lib/xcfcompositer.js";
+import { XCF_PropType, ColorRGBA } from "./types/index.js";
+
+// Re-export all types for consumers
+export * from "./types/index.js";
 
 /**
  * Error thrown when XCF file parsing fails
@@ -30,68 +34,6 @@ export class UnsupportedFormatError extends Error {
     super(message);
     this.name = "UnsupportedFormatError";
   }
-}
-
-enum XCF_PropType {
-  END = 0,
-  COLORMAP = 1,
-  ACTIVE_LAYER = 2,
-  ACTIVE_CHANNEL = 3,
-  SELECTION = 4,
-  FLOATING_SELECTION = 5,
-  OPACITY = 6,
-  MODE = 7,
-  VISIBLE = 8,
-  LINKED = 9,
-  LOCK_ALPHA = 10,
-  APPLY_MASK = 11,
-  EDIT_MASK = 12,
-  SHOW_MASK = 13,
-  SHOW_MASKED = 14,
-  OFFSETS = 15,
-  COLOR = 16,
-  COMPRESSION = 17,
-  GUIDES = 18,
-  RESOLUTION = 19,
-  TATTOO = 20,
-  PARASITES = 21,
-  UNIT = 22,
-  PATHS = 23,
-  USER_UNIT = 24,
-  VECTORS = 25,
-  TEXT_LAYER_FLAGS = 26,
-  SAMPLE_POINTS = 27,
-  LOCK_CONTENT = 28,
-  GROUP_ITEM = 29,
-  ITEM_PATH = 30,
-  GROUP_ITEM_FLAGS = 31,
-  LOCK_POSITION = 32,
-  FLOAT_OPACITY = 33,
-}
-
-/**
- * RGB color with red, green, blue components (0-255)
- */
-export interface ColorRGB {
-  red: number;
-  green: number;
-  blue: number;
-}
-
-/**
- * RGBA color with red, green, blue, alpha components (0-255)
- */
-export interface ColorRGBA extends ColorRGB {
-  alpha: number;
-}
-
-/**
- * GIMP parasite (metadata) attached to layers or images
- */
-export interface Parasite {
-  name: string;
-  flags: number;
-  details: Buffer;
 }
 
 const itemIsZero = (item: any, _buffer: Buffer): boolean => {
