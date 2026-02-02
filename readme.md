@@ -1,4 +1,10 @@
+## Coverage
+
 [![Coverage Status](https://img.shields.io/badge/coverage-81%25-brightgreen)](./coverage)
+
+- Code coverage is measured using c8 and reported in CI.
+- The badge above reflects the latest main branch coverage.
+- CI will fail if line coverage drops below 80% and will emit a warning if below 85%.
 
 # xcfreader
 # API Documentation

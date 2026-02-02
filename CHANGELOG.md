@@ -140,3 +140,9 @@ For full commit history, see the git log.
 
 ### Changed
 - Diagnostics and debug output in `examples/browser-demo.html` are now only visible when explicitly enabled via the URL toggle.
+
+### Added
+- Browser-based Playwright tests for demo parsing of all example XCF files. Tests use setInputFiles for file upload and assert on #file-info for robust, real-world coverage.
+- Coverage badge (81%) added to the top of the readme for visibility.
+- CI workflow now runs coverage reporting on every push/PR.
+- CI emits a warning if coverage drops below 85% and fails if below 80% (enforcing minimum coverage).

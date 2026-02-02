@@ -10,7 +10,8 @@
     "nx": "22.4.4"
   },
   "scripts": {
-    "test:browser": "playwright test packages/xcfreader/tests/browser-demo.spec.ts",
-    "coverage": "c8 npm test && c8 report --reporter=lcov && c8 report --reporter=text-summary"
+    "test": "npm run --workspace=packages/xcfreader test",
+    "test:browser": "npm run --workspace=packages/xcfreader test:browser",
+    "coverage": "npm run --workspace=packages/xcfreader coverage"
   }
 }
