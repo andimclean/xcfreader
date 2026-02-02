@@ -8,7 +8,7 @@
 import { Parser } from "binary-parser";
 import FS from "fs";
 import { Buffer } from "buffer";
-import { PNG } from 'pngjs';
+import { PNG } from "pngjs";
 import XCFCompositer from "./lib/xcfcompositer.js";
 
 /**
@@ -920,10 +920,10 @@ export class XCFImage {
    */
   writeImage(filename: string, callback?: (err?: Error) => void): void {
     try {
-      if (typeof this._image.pack === 'function') {
+      if (typeof this._image.pack === "function") {
         const stream = this._image.pack().pipe(FS.createWriteStream(filename));
-        stream.on('finish', () => callback && callback());
-        stream.on('error', (err: Error) => callback && callback(err));
+        stream.on("finish", () => callback && callback());
+        stream.on("error", (err: Error) => callback && callback(err));
       } else {
         if (callback) callback();
       }
