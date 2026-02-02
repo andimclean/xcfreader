@@ -59,9 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `parser.colormap` getter to access the color palette (array of RGB colors)
     - Automatic palette lookup during rendering
     - Test 15 verifies indexed color support
+  - **`indexed.ts` example**: Demonstrates parsing indexed/paletted XCF files
 
 ### Changed
 
+  - **Examples now output to separate folders**: Each example outputs to its own subdirectory under `examples/output/` (e.g., `single/`, `multi/`, `grey/`, `indexed/`)
   - **Renamed `XCFImage` to `XCFPNGImage`**: Better reflects its PNG-specific implementation
     - Extracted to dedicated file `src/lib/xcfpngimage.ts`
     - Added `IXCFImage` interface in `src/types/index.ts` for image abstraction
