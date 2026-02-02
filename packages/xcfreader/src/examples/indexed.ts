@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 
 async function main(): Promise<void> {
   const xcfPath = path.resolve(__dirname, "../../examples/indexed.xcf");
-  const outputDir = path.resolve(__dirname, "../../examples/output/indexed");
+  const outputDir = path.resolve(__dirname, "../../../../output/indexed");
 
   Logger.log(`Parsing ${xcfPath}...`);
 
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     FS.mkdirSync(outputDir, { recursive: true });
   }
 
-  const outputPath = `${outputDir}/output.png`;
+  const outputPath = path.resolve(outputDir, "output.png");
   await image.writeImage(outputPath);
   Logger.log(`\nImage saved to ${outputPath}`);
 }

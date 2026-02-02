@@ -11,7 +11,7 @@ src/**/*.d.ts.map
 
 # Generated files
 examples/output/*.png
-examples/output/*/
+output/*/
 packages/xcfreader/examples/output/*.png
 packages/xcfreader/examples/output/*/
 examples/map1

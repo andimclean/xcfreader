@@ -34,7 +34,7 @@ const precisionNames: Record<number, string> = {
 
 async function main(): Promise<void> {
   const xcfPath = path.resolve(__dirname, "../../examples/fullColour.xcf");
-  const outputDir = path.resolve(__dirname, "../../examples/output/fullColour");
+  const outputDir = path.resolve(__dirname, "../../../../output/fullColour");
 
   Logger.log(`Parsing ${xcfPath}...`);
 
@@ -74,7 +74,7 @@ async function main(): Promise<void> {
   parser.createImage(image);
 
   const outputPath = path.join(outputDir, "output.png");
-  await image.writeImage(outputPath);
+  await image.writeImage(path.resolve(outputDir, "output.png"));
   Logger.log(`\nImage saved to ${outputPath}`);
 }
 

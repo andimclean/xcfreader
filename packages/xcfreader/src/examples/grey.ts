@@ -47,7 +47,7 @@ async function main(): Promise<void> {
   }
 
   // Render to PNG (grayscale will be converted to RGB automatically)
-  const outputDir = path.resolve(__dirname, "../../examples/output/grey");
+  const outputDir = path.resolve(__dirname, "../../../../output/grey");
   if (!FS.existsSync(outputDir)) {
     FS.mkdirSync(outputDir, { recursive: true });
   }
@@ -56,7 +56,7 @@ async function main(): Promise<void> {
   parser.createImage(image);
 
   const outputPath = path.join(outputDir, "output.png");
-  await image.writeImage(outputPath);
+  await image.writeImage(path.resolve(outputDir, "output.png"));
   Logger.log(`\nImage saved to ${outputPath}`);
 }
 

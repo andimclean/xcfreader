@@ -88,7 +88,8 @@
     "test": "npm run build && node dist/tests/runner.js",
     "test:coverage": "npm run build && c8 node dist/tests/runner.js",
     "coverage": "npm run test:coverage",
-    "prepublishOnly": "npm run build:all"
+    "prepublishOnly": "npm run build:all",
+    "int32": "npm run build && node dist/examples/int32.js"
   },
   "repository": {
     "type": "git",
