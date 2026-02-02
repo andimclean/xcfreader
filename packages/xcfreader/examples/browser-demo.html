@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Prevent browser caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>xcfreader Browser Demo</title>
@@ -105,7 +109,7 @@
   </div>
 
   <!-- Load the browser bundle (IIFE version) -->
-  <script src="../dist/xcfreader.browser.js"></script>
+  <script src="../dist/xcfreader.browser.js?cb=" + Date.now()></script>
   <script>
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
@@ -146,16 +150,79 @@
       try {
         // Read file as ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
-        
+
+        // Print raw bytes 0-20 (hex and ASCII) for debugging
+        const rawBytes = new Uint8Array(arrayBuffer.slice(0, 20));
+        const hex = Array.from(rawBytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        const ascii = Array.from(rawBytes).map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.').join('');
+
         // Parse using xcfreader
         const parser = XCFReader.XCFParser.parseBuffer(arrayBuffer);
-        
-        // Display file info
+
+        // Extra debug: print version string and versionNum from parser internals
+        let versionString = '', versionNum = '';
+        try {
+          // Try to access the private _buffer and _version fields
+          if (parser._buffer) {
+            const buf = parser._buffer;
+            // bytes 9-13 for version string
+            if (typeof buf.toString === 'function') {
+              versionString = buf.toString('utf-8', 9, 13);
+            }
+          }
+          if (typeof parser._version !== 'undefined') {
+            versionNum = parser._version;
+          }
+        } catch (e) {}
+
+        // Display file info with precision/bit depth and debug info
+        const precisionNames = {
+          0: '8-bit gamma',
+          1: '8-bit linear',
+          2: '16-bit gamma',
+          3: '16-bit linear',
+          4: '32-bit gamma',
+          5: '32-bit linear',
+          6: '16-bit float (half, gamma)',
+          7: '16-bit float (half, linear)',
+          8: '32-bit float (gamma)',
+          9: '32-bit float (linear)',
+          10: '64-bit float (gamma)',
+          11: '64-bit float (linear)'
+        };
+        const precision = parser.precision;
+        const bytesPerChannel = parser.bytesPerChannel;
+        const isFloat = parser.isFloatingPoint;
+        const precisionLabel = precisionNames[precision] || precision;
+        let warn = '';
+        if (bytesPerChannel > 1 || isFloat) {
+          warn = `<div style=\"color:#b71c1c;font-weight:bold;margin-top:8px;\">⚠️ High bit-depth or floating-point image: browser preview is 8-bit only.</div>`;
+        }
+        // Debug: show version and raw header fields if available
+        let debugInfo = '';
+        try {
+          debugInfo = `<div style='margin-top:10px;font-size:12px;color:#333;background:#f0f0f0;padding:8px;border-radius:4px;'>` +
+            `<strong>Debug:</strong><br>` +
+            `XCF Version: ${parser.isV11 ? 'v011 (64-bit)' : 'v010 (32-bit)'}<br>` +
+            `Header: ${JSON.stringify(parser._header)}<br>` +
+            `Layers: ${JSON.stringify(parser.layers.map(l => l && l.name))}<br>` +
+            `Version string (bytes 9-13): <b>${versionString}</b><br>` +
+            `Parsed versionNum: <b>${versionNum}</b><br>` +
+            `<br><strong>Raw bytes 0-20:</strong><br>` +
+            `Hex: ${hex}<br>` +
+            `ASCII: ${ascii}<br>` +
+            `</div>`;
+        } catch (e) {}
         document.getElementById('file-info').innerHTML = `
           <strong>File:</strong> ${file.name}<br>
           <strong>Size:</strong> ${(file.size / 1024).toFixed(1)} KB<br>
           <strong>Dimensions:</strong> ${parser.width} × ${parser.height} px<br>
-          <strong>Layers:</strong> ${parser.layers.length}
+          <strong>Layers:</strong> ${parser.layers.length}<br>
+          <strong>Precision:</strong> ${precisionLabel}<br>
+          <strong>Bytes/Channel:</strong> ${bytesPerChannel}<br>
+          <strong>Floating Point:</strong> ${isFloat ? 'Yes' : 'No'}
+          ${warn}
+          ${debugInfo}
         `;
 
         // Render flattened image to canvas

@@ -72,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-  - **Examples now output to separate folders**: Each example outputs to its own subdirectory under `examples/output/` (e.g., `single/`, `multi/`, `grey/`, `indexed/`)
+  - **Examples now output to root `/output/` directory**: All example scripts write images to `/output/{example}/` at the project root for consistency and easy access.
   - **Renamed `XCFImage` to `XCFPNGImage`**: Better reflects its PNG-specific implementation
     - Extracted to dedicated file `src/lib/xcfpngimage.ts`
     - Added `IXCFImage` interface in `src/types/index.ts` for image abstraction
