@@ -7,6 +7,8 @@ import { test06ParseEmpty } from "./06-parse-empty.js";
 import { test07ErrorHandling } from "./07-error-handling.js";
 import { test08GetLayerByName } from "./08-get-layer-by-name.js";
 import { test09MultiLayerNames } from "./09-multi-layer-names.js";
+import { test10XCFDataImage } from "./10-xcf-data-image.js";
+import { test11BrowserExports } from "./11-browser-exports.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -19,6 +21,8 @@ const tests = [
   { name: "07-error-handling.ts", fn: test07ErrorHandling },
   { name: "08-get-layer-by-name.ts", fn: test08GetLayerByName },
   { name: "09-multi-layer-names.ts", fn: test09MultiLayerNames },
+  { name: "10-xcf-data-image.ts", fn: test10XCFDataImage },
+  { name: "11-browser-exports.ts", fn: test11BrowserExports },
 ];
 
 async function runTests(): Promise<void> {
