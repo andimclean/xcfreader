@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Located in `src/lib/xcfdataimage.ts`
     - Implements `IXCFImage` interface
     - `imageData` getter returns ImageData-compatible object for canvas rendering
+    - `toBlob(mimeType?, quality?)` - Convert to Blob for file uploads
+    - `toDataURL(mimeType?, quality?)` - Convert to data URL for embedding
     - No Node.js dependencies (works in browsers)
   - **Separate entry points** for Node.js and browser:
     - `xcfreader/node` - Exports `XCFPNGImage` for PNG file output

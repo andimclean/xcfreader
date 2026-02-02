@@ -59,10 +59,19 @@
       font-family: monospace;
       font-size: 13px;
       background: #f5f5f5;
-      padding: 10px;
+      padding: 10px 10px 10px 30px;
       border-radius: 4px;
       max-height: 200px;
       overflow-y: auto;
+      list-style: none;
+      margin: 0;
+    }
+    .layers li {
+      padding: 4px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .layers li:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
@@ -85,8 +94,14 @@
     <h3>🖼️ Preview (Flattened)</h3>
     <canvas id="preview-canvas"></canvas>
     
+    <div style="margin: 10px 0;">
+      <button class="btn" id="download-png" style="display: none; margin-right: 10px;">📥 Download PNG</button>
+      <button class="btn" id="download-jpeg" style="display: none; background: #2196F3;">📥 Download JPEG</button>
+      <button class="btn" id="copy-dataurl" style="display: none; background: #9C27B0; margin-left: 10px;">📋 Copy Data URL</button>
+    </div>
+    
     <h3>📚 Layers</h3>
-    <div class="layers" id="layers-list"></div>
+    <ul class="layers" id="layers-list"></ul>
   </div>
 
   <!-- Load the browser bundle (IIFE version) -->
@@ -156,13 +171,43 @@
         const imageData = new ImageData(new Uint8ClampedArray(pixelData), parser.width, parser.height);
         ctx.putImageData(imageData, 0, 0);
 
-        // List layers
-        const layersList = parser.layers.map((layer, i) => {
-          const visibility = layer.isVisible ? '👁️' : '🚫';
-          const group = layer.isGroup ? '📁' : '🖼️';
-          return `${visibility} ${group} ${layer.name} (${layer.width}×${layer.height})`;
-        }).join('\n');
-        document.getElementById('layers-list').textContent = layersList;
+        // List layers recursively using groupLayers tree
+        const layersListEl = document.getElementById('layers-list');
+        layersListEl.innerHTML = '';
+        
+        function renderLayerNode(node, parentUl) {
+          node.children.forEach((child) => {
+            const li = document.createElement('li');
+            const layer = child.layer;
+            const visibility = layer.isVisible ? '👁️' : '🚫';
+            const group = layer.isGroup ? '📁' : '🖼️';
+            li.textContent = `${visibility} ${group} ${layer.name} (${layer.width}×${layer.height})`;
+            parentUl.appendChild(li);
+            
+            // If this is a group with children, create nested ul
+            if (child.children && child.children.length > 0) {
+              const nestedUl = document.createElement('ul');
+              nestedUl.className = 'layers';
+              li.appendChild(nestedUl);
+              renderLayerNode(child, nestedUl);
+            }
+          });
+        }
+        
+        renderLayerNode(parser.groupLayers, layersListEl);
+
+        // Setup download buttons using toBlob()
+        const downloadPng = document.getElementById('download-png');
+        const downloadJpeg = document.getElementById('download-jpeg');
+        const copyDataUrl = document.getElementById('copy-dataurl');
+        
+        downloadPng.style.display = 'inline-block';
+        downloadJpeg.style.display = 'inline-block';
+        copyDataUrl.style.display = 'inline-block';
+        
+        // Store image reference for download handlers
+        window.currentImage = image;
+        window.currentFileName = file.name.replace('.xcf', '');
 
         output.style.display = 'block';
       } catch (err) {
@@ -170,6 +215,53 @@
         alert('Error parsing file: ' + err.message);
       }
     }
+
+    // Download PNG button handler
+    document.getElementById('download-png').addEventListener('click', async () => {
+      if (!window.currentImage) return;
+      try {
+        const blob = await window.currentImage.toBlob('image/png');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = window.currentFileName + '.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Error creating PNG: ' + err.message);
+      }
+    });
+
+    // Download JPEG button handler
+    document.getElementById('download-jpeg').addEventListener('click', async () => {
+      if (!window.currentImage) return;
+      try {
+        const blob = await window.currentImage.toBlob('image/jpeg', 0.9);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = window.currentFileName + '.jpg';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Error creating JPEG: ' + err.message);
+      }
+    });
+
+    // Copy Data URL button handler
+    document.getElementById('copy-dataurl').addEventListener('click', async () => {
+      if (!window.currentImage) return;
+      try {
+        const dataUrl = window.currentImage.toDataURL('image/png');
+        await navigator.clipboard.writeText(dataUrl);
+        const btn = document.getElementById('copy-dataurl');
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      } catch (err) {
+        alert('Error copying data URL: ' + err.message);
+      }
+    });
   </script>
 </body>
 </html>
