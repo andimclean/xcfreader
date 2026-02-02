@@ -6,6 +6,7 @@
  */
 
 import { Parser } from "binary-parser";
+import { Logger } from "./lib/logger.js";
 import FS from "fs";
 import { Buffer } from "buffer";
 import { PNG } from "pngjs";
@@ -673,7 +674,7 @@ export class XCFParser {
     file: string,
     callback: (err: any, parser?: XCFParser) => void,
   ): void {
-    console.warn('XCFParser.parseFile() is deprecated. Use parseFileAsync() with async/await instead.');
+    Logger.warn('XCFParser.parseFile() is deprecated. Use parseFileAsync() with async/await instead.');
     XCFParser.parseFileAsync(file)
       .then((parser) => callback(null, parser))
       .catch((err) => callback(err));

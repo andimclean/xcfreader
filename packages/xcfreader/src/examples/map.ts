@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { Logger } from "../lib/logger.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -16,7 +18,7 @@ async function saveLayer(file: string, groupName: string): Promise<void> {
   if (layer && layer.layer) {
     const layerImage = layer.layer.makeImage();
     layerImage.writeImage(path.resolve(outDir, groupName + ".png"), () => {
-      console.log(`Layer ${groupName} saved`);
+      Logger.log(`Layer ${groupName} saved`);
     });
   }
 }
@@ -26,7 +28,7 @@ async function saveLayer(file: string, groupName: string): Promise<void> {
     await saveLayer(xcfPath, "Kopie");
     await saveLayer(xcfPath, "Kopie #1");
   } catch (err) {
-    console.error(err);
+    Logger.error(err);
     process.exit(1);
   }
 })();

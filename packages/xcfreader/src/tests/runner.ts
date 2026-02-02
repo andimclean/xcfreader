@@ -7,6 +7,7 @@ import { test06ParseEmpty } from "./06-parse-empty.js";
 import { test07ErrorHandling } from "./07-error-handling.js";
 import { test08GetLayerByName } from "./08-get-layer-by-name.js";
 import { test09MultiLayerNames } from "./09-multi-layer-names.js";
+import { Logger } from "../lib/logger.js";
 
 const tests = [
   { name: "01-parse-single.ts", fn: test01ParseSingle },
@@ -22,18 +23,18 @@ const tests = [
 
 async function runTests(): Promise<void> {
   for (const test of tests) {
-    console.log(`Running ${test.name}`);
+    Logger.log(`Running ${test.name}`);
     try {
       await test.fn();
     } catch (error) {
-      console.error(`FAIL: ${test.name} - ${error}`);
+      Logger.error(`FAIL: ${test.name} - ${error}`);
       process.exit(1);
     }
   }
-  console.log("All tests passed");
+  Logger.log("All tests passed");
 }
 
 runTests().catch((error) => {
-  console.error("Test runner error:", error);
+  Logger.error("Test runner error:", error);
   process.exit(1);
 });

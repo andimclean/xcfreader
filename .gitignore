@@ -20,3 +20,8 @@ docs/
 *.log
 .env
 .env.local
+
+
+
+.nx/cache
+.nx/workspace-data

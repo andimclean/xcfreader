@@ -1,4 +1,5 @@
 import { XCFParser } from "../gimpparser.js";
+import { Logger } from "../lib/logger.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -19,8 +20,8 @@ async function benchmark(): Promise<void> {
 
   const files = ["single.xcf", "multi.xcf", "text.xcf", "empty.xcf"];
 
-  console.log("Performance Benchmark - xcfreader v0.0.8\n");
-  console.log("Parsing and rendering XCF files...\n");
+  Logger.log("Performance Benchmark - xcfreader v0.0.8\n");
+  Logger.log("Parsing and rendering XCF files...\n");
 
   for (const filename of files) {
     const filePath = path.resolve(__dirname, `../../examples/${filename}`);
@@ -51,19 +52,19 @@ async function benchmark(): Promise<void> {
   }
 
   // Print results
-  console.log("Results:");
-  console.log("─".repeat(80));
-  console.log(
+  Logger.log("Results:");
+  Logger.log("─".repeat(80));
+  Logger.log(
     "File".padEnd(20) +
       "Parse (ms)".padEnd(15) +
       "Render (ms)".padEnd(15) +
       "Total (ms)".padEnd(15) +
       "Size (KB)",
   );
-  console.log("─".repeat(80));
+  Logger.log("─".repeat(80));
 
   for (const result of results) {
-    console.log(
+    Logger.log(
       result.name.padEnd(20) +
         result.parseTime.toFixed(2).padEnd(15) +
         result.renderTime.toFixed(2).padEnd(15) +
@@ -72,15 +73,15 @@ async function benchmark(): Promise<void> {
     );
   }
 
-  console.log("─".repeat(80));
+  Logger.log("─".repeat(80));
 
   const totalParseTime = results.reduce((sum, r) => sum + r.parseTime, 0);
   const totalRenderTime = results.reduce((sum, r) => sum + r.renderTime, 0);
   const totalTime = totalParseTime + totalRenderTime;
 
-  console.log(
+  Logger.log(
     `\nSummary: ${totalParseTime.toFixed(2)}ms parse + ${totalRenderTime.toFixed(2)}ms render = ${totalTime.toFixed(2)}ms total`,
   );
 }
 
-benchmark().catch(console.error);
+benchmark().catch(Logger.error);

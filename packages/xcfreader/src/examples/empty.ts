@@ -13,9 +13,10 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 (async function main() {
   try {
     const parser = await GimpParser.parseFileAsync(xcfPath);
-    console.log("Layers:", parser.layers.length);
+    Logger.log("Layers:", parser.layers.length);
   } catch (err) {
-    console.error(err);
+    Logger.error(err);
     process.exit(1);
   }
 })();
+import { Logger } from "../lib/logger.js";

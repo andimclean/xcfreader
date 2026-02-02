@@ -1,51 +1,12 @@
 {
-  "name": "xcfreader",
-  "version": "1.0.0",
-  "description": "Reads in GIMP xcf files",
-  "type": "module",
-  "main": "dist/gimpparser.js",
-  "types": "dist/gimpparser.d.ts",
-  "dependencies": {
-    "binary-parser": "^1.1.5",
-    "pngjs": "^7.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/pngjs": "^6.0.5",
-    "@typescript-eslint/eslint-plugin": "^6.15.0",
-    "@typescript-eslint/parser": "^6.15.0",
-    "eslint": "^8.56.0",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
-    "nodemon": "^2.0.21",
-    "typedoc": "^0.25.4",
-    "typescript": "^5.3.3"
-  },
-  "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "docs": "typedoc --out docs src/gimpparser.ts",
-    "benchmark": "node dist/benchmarks/benchmark.js",
-    "prepare": "husky install",
-    "multi": "npm run build && nodemon --exec node dist/examples/multi.js",
-    "single": "npm run build && nodemon --exec node dist/examples/single.js",
-    "map": "npm run build && nodemon --exec node dist/examples/map.js",
-    "text": "npm run build && nodemon --exec node dist/examples/text.js",
-    "empty": "npm run build && nodemon --exec node dist/examples/empty.js",
-    "test": "npm run build && node dist/tests/runner.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com:andimclean/xcfreader.git"
-  },
-  "keywords": [
-    "gimp",
-    "xcf",
-    "parser"
+  "name": "xcfreader-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
-  "author": "Andi McLean",
   "license": "MIT",
-  "homepage": "https://github.com/andimclean/xcfreader#readme"
+  "description": "Monorepo for xcfreader and related packages",
+  "devDependencies": {
+    "nx": "22.4.4"
+  }
 }

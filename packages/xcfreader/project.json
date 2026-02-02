@@ -1,0 +1,33 @@
+{
+  "name": "xcfreader",
+  "projectType": "library",
+  "root": "packages/xcfreader",
+  "sourceRoot": "packages/xcfreader/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build --workspace xcfreader"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test --workspace xcfreader"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run lint --workspace xcfreader"
+      }
+    },
+    "docs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run docs --workspace xcfreader"
+      }
+    }
+  },
+  "tags": []
+}
