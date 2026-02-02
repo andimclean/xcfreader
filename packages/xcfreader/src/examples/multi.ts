@@ -22,7 +22,7 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     layers
       .slice()
       .reverse()
-      .forEach((layer: any) => {
+      .forEach((layer) => {
         const layerImage = layer.makeImage();
          Logger.log(layer.name);
         layer.makeImage(image, true);

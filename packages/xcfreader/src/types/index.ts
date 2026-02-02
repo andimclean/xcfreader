@@ -391,5 +391,5 @@ export interface GimpLayerPublic {
  * Compositer mode interface - used for layer blending
  */
 export interface CompositerMode {
-  compose(bgCol: ColorRGBA, fgCol: ColorRGBA): ColorRGBA;
+  compose(bgCol: ColorRGBA, fgCol: ColorRGBA): ColorRGB & { alpha?: number };
 }

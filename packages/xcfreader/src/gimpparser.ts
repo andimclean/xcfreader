@@ -11,7 +11,20 @@ import FS from "fs";
 import { Buffer } from "buffer";
 import { PNG } from "pngjs";
 import XCFCompositer from "./lib/xcfcompositer.js";
-import { XCF_PropType, ColorRGBA } from "./types/index.js";
+import {
+  XCF_PropType,
+  ColorRGBA,
+  ParsedLayer,
+  ParsedHierarchy,
+  ParsedLevel,
+  ParsedGimpHeader,
+  ParsedProperty,
+  ParsedParasiteItem,
+  ParsedParasiteArray,
+  ParsedPropItemPath,
+  CompositerMode,
+  GroupLayerNode,
+} from "./types/index.js";
 
 // Re-export all types for consumers
 export * from "./types/index.js";
@@ -36,7 +49,7 @@ export class UnsupportedFormatError extends Error {
   }
 }
 
-const itemIsZero = (item: any, _buffer: Buffer): boolean => {
+const itemIsZero = (item: number, _buffer: Buffer): boolean => {
   return item === 0;
 };
 
@@ -54,7 +67,7 @@ const prop_colorMapParser = new Parser()
 
 const prop_guidesParser = new Parser().uint32("length").array("guides", {
   type: new Parser().int32("c").int8("o"),
-  length: function (this: any) {
+  length: function (this: { length: number }) {
     return this.length / 5;
   },
 });
@@ -93,7 +106,9 @@ const propertyListParser = new Parser()
       [XCF_PropType.END]: new Parser().uint32("length", { assert: 0 }),
       [XCF_PropType.COLORMAP]: prop_colorMapParser,
       [XCF_PropType.ACTIVE_LAYER]: new Parser().uint32("length", { assert: 0 }),
-      [XCF_PropType.ACTIVE_CHANNEL]: new Parser().uint32("length", { assert: 0 }),
+      [XCF_PropType.ACTIVE_CHANNEL]: new Parser().uint32("length", {
+        assert: 0,
+      }),
       [XCF_PropType.SELECTION]: new Parser().uint32("length", { assert: 0 }),
       [XCF_PropType.FLOATING_SELECTION]: new Parser()
         .uint32("length", { assert: 4 })
@@ -142,7 +157,9 @@ const propertyListParser = new Parser()
       [XCF_PropType.PARASITES]: parasiteParser,
       [XCF_PropType.UNIT]: new Parser().uint32("length").uint32("c"),
       [XCF_PropType.TEXT_LAYER_FLAGS]: propLengthF,
-      [XCF_PropType.LOCK_CONTENT]: new Parser().uint32("length").uint32("isLocked"),
+      [XCF_PropType.LOCK_CONTENT]: new Parser()
+        .uint32("length")
+        .uint32("isLocked"),
       [XCF_PropType.GROUP_ITEM]: new Parser().uint32("length", { assert: 0 }),
       [XCF_PropType.ITEM_PATH]: new Parser()
         .uint32("length", {
@@ -151,10 +168,12 @@ const propertyListParser = new Parser()
           },
         })
         .array("items", { type: "uint32be", length: "length" }),
-      [XCF_PropType.GROUP_ITEM_FLAGS]: new Parser().uint32("length").uint32("flags"),
+      [XCF_PropType.GROUP_ITEM_FLAGS]: new Parser()
+        .uint32("length")
+        .uint32("flags"),
     },
     defaultChoice: new Parser().uint32("length").buffer("buffer", {
-      length: function (this: any) {
+      length: function (this: { length: number }) {
         return this.length;
       },
     }),
@@ -171,7 +190,7 @@ const layerParser = new Parser()
   })
   .array("propertyList", {
     type: propertyListParser,
-    readUntil: function (item: any, _buffer: Buffer) {
+    readUntil: function (item: { type: number }, _buffer: Buffer) {
       return item.type === 0;
     },
   })
@@ -208,7 +227,7 @@ const gimpHeader = new Parser()
   .uint32("base_type", { assert: 0 })
   .array("propertyList", {
     type: propertyListParser,
-    readUntil: function (item: any, _buffer: Buffer) {
+    readUntil: function (item: { type: number }, _buffer: Buffer) {
       return item.type === 0;
     },
   })
@@ -225,7 +244,7 @@ const remove_empty = (data: number): boolean => {
   return data !== 0;
 };
 
-const isUnset = (value: any): boolean => {
+const isUnset = (value: unknown): boolean => {
   return value === null || value === undefined;
 };
 
@@ -236,20 +255,21 @@ class GimpLayer {
   private _parent: XCFParser;
   private _buffer: Buffer;
   private _compiled: boolean;
-  private _props: any;
-  private _details: any;
+  private _props: Record<number, ParsedProperty> | null;
+  private _details: ParsedLayer | null;
   private _name?: string;
-  private _parasites?: Record<string, any>;
+  private _parasites?: Record<string, Record<string, string>>;
 
   constructor(parent: XCFParser, buffer: Buffer) {
     this._parent = parent;
     this._buffer = buffer;
     this._compiled = false;
     this._props = null;
+    this._details = null;
   }
 
   compile(): void {
-    this._details = layerParser.parse(this._buffer);
+    this._details = layerParser.parse(this._buffer) as ParsedLayer;
     this._compiled = true;
   }
 
@@ -261,7 +281,7 @@ class GimpLayer {
       this.compile();
     }
     if (isUnset(this._name)) {
-      this._name = this._details.name;
+      this._name = this._details!.name;
       let pos = this._name!.indexOf(" copy");
 
       if (pos > 0) {
@@ -277,8 +297,10 @@ class GimpLayer {
     return this._name!;
   }
 
-  get pathInfo(): any {
-    return this.getProps(XCF_PropType.ITEM_PATH);
+  get pathInfo(): ParsedProperty | null {
+    const prop = this.getProps(XCF_PropType.ITEM_PATH);
+    // getProps without index always returns ParsedProperty | null, not number
+    return (prop as ParsedProperty | null) ?? null;
   }
 
   /**
@@ -290,20 +312,20 @@ class GimpLayer {
     }
     const pathInfo = this.pathInfo;
 
-    if (isUnset(pathInfo)) {
+    if (!pathInfo) {
       return this.name;
     }
 
-    const pathItems = pathInfo.data.items;
-    let item: any = this._parent._groupLayers;
+    const pathItems = (pathInfo.data as unknown as ParsedPropItemPath).items;
+    let item: GroupLayerNode = this._parent._groupLayers;
     const name: string[] = [];
     for (let index = 0; index < pathItems.length; index += 1) {
       if (item.children) {
         item = item.children[pathItems[index]];
       } else {
-        item = item[pathItems[index]];
+        item = (item as unknown as GroupLayerNode[])[pathItems[index]];
       }
-      name.push(item.layer.name);
+      name.push(item.layer!.name);
     }
 
     return name.join("/");
@@ -316,7 +338,7 @@ class GimpLayer {
     if (!this._compiled) {
       this.compile();
     }
-    return this._details.width;
+    return this._details!.width;
   }
 
   /**
@@ -326,21 +348,21 @@ class GimpLayer {
     if (!this._compiled) {
       this.compile();
     }
-    return this._details.height;
+    return this._details!.height;
   }
 
   /**
    * Get the X offset of this layer
    */
   get x(): number {
-    return this.getProps(XCF_PropType.OFFSETS, "dx");
+    return this.getProps(XCF_PropType.OFFSETS, "dx") as number;
   }
 
   /**
    * Get the Y offset of this layer
    */
   get y(): number {
-    return this.getProps(XCF_PropType.OFFSETS, "dy");
+    return this.getProps(XCF_PropType.OFFSETS, "dy") as number;
   }
 
   /**
@@ -361,7 +383,7 @@ class GimpLayer {
    * Get the color/blend mode of this layer
    */
   get colourMode(): number {
-    return this.getProps(XCF_PropType.MODE, "mode");
+    return this.getProps(XCF_PropType.MODE, "mode") as number;
   }
 
   /**
@@ -375,55 +397,67 @@ class GimpLayer {
    * Get the opacity of this layer (0-100)
    */
   get opacity(): number {
-    return this.getProps(XCF_PropType.OPACITY, "opacity");
+    return this.getProps(XCF_PropType.OPACITY, "opacity") as number;
   }
 
   /**
    * Get parasites (metadata) attached to this layer
    */
-  get parasites(): Record<string, any> {
+  get parasites(): Record<string, Record<string, string>> {
     if (this._parasites === undefined) {
-      const parasite = this.getProps(XCF_PropType.PARASITES);
+      const parasite = this.getProps(
+        XCF_PropType.PARASITES,
+      ) as ParsedProperty | null;
       this._parasites = {};
       if (parasite) {
-        const parasiteData = parasite.data.parasite;
-        const parsedParasite = fullParasiteParser.parse(parasiteData);
-        (parsedParasite.items || []).forEach((parasiteItem: any) => {
-          const parasiteName = parasiteItem.name;
-          if (parasiteName === "gimp-text-layer") {
-            const text = stringParser.parse(parasiteItem.details).data;
-            const fields: Record<string, string> = {};
-            const matches = text.match(/(\(.*\))+/g) || [];
-            matches.forEach((item: string) => {
-              const itemParts = item.substring(1, item.length - 1).split(" ");
-              const key = itemParts[0];
-              const value = itemParts.slice(1).join(" ");
-              fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
-            });
-            this._parasites![parasiteName] = fields;
-          }
-        });
+        const parasiteData = (parasite.data as unknown as { parasite: Buffer })
+          .parasite;
+        const parsedParasite = fullParasiteParser.parse(
+          parasiteData,
+        ) as ParsedParasiteArray;
+        (parsedParasite.items || []).forEach(
+          (parasiteItem: ParsedParasiteItem) => {
+            const parasiteName = parasiteItem.name;
+            if (parasiteName === "gimp-text-layer") {
+              const text = (
+                stringParser.parse(parasiteItem.details) as { data: string }
+              ).data;
+              const fields: Record<string, string> = {};
+              const matches = text.match(/(\(.*\))+/g) || [];
+              matches.forEach((item: string) => {
+                const itemParts = item.substring(1, item.length - 1).split(" ");
+                const key = itemParts[0];
+                const value = itemParts.slice(1).join(" ");
+                fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
+              });
+              this._parasites![parasiteName] = fields;
+            }
+          },
+        );
       }
     }
     return this._parasites;
   }
 
-  getProps(prop: number, index?: string): any {
+  getProps(prop: number, index?: string): ParsedProperty | number | null {
     if (!this._compiled) {
       this.compile();
     }
 
-    if (isUnset(this._props)) {
+    if (!this._props) {
       this._props = {};
-      (this._details.propertyList || []).forEach((property: any) => {
-        this._props[property.type] = property;
-      });
+      (this._details!.propertyList || []).forEach(
+        (property: ParsedProperty) => {
+          this._props![property.type] = property;
+        },
+      );
     }
 
-    if (index && this._props[prop] && this._props[prop]["data"]) {
-      return this._props[prop]["data"][index];
+    const propValue = this._props[prop];
+    if (index && propValue && propValue["data"]) {
+      return (propValue["data"] as Record<string, number>)[index];
     }
-    return this._props[prop];
+    return propValue ?? null;
   }
 
   makeImage(image?: XCFImage, useOffset?: boolean): XCFImage {
@@ -433,7 +467,6 @@ class GimpLayer {
     if (this.isVisible) {
       let x = 0,
         y = 0;
-      let hDetails, levels, tilesAcross;
       let w = this.width,
         h = this.height;
       const mode = XCFCompositer.makeCompositer(this.mode, this.opacity);
@@ -446,14 +479,14 @@ class GimpLayer {
       if (isUnset(image)) {
         image = new XCFImage(w, h);
       }
-      hDetails = hirerarchyParser.parse(
-        this._parent.getBufferForPointer(this._details.hptr),
-      );
-      levels = levelParser.parse(
+      const hDetails = hirerarchyParser.parse(
+        this._parent.getBufferForPointer(this._details!.hptr),
+      ) as ParsedHierarchy;
+      const levels = levelParser.parse(
         this._parent.getBufferForPointer(hDetails.lptr),
-      );
+      ) as ParsedLevel;
 
-      tilesAcross = Math.ceil(this.width / 64);
+      const tilesAcross = Math.ceil(this.width / 64);
       (levels.tptr || []).forEach((tptr: number, index: number) => {
         const xIndex = (index % tilesAcross) * 64;
         const yIndex = Math.floor(index / tilesAcross) * 64;
@@ -559,7 +592,7 @@ class GimpLayer {
     xpoints: number,
     ypoints: number,
     bpp: number,
-    mode: any,
+    mode: CompositerMode | null,
   ): void {
     let bufferOffset = 0;
 
@@ -575,7 +608,9 @@ class GimpLayer {
           colour.alpha = tileBuffer[bufferOffset + 3];
         }
         const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
-        const composedColour = mode ? mode.compose(bgCol, colour) : colour;
+        const composedColour = mode
+          ? (mode.compose(bgCol, colour) as ColorRGBA)
+          : colour;
         image.setAt(xoffset + xloop, yoffset + yloop, composedColour);
         bufferOffset += bpp;
       }
@@ -599,8 +634,8 @@ export class XCFParser {
   private _layers: GimpLayer[] = [];
   private _channels: GimpChannel[] = [];
   private _buffer: Buffer | null = null;
-  private _header: any = null;
-  _groupLayers: any = null;
+  private _header: ParsedGimpHeader | null = null;
+  _groupLayers: GroupLayerNode = { layer: null, children: [] };
 
   /**
    * Parse an XCF file with callback (legacy API)
@@ -610,9 +645,11 @@ export class XCFParser {
    */
   static parseFile(
     file: string,
-    callback: (err: any, parser?: XCFParser) => void,
+    callback: (err: Error | null, parser?: XCFParser) => void,
   ): void {
-    Logger.warn('XCFParser.parseFile() is deprecated. Use parseFileAsync() with async/await instead.');
+    Logger.warn(
+      "XCFParser.parseFile() is deprecated. Use parseFileAsync() with async/await instead.",
+    );
     XCFParser.parseFileAsync(file)
       .then((parser) => callback(null, parser))
       .catch((err) => callback(err));
@@ -651,11 +688,12 @@ export class XCFParser {
       const parser = new XCFParser();
       parser.parse(data);
       return parser;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof UnsupportedFormatError) {
         throw err;
       }
-      throw new XCFParseError(`Failed to parse XCF file "${file}": ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      throw new XCFParseError(`Failed to parse XCF file "${file}": ${message}`);
     }
   }
 
@@ -663,7 +701,7 @@ export class XCFParser {
     this._buffer = buffer;
     this._layers = [];
     this._channels = [];
-    this._header = gimpHeader.parse(buffer);
+    this._header = gimpHeader.parse(buffer) as ParsedGimpHeader;
     this._groupLayers = { layer: null, children: [] };
 
     this._layers = (this._header.layerList || [])
@@ -672,27 +710,36 @@ export class XCFParser {
         const layer = new GimpLayer(this, this._buffer!.slice(layerPointer));
         const path = layer.pathInfo;
         if (!path) {
-          this._groupLayers.children.push({ layer: layer, children: [] });
+          this._groupLayers.children.push({
+            layer:
+              layer as unknown as import("./types/index.js").GimpLayerPublic,
+            children: [],
+          });
         } else {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const item = this._groupLayers;
-          const toCall = (item: any, index: number): any => {
-            if (index === path.data.length) {
-              item.layer = layer;
+          const pathData = path.data as unknown as ParsedPropItemPath;
+          const toCall = (
+            node: GroupLayerNode,
+            index: number,
+          ): GroupLayerNode => {
+            if (index === pathData.items.length) {
+              node.layer =
+                layer as unknown as import("./types/index.js").GimpLayerPublic;
             } else {
-              if (isUnset(item.children[path.data.items[index]])) {
-                item.children[path.data.items[index]] = {
+              if (isUnset(node.children[pathData.items[index]])) {
+                node.children[pathData.items[index]] = {
                   layer: null,
                   children: [],
                 };
               }
-              item.children[path.data.items[index]] = toCall(
-                item.children[path.data.items[index]],
+              node.children[pathData.items[index]] = toCall(
+                node.children[pathData.items[index]],
                 index + 1,
               );
             }
 
-            return item;
+            return node;
           };
 
           this._groupLayers = toCall(this._groupLayers, 0);
@@ -712,35 +759,51 @@ export class XCFParser {
   }
 
   get width(): number {
-    return this._header.width;
+    return this._header!.width;
   }
 
   get height(): number {
-    return this._header.height;
+    return this._header!.height;
   }
 
   get layers(): GimpLayer[] {
     return this._layers;
   }
 
-  get groupLayers(): any {
+  get groupLayers(): GroupLayerNode {
     if (isUnset(this._groupLayers)) {
-      this._groupLayers = {};
+      this._groupLayers = { layer: null, children: [] };
       (this.layers || []).forEach((layer) => {
         const segments = layer.groupName.split("/");
         let cursor = this._groupLayers;
 
         for (let i = 0; i < segments.length - 1; ++i) {
-          cursor[segments[i]] = cursor[segments[i]] || {};
-          cursor[segments[i]].children = cursor[segments[i]].children || {};
-          cursor = cursor[segments[i]].children;
+          const segmentKey = segments[i];
+          const cursorChildren = cursor.children as unknown as Record<
+            string,
+            GroupLayerNode
+          >;
+          cursorChildren[segmentKey] = cursorChildren[segmentKey] || {
+            layer: null,
+            children: [],
+          };
+          cursorChildren[segmentKey].children =
+            cursorChildren[segmentKey].children || [];
+          cursor = cursorChildren[segmentKey];
         }
-        cursor[segments[segments.length - 1]] =
-          cursor[segments[segments.length - 1]] || {};
-        cursor[segments[segments.length - 1]].layer = layer;
+        const lastSegment = segments[segments.length - 1];
+        const cursorChildren = cursor.children as unknown as Record<
+          string,
+          GroupLayerNode
+        >;
+        cursorChildren[lastSegment] = cursorChildren[lastSegment] || {
+          layer: null,
+          children: [],
+        };
+        cursorChildren[lastSegment].layer =
+          layer as unknown as import("./types/index.js").GimpLayerPublic;
       });
     }
-
     return this._groupLayers;
   }
 
@@ -773,7 +836,7 @@ export class XCFParser {
 export class XCFImage {
   private _width: number;
   private _height: number;
-  _image: any;
+  private _image: PNG;
 
   /**
    * Create a new XCF image
@@ -783,26 +846,11 @@ export class XCFImage {
   constructor(width: number, height: number) {
     this._width = width;
     this._height = height;
-    try {
-      const png = new PNG({ width, height });
-      // initialize transparent pixels
-      png.data = Buffer.alloc(width * height * 4, 0);
-      this._image = png;
-    } catch (err) {
-      // PNGImage may have issues in test environments; create a mock
-      this._image = {
-        width,
-        height,
-        data: Buffer.alloc(width * height * 4, 0),
-        pack: () => ({ pipe: () => {} }),
-        setAt: () => {},
-        fillRect: () => {},
-        writeImage: (_filename: string) => Promise.resolve(),
-      };
-    }
+    const png = new PNG({ width, height });
+    // initialize transparent pixels
+    png.data = Buffer.alloc(width * height * 4, 0);
+    this._image = png;
   }
-
-  [key: string]: any;
 
   /**
    * Set a pixel color at the specified coordinates
@@ -868,28 +916,9 @@ export class XCFImage {
    */
   writeImage(filename: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      try {
-        if (typeof this._image.pack === "function") {
-          const stream = this._image.pack().pipe(FS.createWriteStream(filename));
-          stream.on("finish", () => resolve());
-          stream.on("error", (err: Error) => reject(err));
-        } else {
-          resolve();
-        }
-      } catch (err: any) {
-        reject(err);
-      }
+      const stream = this._image.pack().pipe(FS.createWriteStream(filename));
+      stream.on("finish", () => resolve());
+      stream.on("error", (err: Error) => reject(err));
     });
   }
 }
-
-// Note: PNGImage prototype delegation is skipped because PNGImage.createImage
-// expects to be called with a file path or stream. The main methods (setAt, getAt,
-// fillRect, writeImage) are explicitly implemented above.
-// for (const key in sampleImage) {
-//   if (typeof (sampleImage as any)[key] === 'function' && !XCFImage.prototype[key]) {
-//     XCFImage.prototype[key] = function (...args: any[]) {
-//       return (this as any)._image[key].apply((this as any)._image, args);
-//     };
-//   }
-// }

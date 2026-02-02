@@ -1,4 +1,5 @@
 import { XCFParser } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -28,7 +29,7 @@ export async function test08GetLayerByName(): Promise<void> {
     throw new Error('getLayerByName should return undefined for missing layer');
   }
 
-  console.log(
+  Logger.log(
     `PASS: getLayerByName found layer "${firstLayerName}" in multi.xcf`
   );
 }

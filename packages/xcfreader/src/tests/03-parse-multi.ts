@@ -1,4 +1,5 @@
 import { XCFParser } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -11,5 +12,5 @@ export async function test03ParseMulti(): Promise<void> {
   if (parser.layers.length !== 10) {
     throw new Error(`Expected 10 layers, got ${parser.layers.length}`);
   }
-  console.log(`PASS: parsed multi.xcf layers= ${parser.layers.length}`);
+  Logger.log(`PASS: parsed multi.xcf layers= ${parser.layers.length}`);
 }

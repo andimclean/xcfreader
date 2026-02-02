@@ -1,4 +1,5 @@
 import { XCFParser } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -20,5 +21,5 @@ export async function test05TextParasites(): Promise<void> {
   if (!hasParasites) {
     throw new Error('No parasites found in text.xcf');
   }
-  console.log(`PASS: text.xcf parasites found= ${hasParasites}`);
+  Logger.log(`PASS: text.xcf parasites found= ${hasParasites}`);
 }

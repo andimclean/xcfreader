@@ -1,4 +1,5 @@
 import { XCFParser } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -11,5 +12,5 @@ export async function test06ParseEmpty(): Promise<void> {
   if (parser.layers.length < 1) {
     throw new Error('Expected at least 1 layer in empty.xcf');
   }
-  console.log(`PASS: parsed empty.xcf layers= ${parser.layers.length}`);
+  Logger.log(`PASS: parsed empty.xcf layers= ${parser.layers.length}`);
 }

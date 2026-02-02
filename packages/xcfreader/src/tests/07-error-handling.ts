@@ -3,6 +3,7 @@ import {
   XCFParseError,
   UnsupportedFormatError
 } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,9 +15,10 @@ export async function test07ErrorHandling(): Promise<void> {
   try {
     await XCFParser.parseFileAsync('/nonexistent/file.xcf');
     throw new Error('Should have thrown XCFParseError for missing file');
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (!(err instanceof XCFParseError)) {
-      throw new Error(`Expected XCFParseError, got ${err.constructor.name}`);
+      const name = err instanceof Error ? err.constructor.name : 'unknown';
+      throw new Error(`Expected XCFParseError, got ${name}`);
     }
   }
 
@@ -25,13 +27,15 @@ export async function test07ErrorHandling(): Promise<void> {
   try {
     await XCFParser.parseFileAsync(invalidFile);
     throw new Error('Should have thrown UnsupportedFormatError for PNG file');
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (!(err instanceof UnsupportedFormatError)) {
+      const name = err instanceof Error ? err.constructor.name : 'unknown';
+      const message = err instanceof Error ? err.message : String(err);
       throw new Error(
-        `Expected UnsupportedFormatError, got ${err.constructor.name}: ${err.message}`
+        `Expected UnsupportedFormatError, got ${name}: ${message}`
       );
     }
   }
 
-  console.log('PASS: error handling works correctly');
+  Logger.log('PASS: error handling works correctly');
 }

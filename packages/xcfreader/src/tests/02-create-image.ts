@@ -1,4 +1,5 @@
 import { XCFParser } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -19,7 +20,7 @@ export async function test02CreateImage(): Promise<void> {
     throw new Error('XCFImage.getAt() did not return valid color');
   }
 
-  console.log(
+  Logger.log(
     `PASS: createImage produced image ${parser.width} x ${parser.height}`
   );
 }

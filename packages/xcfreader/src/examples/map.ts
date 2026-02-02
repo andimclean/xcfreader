@@ -14,19 +14,18 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
 async function saveLayer(file: string, groupName: string): Promise<void> {
   const parser = await GimpParser.parseFileAsync(file);
-  const layer = parser.groupLayers[groupName];
-  if (layer && layer.layer) {
-    const layerImage = layer.layer.makeImage();
-    layerImage.writeImage(path.resolve(outDir, groupName + ".png"), () => {
-      Logger.log(`Layer ${groupName} saved`);
-    });
+  const layer = parser.getLayerByName(groupName);
+  if (layer) {
+    const layerImage = layer.makeImage();
+    await layerImage.writeImage(path.resolve(outDir, groupName + ".png"));
+    Logger.log(`Layer ${groupName} saved`);
   }
 }
 
 (async function main() {
   try {
-    await saveLayer(xcfPath, "Kopie");
-    await saveLayer(xcfPath, "Kopie #1");
+    await saveLayer(xcfPath, "map1");
+    await saveLayer(xcfPath, "30");
   } catch (err) {
     Logger.error(err);
     process.exit(1);

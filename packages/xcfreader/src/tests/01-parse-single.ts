@@ -1,4 +1,5 @@
 import { XCFParser } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,7 +16,7 @@ export async function test01ParseSingle(): Promise<void> {
   ) {
     throw new Error('Failed to parse single.xcf correctly');
   }
-  console.log(
+  Logger.log(
     `PASS: parsed ${path.basename(xcfPath)} width= ${parser.width} layers= ${parser.layers.length}`
   );
 }

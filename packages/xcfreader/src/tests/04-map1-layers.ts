@@ -1,4 +1,5 @@
 import { XCFParser } from '../gimpparser.js';
+import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,5 +15,5 @@ export async function test04Map1Layers(): Promise<void> {
   if (!groupLayers || Object.keys(groupLayers).length === 0) {
     throw new Error('No group layers found');
   }
-  console.log(`PASS: map1.xcf parsed, visible non-group layers found= true`);
+  Logger.log(`PASS: map1.xcf parsed, visible non-group layers found= true`);
 }

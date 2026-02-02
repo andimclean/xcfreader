@@ -1,4 +1,5 @@
 import { XCFParser } from "../gimpparser.js";
+import { Logger } from "../lib/logger.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -43,7 +44,7 @@ export async function test09MultiLayerNames(): Promise<void> {
     throw new Error(`Expected 3 "br_red" layers, found ${brRedCount}`);
   }
 
-  console.log(
+  Logger.log(
     `PASS: multi.xcf layer names verified: ${actualLayerNames.join(", ")}`,
   );
 }
