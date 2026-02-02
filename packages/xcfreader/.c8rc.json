@@ -1,7 +1,10 @@
 {
   "all": true,
+  "src": ["src"],
   "include": ["dist/**/*.js"],
   "exclude": [
+    "node_modules/**",
+    "**/node_modules/**",
     "dist/tests/**",
     "dist/examples/**",
     "dist/benchmarks/**"
