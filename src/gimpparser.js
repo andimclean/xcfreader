@@ -4,7 +4,7 @@ import FS from 'fs';
 import { Buffer } from 'buffer';
 import Lazy from 'lazy.js';
 import PNGImage from 'pngjs-image';
-import XCFCompositer from './lib/xcfcompositer';
+import XCFCompositer from './lib/xcfcompositer.js';
 
 const PROP_END = 0;
 const PROP_COLORMAP = 1;

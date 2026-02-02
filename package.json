@@ -15,11 +15,12 @@
     "nodemon": "^2.0.21"
   },
   "scripts": {
-    "multi": "nodemon --exec node --experimental-specifier-resolution=node examples/multi.js",
-    "single": "nodemon --exec node --experimental-specifier-resolution=node examples/single.js",
-    "map": "nodemon --exec node --experimental-specifier-resolution=node examples/map.js",
-    "text": "nodemon --exec node --experimental-specifier-resolution=node examples/text.js",
-    "compile": "echo \"No compile step: project uses native ESM; edit source in src/ and run examples with node\""
+    "multi": "nodemon --exec node examples/multi.js",
+    "single": "nodemon --exec node examples/single.js",
+    "map": "nodemon --exec node examples/map.js",
+    "text": "nodemon --exec node examples/text.js",
+    "compile": "echo \"No compile step: project uses native ESM; edit source in src/ and run examples with node\"",
+    "test": "node tests/runner.js"
   },
   "repository": {
     "type": "git",

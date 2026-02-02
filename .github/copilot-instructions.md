@@ -8,8 +8,9 @@ Summary
 Quick workflow
 
 - Install dev deps: `npm install`.
-- Run examples (uses `node` + `nodemon`): `npm run single`, `npm run multi`, `npm run map`, `npm run text`.
-- Build step: project uses native ESM. There is no Babel compile step by default — edits in `src/` run directly with `node`.
+ - Run examples (uses `node` + `nodemon`): `npm run single`, `npm run multi`, `npm run map`, `npm run text`.
+ - Build step: project uses native ESM. There is no Babel compile step by default — edits in `src/` run directly with `node`.
+ - Runtime flags: not required. Source imports use explicit `.js` extensions (e.g. `import XCFCompositer from './lib/xcfcompositer.js'`), so Node resolves modules without `--experimental-specifier-resolution`.
 
 Where to look (key files)
 
@@ -37,7 +38,7 @@ Conventions & patterns for contributors/agents
 Run / debug tips
 
 - Run examples directly after edits: `npm run single` to test a single-file parse/render loop.
-- To iterate quickly while editing, use `npm run single` (it uses `nodemon` + `node` so live-reloads during development).
+- To iterate quickly while editing, use `npm run single` (it uses `nodemon` + `node` so live-reloads during development). No additional Node flags are required.
 - If investigating a parsing bug, reproduce with one of the `examples/*.xcf` files in the `examples/` folder and add a focused example that loads the failing file.
 
 Files to update for related work
