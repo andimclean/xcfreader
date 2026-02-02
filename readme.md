@@ -137,6 +137,63 @@ This project is licensed under the MIT License. See LICENSE for details.
 
 `XCFImage` is a thin wrapper around `pngjs` and implements `setAt(x,y,colour)` and `getAt(x,y)` where `colour` is `{red, green, blue, alpha}`. Example usage and tests expect this contract.
 
+## Browser Usage
+
+xcfreader includes browser bundles that can parse XCF files directly in the browser.
+
+### Using ES Modules (recommended)
+
+```html
+<script type="module">
+  import { XCFParser } from 'xcfreader/browser';
+  
+  // Parse from file input
+  const input = document.querySelector('input[type="file"]');
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const arrayBuffer = await file.arrayBuffer();
+    
+    const parser = XCFParser.parseBuffer(arrayBuffer);
+    console.log(`Size: ${parser.width}x${parser.height}`);
+    console.log(`Layers: ${parser.layers.length}`);
+    
+    // Render to canvas
+    const image = parser.createImage();
+    const canvas = document.getElementById('preview');
+    canvas.width = parser.width;
+    canvas.height = parser.height;
+    const ctx = canvas.getContext('2d');
+    const imageData = new ImageData(
+      image.getPixelData(),
+      parser.width,
+      parser.height
+    );
+    ctx.putImageData(imageData, 0, 0);
+  });
+</script>
+```
+
+### Using Script Tag (IIFE)
+
+```html
+<script src="node_modules/xcfreader/dist/xcfreader.browser.js"></script>
+<script>
+  // XCFReader is available globally
+  async function parseXCF(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const parser = XCFReader.XCFParser.parseBuffer(arrayBuffer);
+    return parser;
+  }
+</script>
+```
+
+### Browser API Notes
+
+- Use `XCFParser.parseBuffer(arrayBuffer)` instead of `parseFileAsync()` in browsers
+- `XCFImage.getPixelData()` returns a `Uint8ClampedArray` for use with Canvas `ImageData`
+- `XCFImage.width` and `XCFImage.height` getters provide dimensions for `ImageData`
+- See `examples/browser-demo.html` for a complete working example
+
 ## Notes for contributors
 
 - **Edit source in `src/` only**. TypeScript files are compiled to `dist/` by `npm run build`.

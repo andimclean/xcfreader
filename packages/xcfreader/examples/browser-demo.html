@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>xcfreader Browser Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .drop-zone {
+      border: 3px dashed #ccc;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      background: white;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #666;
+      background: #fafafa;
+    }
+    .drop-zone p { margin: 0 0 10px; color: #666; }
+    #file-input { display: none; }
+    .btn {
+      background: #4CAF50;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn:hover { background: #45a049; }
+    #output {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    #preview-canvas {
+      max-width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .info {
+      background: #e7f3fe;
+      border-left: 4px solid #2196F3;
+      padding: 12px;
+      margin: 10px 0;
+    }
+    .layers {
+      font-family: monospace;
+      font-size: 13px;
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 xcfreader Browser Demo</h1>
+  
+  <div class="drop-zone" id="drop-zone">
+    <p>Drag & drop a GIMP .xcf file here</p>
+    <p>or</p>
+    <button class="btn" onclick="document.getElementById('file-input').click()">
+      Choose File
+    </button>
+    <input type="file" id="file-input" accept=".xcf">
+  </div>
+
+  <div id="output" style="display: none;">
+    <h2>📄 File Info</h2>
+    <div class="info" id="file-info"></div>
+    
+    <h3>🖼️ Preview (Flattened)</h3>
+    <canvas id="preview-canvas"></canvas>
+    
+    <h3>📚 Layers</h3>
+    <div class="layers" id="layers-list"></div>
+  </div>
+
+  <!-- Load the browser bundle (IIFE version) -->
+  <script src="../dist/xcfreader.browser.js"></script>
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const output = document.getElementById('output');
+    const canvas = document.getElementById('preview-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.xcf')) {
+        await processFile(file);
+      } else {
+        alert('Please drop a .xcf file');
+      }
+    });
+
+    // File input handler
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        await processFile(file);
+      }
+    });
+
+    async function processFile(file) {
+      try {
+        // Read file as ArrayBuffer
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Parse using xcfreader
+        const parser = XCFReader.XCFParser.parseBuffer(arrayBuffer);
+        
+        // Display file info
+        document.getElementById('file-info').innerHTML = `
+          <strong>File:</strong> ${file.name}<br>
+          <strong>Size:</strong> ${(file.size / 1024).toFixed(1)} KB<br>
+          <strong>Dimensions:</strong> ${parser.width} × ${parser.height} px<br>
+          <strong>Layers:</strong> ${parser.layers.length}
+        `;
+
+        // Render flattened image to canvas
+        canvas.width = parser.width;
+        canvas.height = parser.height;
+        const image = parser.createImage();
+        
+        // Get pixel data and draw to canvas
+        const pixelData = image.getPixelData();
+        const imageData = new ImageData(pixelData, parser.width, parser.height);
+        ctx.putImageData(imageData, 0, 0);
+
+        // List layers
+        const layersList = parser.layers.map((layer, i) => {
+          const visibility = layer.isVisible ? '👁️' : '🚫';
+          const group = layer.isGroup ? '📁' : '🖼️';
+          return `${visibility} ${group} ${layer.name} (${layer.width}×${layer.height})`;
+        }).join('\n');
+        document.getElementById('layers-list').textContent = layersList;
+
+        output.style.display = 'block';
+      } catch (err) {
+        console.error(err);
+        alert('Error parsing file: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

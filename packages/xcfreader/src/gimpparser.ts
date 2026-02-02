@@ -808,6 +808,58 @@ export class XCFParser {
     }
   }
 
+  /**
+   * Parse XCF data from a Buffer or ArrayBuffer.
+   * 
+   * This method is useful for browser environments or when you already have
+   * the file data in memory. It validates the XCF magic bytes before parsing.
+   * 
+   * @param data - Buffer, ArrayBuffer, or Uint8Array containing XCF file data
+   * @returns XCFParser instance with parsed data
+   * @throws {@link UnsupportedFormatError} if the data is not a valid XCF file
+   * 
+   * @example
+   * ```typescript
+   * // Browser: from fetch response
+   * const response = await fetch('./artwork.xcf');
+   * const arrayBuffer = await response.arrayBuffer();
+   * const parser = XCFParser.parseBuffer(arrayBuffer);
+   * 
+   * // Browser: from file input
+   * const file = input.files[0];
+   * const arrayBuffer = await file.arrayBuffer();
+   * const parser = XCFParser.parseBuffer(arrayBuffer);
+   * 
+   * // Node.js: from existing buffer
+   * const buffer = fs.readFileSync('./artwork.xcf');
+   * const parser = XCFParser.parseBuffer(buffer);
+   * ```
+   */
+  static parseBuffer(data: Buffer | ArrayBuffer | Uint8Array): XCFParser {
+    // Convert to Buffer if needed
+    let buffer: Buffer;
+    if (data instanceof Buffer) {
+      buffer = data;
+    } else if (data instanceof ArrayBuffer) {
+      buffer = Buffer.from(data);
+    } else if (data instanceof Uint8Array) {
+      buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+    } else {
+      throw new XCFParseError("Invalid input: expected Buffer, ArrayBuffer, or Uint8Array");
+    }
+
+    // Validate XCF magic bytes
+    if (buffer.length < 14 || buffer.toString("utf-8", 0, 4) !== "gimp") {
+      throw new UnsupportedFormatError(
+        "Invalid XCF data: missing GIMP magic bytes",
+      );
+    }
+
+    const parser = new XCFParser();
+    parser.parse(buffer);
+    return parser;
+  }
+
   parse(buffer: Buffer): void {
     this._buffer = buffer;
     this._layers = [];
@@ -1095,5 +1147,46 @@ export class XCFImage {
       stream.on("finish", () => resolve());
       stream.on("error", (err: Error) => reject(err));
     });
+  }
+
+  /**
+   * Get the raw RGBA pixel data as a Uint8Array.
+   * 
+   * This is useful for browser environments where you want to draw the image
+   * to a canvas using ImageData.
+   * 
+   * @returns Uint8Array of RGBA pixel data (4 bytes per pixel)
+   * 
+   * @example
+   * ```typescript
+   * // Browser: draw to canvas
+   * const parser = XCFParser.parseBuffer(arrayBuffer);
+   * const image = parser.createImage();
+   * const pixels = image.getPixelData();
+   * 
+   * const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+   * const ctx = canvas.getContext('2d')!;
+   * canvas.width = image.width;
+   * canvas.height = image.height;
+   * const imageData = new ImageData(new Uint8ClampedArray(pixels), image.width, image.height);
+   * ctx.putImageData(imageData, 0, 0);
+   * ```
+   */
+  getPixelData(): Uint8Array {
+    return new Uint8Array(this._image.data);
+  }
+
+  /**
+   * Get the image width in pixels
+   */
+  get width(): number {
+    return this._width;
+  }
+
+  /**
+   * Get the image height in pixels
+   */
+  get height(): number {
+    return this._height;
   }
 }

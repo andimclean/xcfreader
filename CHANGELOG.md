@@ -23,16 +23,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `GroupLayerNode` interface for layer hierarchy
   - `CompositerMode` interface for layer blending
   - `Logger` utility class replacing direct `console.log` usage
+  - **Browser bundle support**: ESM and IIFE bundles for browser usage
+    - `dist/xcfreader.browser.mjs` - ES Module bundle (~208KB minified)
+    - `dist/xcfreader.browser.js` - IIFE bundle for `<script>` tags
+    - `XCFParser.parseBuffer(arrayBuffer)` - Parse from ArrayBuffer/Uint8Array
+    - `XCFImage.getPixelData()` - Get pixel data for Canvas ImageData
+    - `examples/browser-demo.html` - Interactive browser demo
+  - **Test coverage reporting**: c8 integration
+    - `npm run coverage` - Generate coverage reports
+    - HTML, LCOV, and text output formats
+    - 90%+ coverage on main parser module
+  - **Comprehensive JSDoc documentation** with `@example` tags on all public APIs
 
 ### Changed
 
-  - New scripts: `npm run build`, `npm run watch`
+  - New scripts: `npm run build`, `npm run watch`, `npm run build:browser`, `npm run build:all`
   - Examples and tests now compile before running
   - `getProps()` now uses generics to return correctly typed results based on property type
   - Internal `_props` cache uses `Partial<XCF_PropTypeMap>` for type safety
   - All `any` types replaced with proper TypeScript types throughout codebase
   - Error handling uses `unknown` type with proper type guards
   - Test files use `Logger.log` instead of `console.log`
+  - Package exports updated with browser bundle paths
 
 ### Fixed
 
