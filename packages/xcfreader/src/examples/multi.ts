@@ -1,5 +1,5 @@
 import { Logger } from "../lib/logger.js";
-import { XCFParser as GimpParser, XCFPNGImage } from "../gimpparser.js";
+import { XCFParser as GimpParser, XCFPNGImage } from "../node.js";
 
 import fs from "fs";
 import path from "path";

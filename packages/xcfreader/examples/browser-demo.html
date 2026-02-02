@@ -146,11 +146,14 @@
         // Render flattened image to canvas
         canvas.width = parser.width;
         canvas.height = parser.height;
-        const image = parser.createImage();
+        
+        // Create XCFDataImage for browser rendering
+        const image = new XCFReader.XCFDataImage(parser.width, parser.height);
+        parser.createImage(image);
         
         // Get pixel data and draw to canvas
         const pixelData = image.getPixelData();
-        const imageData = new ImageData(pixelData, parser.width, parser.height);
+        const imageData = new ImageData(new Uint8ClampedArray(pixelData), parser.width, parser.height);
         ctx.putImageData(imageData, 0, 0);
 
         // List layers

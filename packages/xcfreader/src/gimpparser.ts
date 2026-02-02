@@ -30,8 +30,10 @@ import {
 // Re-export all types for consumers
 export * from "./types/index.js";
 
-// Re-export XCFPNGImage class
-export { XCFPNGImage } from "./lib/xcfpngimage.js";
+// NOTE: XCFPNGImage and XCFDataImage are NOT exported from this base module.
+// Import from the appropriate entry point:
+//   - 'xcfreader/node' for Node.js (includes XCFPNGImage)
+//   - 'xcfreader/browser' for browser (includes XCFDataImage)
 
 /**
  * Error thrown when XCF file parsing fails

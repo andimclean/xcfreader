@@ -1,4 +1,4 @@
-import { XCFParser, XCFPNGImage } from '../gimpparser.js';
+import { XCFParser, XCFPNGImage } from '../node.js';
 import { Logger } from '../lib/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';

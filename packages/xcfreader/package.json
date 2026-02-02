@@ -13,8 +13,13 @@
       "import": "./dist/gimpparser.js",
       "default": "./dist/gimpparser.js"
     },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js"
+    },
     "./browser": {
-      "types": "./dist/gimpparser.d.ts",
+      "types": "./dist/browser.d.ts",
       "import": "./dist/xcfreader.browser.mjs",
       "default": "./dist/xcfreader.browser.js"
     }
@@ -23,6 +28,12 @@
     "dist/gimpparser.js",
     "dist/gimpparser.d.ts",
     "dist/gimpparser.js.map",
+    "dist/node.js",
+    "dist/node.d.ts",
+    "dist/node.js.map",
+    "dist/browser.js",
+    "dist/browser.d.ts",
+    "dist/browser.js.map",
     "dist/xcfreader.browser.js",
     "dist/xcfreader.browser.js.map",
     "dist/xcfreader.browser.mjs",

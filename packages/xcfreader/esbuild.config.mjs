@@ -11,9 +11,9 @@ const browserPlugins = [
   })
 ];
 
-// Browser bundle (ESM) - polyfill Node.js builtins
+// Browser bundle (ESM) - uses browser.js entry point which excludes XCFPNGImage
 await esbuild.build({
-  entryPoints: ['dist/gimpparser.js'],
+  entryPoints: ['dist/browser.js'],
   bundle: true,
   format: 'esm',
   outfile: 'dist/xcfreader.browser.mjs',
@@ -33,7 +33,7 @@ await esbuild.build({
 
 // Browser bundle (IIFE for script tag)
 await esbuild.build({
-  entryPoints: ['dist/gimpparser.js'],
+  entryPoints: ['dist/browser.js'],
   bundle: true,
   format: 'iife',
   globalName: 'XCFReader',
@@ -56,7 +56,8 @@ console.log('Browser bundles built successfully:');
 console.log('  - dist/xcfreader.browser.mjs (ESM)');
 console.log('  - dist/xcfreader.browser.js (IIFE)');
 console.log('');
-console.log('Note: Use parseBuffer() in the browser instead of parseFileAsync()');
+console.log('Note: XCFPNGImage is excluded from browser builds.');
+console.log('      Use XCFDataImage instead for browser rendering.');
 
 
 
