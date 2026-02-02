@@ -393,3 +393,48 @@ export interface GimpLayerPublic {
 export interface CompositerMode {
   compose(bgCol: ColorRGBA, fgCol: ColorRGBA): ColorRGB & { alpha?: number };
 }
+
+/**
+ * Type mapping from XCF_PropType enum values to their corresponding parsed types
+ */
+export interface XCF_PropTypeMap {
+  [XCF_PropType.END]: ParsedPropLength;
+  [XCF_PropType.COLORMAP]: ParsedColorMap;
+  [XCF_PropType.ACTIVE_LAYER]: ParsedPropLength;
+  [XCF_PropType.ACTIVE_CHANNEL]: ParsedPropLength;
+  [XCF_PropType.SELECTION]: ParsedPropLength;
+  [XCF_PropType.FLOATING_SELECTION]: ParsedPropFloatingSelection;
+  [XCF_PropType.OPACITY]: ParsedPropOpacity;
+  [XCF_PropType.MODE]: ParsedMode;
+  [XCF_PropType.VISIBLE]: ParsedPropVisible;
+  [XCF_PropType.LINKED]: ParsedPropLinked;
+  [XCF_PropType.LOCK_ALPHA]: ParsedPropLockAlpha;
+  [XCF_PropType.APPLY_MASK]: ParsedPropApplyMask;
+  [XCF_PropType.EDIT_MASK]: ParsedPropEditMask;
+  [XCF_PropType.SHOW_MASK]: ParsedPropShowMask;
+  [XCF_PropType.SHOW_MASKED]: ParsedPropShowMasked;
+  [XCF_PropType.OFFSETS]: ParsedPropOffsets;
+  [XCF_PropType.COLOR]: ParsedPropColor;
+  [XCF_PropType.COMPRESSION]: ParsedPropCompression;
+  [XCF_PropType.GUIDES]: ParsedGuides;
+  [XCF_PropType.RESOLUTION]: ParsedPropResolution;
+  [XCF_PropType.TATTOO]: ParsedPropTattoo;
+  [XCF_PropType.PARASITES]: ParsedParasiteBuffer;
+  [XCF_PropType.UNIT]: ParsedPropUnit;
+  [XCF_PropType.PATHS]: ParsedPropDefault;
+  [XCF_PropType.USER_UNIT]: ParsedPropDefault;
+  [XCF_PropType.VECTORS]: ParsedPropDefault;
+  [XCF_PropType.TEXT_LAYER_FLAGS]: ParsedPropLengthF;
+  [XCF_PropType.SAMPLE_POINTS]: ParsedPropDefault;
+  [XCF_PropType.LOCK_CONTENT]: ParsedPropLockContent;
+  [XCF_PropType.GROUP_ITEM]: ParsedPropLength;
+  [XCF_PropType.ITEM_PATH]: ParsedPropItemPath;
+  [XCF_PropType.GROUP_ITEM_FLAGS]: ParsedPropGroupItemFlags;
+  [XCF_PropType.LOCK_POSITION]: ParsedPropDefault;
+  [XCF_PropType.FLOAT_OPACITY]: ParsedPropDefault;
+}
+
+/**
+ * Helper type to get the parsed property type for a given XCF_PropType
+ */
+export type PropTypeFor<T extends XCF_PropType> = XCF_PropTypeMap[T];

@@ -13,6 +13,7 @@ import { PNG } from "pngjs";
 import XCFCompositer from "./lib/xcfcompositer.js";
 import {
   XCF_PropType,
+  XCF_PropTypeMap,
   ColorRGBA,
   ParsedLayer,
   ParsedHierarchy,
@@ -255,7 +256,7 @@ class GimpLayer {
   private _parent: XCFParser;
   private _buffer: Buffer;
   private _compiled: boolean;
-  private _props: Record<number, ParsedProperty> | null;
+  private _props: Partial<XCF_PropTypeMap> | null;
   private _details: ParsedLayer | null;
   private _name?: string;
   private _parasites?: Record<string, Record<string, string>>;
@@ -439,7 +440,10 @@ class GimpLayer {
     return this._parasites;
   }
 
-  getProps(prop: number, index?: string): ParsedProperty | number | null {
+  getProps<T extends XCF_PropType>(
+    prop: T,
+    index?: string,
+  ): XCF_PropTypeMap[T] | number | null {
     if (!this._compiled) {
       this.compile();
     }
@@ -448,14 +452,16 @@ class GimpLayer {
       this._props = {};
       (this._details!.propertyList || []).forEach(
         (property: ParsedProperty) => {
-          this._props![property.type] = property;
+          (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
+            property.type
+          ] = property;
         },
       );
     }
 
     const propValue = this._props[prop];
-    if (index && propValue && propValue["data"]) {
-      return (propValue["data"] as Record<string, number>)[index];
+    if (index && propValue && "data" in propValue) {
+      return (propValue.data as Record<string, number>)[index];
     }
     return propValue ?? null;
   }
