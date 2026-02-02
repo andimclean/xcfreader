@@ -4,6 +4,7 @@
     "/^node tests/runner\\.js$/": {
       "approve": true,
       "matchCommandLine": true
-    }
+    },
+    "npm ci": true
   }
 }

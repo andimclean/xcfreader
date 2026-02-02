@@ -1,23 +1,27 @@
 {
   "name": "xcfreader",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Reads in GIMP xcf files",
   "type": "module",
-  "main": "src/gimpparser.js",
+  "main": "dist/gimpparser.js",
+  "types": "dist/gimpparser.d.ts",
   "dependencies": {
     "binary-parser": "^1.1.5",
     "pngjs-image": "^0.11.6"
   },
   "devDependencies": {
-    "nodemon": "^2.0.21"
+    "@types/node": "^20.10.0",
+    "nodemon": "^2.0.21",
+    "typescript": "^5.3.3"
   },
   "scripts": {
-    "multi": "nodemon --exec node examples/multi.js",
-    "single": "nodemon --exec node examples/single.js",
-    "map": "nodemon --exec node examples/map.js",
-    "text": "nodemon --exec node examples/text.js",
-    "compile": "echo \"No compile step: project uses native ESM; edit source in src/ and run examples with node\"",
-    "test": "node tests/runner.js"
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "multi": "npm run build && nodemon --exec node dist/examples/multi.js",
+    "single": "npm run build && nodemon --exec node dist/examples/single.js",
+    "map": "npm run build && nodemon --exec node dist/examples/map.js",
+    "text": "npm run build && nodemon --exec node dist/examples/text.js",
+    "test": "npm run build && node dist/tests/runner.js"
   },
   "repository": {
     "type": "git",

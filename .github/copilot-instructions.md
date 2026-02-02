@@ -1,55 +1,125 @@
 # Copilot / AI Agent Instructions for xcfreader
 
-Summary
+## Summary
 
-- Small Node.js library that parses GIMP `.xcf` files and exposes a JS API to read metadata, layers and render images.
-- Source is in `src/` (ES modules). `lib/` contains compiled output (built with Babel) and is the package `main`.
+- Small Node.js library that parses GIMP `.xcf` files and exposes a TypeScript/JS API to read metadata, layers and render images.
+- Source is in `src/` (TypeScript). `dist/` contains compiled output (built with TypeScript compiler `tsc`) and is the package target during runtime.
 
-Quick workflow
+## Quick workflow
 
 - Install dev deps: `npm install`.
-- Run examples (uses `node` + `nodemon`): `npm run single`, `npm run multi`, `npm run map`, `npm run text`.
-- Build step: project uses native ESM. There is no Babel compile step by default — edits in `src/` run directly with `node`.
-- Runtime flags: not required. Source imports use explicit `.js` extensions (e.g. `import XCFCompositer from './lib/xcfcompositer.js'`), so Node resolves modules without `--experimental-specifier-resolution`.
+- **Build TypeScript**: `npm run build` (runs `tsc` to compile `src/**/*.ts` → `dist/`).
+- Run examples (uses `node` + `nodemon`): `npm run single`, `npm run multi`, `npm run map`, `npm run text`, `npm run empty`.
+  - These commands now build TypeScript first, then execute the compiled JS.
+- Run tests: `npm test` (builds and runs `dist/tests/runner.js`).
+- Watch mode: `npm run watch` (continuously recompiles TypeScript as you edit).
 
-Where to look (key files)
+## Where to look (key files)
 
-- `src/gimpparser.js` — the main parser implementation and the best place to understand program flow (parsers, `GimpLayer`, `XCFParser`, `XCFImage`).
-- `src/lib/xcfcompositer.js` — compositing modes used by layer rendering.
-- `lib/` — compiled output that the package uses at runtime; compare with `src/` when debugging transpilation issues.
-- `examples/*.js` — runnable usage examples that show how callers use the public API.
-- `readme.md` — user-facing API examples and the expected `XCFImage` interface.
+- [src/gimpparser.ts](src/gimpparser.ts) — main parser implementation with `GimpLayer`, `XCFParser`, `XCFImage` classes; types and interfaces defined here.
+- [src/lib/xcfcompositer.ts](src/lib/xcfcompositer.ts) — compositing mode implementations (HSV, General, Dissolve).
+- [src/examples/](src/examples/) — TypeScript example scripts (single, multi, map, text, empty) showing public API usage.
+- [src/tests/](src/tests/) — TypeScript test files; [tests/runner.ts](src/tests/runner.ts) dynamically imports numbered tests.
+- [tsconfig.json](tsconfig.json) — TypeScript compiler configuration; targets ES2020, declaration files enabled.
+- [readme.md](readme.md) — user-facing API docs and `XCFImage` interface contract.
 
-Architecture & important implementation notes
+## Architecture & implementation notes
 
-- The parser uses `binary-parser` to build multiple Parser instances (`layerParser`, `levelParser`, `gimpHeader`, etc.). Look for `PROP_*` constants near the top of `src/gimpparser.js` — many behaviors are driven by property types.
-- The XCF format is parsed as a single Buffer; many fields in headers are pointers (offsets) into that same Buffer. Use `XCFParser.getBufferForPointer(offset)` to obtain a slice for a pointer — do not assume separate files or streams.
-- Layers are processed as tiled 64×64 blocks; `GimpLayer.uncompress()` and `copyTile()` handle decompression and writing pixels via the `XCFImage` interface.
-- `XCFImage` is a thin wrapper around `pngjs-image` that implements `setAt(x,y,colour)`/`getAt(x,y)` as described in `readme.md`. Tests/examples rely on that contract.
-- `XCFCompositer.makeCompositer(mode, opacity)` returns compositing logic used by `GimpLayer.makeImage()`; changes to blending belong in `src/lib/xcfcompositer.js`.
+- **Binary parsing**: Uses `binary-parser` library to construct parser instances (`layerParser`, `levelParser`, `gimpHeader`, etc.).
+  - `PROP_*` constants near the top of [gimpparser.ts](src/gimpparser.ts#L14-L40) define property types.
+  - Each property type is mapped to a `Parser` choice in `propertyListParser`.
+- **Buffer management**: XCF is a single binary Buffer; offsets/pointers index into it. Use `XCFParser.getBufferForPointer(offset)` to slice.
+- **Tiled rendering**: Layers use 64×64 tile blocks. `GimpLayer.uncompress()` decompresses tile data; `copyTile()` writes pixels to `XCFImage`.
+- **Compositing**: `XCFCompositer.makeCompositer(mode, opacity)` returns compositing logic (blend modes); used in `GimpLayer.makeImage()`.
+- **XCFImage**: Thin wrapper around `pngjs-image` with `setAt(x, y, colour)` / `getAt(x, y)` interface. Methods (`fillRect`, `writeImage`) delegate to wrapped image; tests use explicit `setAt`/`getAt` contract.
+- **Type safety**: Full TypeScript with strict mode; interfaces for `Color`, `ColorRGBA`, `RGB`, `HSV`, Parser result types.
 
-Conventions & patterns for contributors/agents
+## Conventions & patterns
 
-- Edit source in `src/` (ES modules / `import` / `export`). Do not edit `lib/` except to inspect compiled output.
-- Prefer small, targeted changes to parsers: many parsing rules are expressed via `new Parser()` and attached assertions/formatters — preserve existing assertions unless fixing a discovered format edge-case.
-- Use `Lazy.js` idioms as in existing code for array/filter/map flows.
-- When adding features that change runtime API, update `readme.md` and `examples/` to show intended usage.
+- **Edit source in `src/` only**. TypeScript files (`.ts`) are compiled to `dist/` by `npm run build`.
+- **Do not edit `dist/`** except to inspect compiled output for debugging transpilation.
+- Prefer small, focused parser changes; preserve assertions in `new Parser()` chains unless fixing a discovered edge-case.
+- Use native Array methods (`filter`, `map`, `forEach`, `find`, `slice`, `reverse`) for array flows.
+- Async API: `XCFParser.parseFileAsync(file)` returns `Promise<XCFParser>`; tests and examples use `async`/`await`.
+- When adding API features, update [readme.md](readme.md) and examples in [src/examples/](src/examples/).
 
-Run / debug tips
+## Building & running
 
-- Run examples directly after edits: `npm run single` to test a single-file parse/render loop.
-- To iterate quickly while editing, use `npm run single` (it uses `nodemon` + `node` so live-reloads during development). No additional Node flags are required.
-- If investigating a parsing bug, reproduce with one of the `examples/*.xcf` files in the `examples/` folder and add a focused example that loads the failing file.
+**Build TypeScript**:
 
-Files to update for related work
+```bash
+npm run build
+```
 
-- Add unit tests or small example scripts next to `examples/`.
-- If you modify API surface, update `readme.md` and copy relevant usage to `examples/`.
+**Run examples** (auto-builds first):
 
-If something's unclear
+```bash
+npm run single    # parse and render single.xcf with live reload (nodemon)
+npm run multi     # parse and render multi.xcf
+npm run map       # parse and render specific layers from map1.xcf
+npm run text      # parse text.xcf with parasite inspection
+npm run empty     # test parsing empty.xcf
+```
 
-- Ask for a sample failing `.xcf` or a short repro (which example + which file). I can add a focused example or a small test harness.
+**Run tests** (auto-builds first):
 
----
+```bash
+npm test
+```
 
-Please review this draft and tell me which sections to expand (e.g., more details on `binary-parser` usage, compositing math, or an explicit example of adding a new Parser).
+**Watch mode** (recompile on file changes):
+
+```bash
+npm run watch
+```
+
+## Testing tips
+
+- Tests are in [src/tests/](src/tests/) and run via `npm test`.
+- Test files are numbered (`01-parse-single.ts`, etc.) and auto-imported by [runner.ts](src/tests/runner.ts).
+- Each test imports the compiled `dist/gimpparser.js` and uses project-relative paths to example files.
+- Add new tests as `src/tests/NN-description.ts` and export a `testNNFunction` with signature: `async function testNN(): Promise<void>`.
+- Add the test to the imports in [runner.ts](src/tests/runner.ts).
+
+## Common edits
+
+**Adding a new layer property**:
+
+1. Add `PROP_MY_THING = N` constant near line 14–40 in [gimpparser.ts](src/gimpparser.ts).
+2. Create a parser: `var myPropParser = new Parser()...` (see existing patterns).
+3. Add to `propertyListParser.choice(...).choices` object with key `[PROP_MY_THING]`.
+4. Access via `layer.getProps(PROP_MY_THING)` in parsing code.
+
+**Updating compositing logic**:
+
+- Blending math lives in `XCFCompositer` and subclasses in [src/lib/xcfcompositer.ts](src/lib/xcfcompositer.ts).
+- Each blend mode is a `case` in `GeneralCompositer.chooseFunction()`.
+- Update constants (`PROP_MODE_*`) and switch logic; tests verify against test images.
+
+**Adding an example**:
+
+1. Create [src/examples/myexample.ts](src/examples/).
+2. Import `{ XCFParser as GimpParser, XCFImage } from '../gimpparser.js'`.
+3. Use `GimpParser.parseFileAsync(path)` and layer `.makeImage()` methods.
+4. Add script to [package.json](package.json) scripts: `"myexample": "npm run build && nodemon --exec node dist/examples/myexample.js"`.
+5. Export or log results.
+
+## Type system
+
+- **Color** type: `{ red: number; green: number; blue: number; alpha?: number }` (0–255 range).
+- **ColorRGBA** type: `{ red; green; blue; alpha: number }` (always includes alpha).
+- **Parser result types**: Inferred from `binary-parser` output; use `any` when result structure is dynamic.
+- Full `strict: true` in [tsconfig.json](tsconfig.json); be explicit with types or use `as any` sparingly.
+
+## Debugging
+
+- **Compile errors**: Check [tsconfig.json](tsconfig.json); ensure types match (especially `Parser` result types and null-coalescing).
+- **Runtime errors**: Add breakpoints in [src/gimpparser.ts](src/gimpparser.ts) and run examples with Node debugger: `node --inspect dist/examples/single.js`.
+- **Binary parsing issues**: Log parser output at suspicious offsets; use `getBufferForPointer()` and inspect raw bytes.
+- **Image rendering bugs**: Add debug logs in `GimpLayer.copyTile()` or compositing logic in [xcfcompositer.ts](src/lib/xcfcompositer.ts).
+
+## Further reading
+
+- See [readme.md](readme.md) for public API and usage examples.
+- See [CHANGELOG.md](CHANGELOG.md) for recent changes (ESM migration, Promise-based API, TypeScript port).
+- binary-parser docs: https://github.com/keichi/binary-parser
