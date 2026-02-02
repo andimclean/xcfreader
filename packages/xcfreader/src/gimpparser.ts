@@ -250,7 +250,24 @@ const isUnset = (value: unknown): boolean => {
 };
 
 /**
- * Represents a single layer in a GIMP XCF file
+ * Represents a single layer in a GIMP XCF file.
+ * 
+ * Provides access to layer properties like name, dimensions, visibility,
+ * opacity, blend mode, and position. Layers can be rendered individually
+ * or composited together using {@link XCFParser.createImage}.
+ * 
+ * @example
+ * ```typescript
+ * const parser = await XCFParser.parseFileAsync('./image.xcf');
+ * const layer = parser.layers[0];
+ * console.log(layer.name, layer.width, layer.height);
+ * console.log(`Position: (${layer.x}, ${layer.y})`);
+ * console.log(`Visible: ${layer.isVisible}, Opacity: ${layer.opacity}`);
+ * 
+ * // Render just this layer
+ * const image = layer.makeImage();
+ * await image.writeImage('./layer-output.png');
+ * ```
  */
 class GimpLayer {
   private _parent: XCFParser;
@@ -440,6 +457,30 @@ class GimpLayer {
     return this._parasites;
   }
 
+  /**
+   * Get a specific property from this layer.
+   * 
+   * Properties contain metadata like opacity, offsets, blend mode, etc.
+   * Use the {@link XCF_PropType} enum to specify which property to retrieve.
+   * 
+   * @typeParam T - The property type (inferred from prop parameter)
+   * @param prop - The property type to retrieve (from XCF_PropType enum)
+   * @param index - Optional sub-field to extract from the property data
+   * @returns The property value, a specific field value if index is provided, or null if not found
+   * 
+   * @example
+   * ```typescript
+   * // Get full property object
+   * const offsetProp = layer.getProps(XCF_PropType.OFFSETS);
+   * 
+   * // Get specific field from property
+   * const xOffset = layer.getProps(XCF_PropType.OFFSETS, 'dx');
+   * const yOffset = layer.getProps(XCF_PropType.OFFSETS, 'dy');
+   * 
+   * // Check if layer is a group
+   * const isGroup = layer.getProps(XCF_PropType.GROUP_ITEM) !== null;
+   * ```
+   */
   getProps<T extends XCF_PropType>(
     prop: T,
     index?: string,
@@ -466,6 +507,29 @@ class GimpLayer {
     return propValue ?? null;
   }
 
+  /**
+   * Render this layer to an XCFImage.
+   * 
+   * Decompresses the layer's tile data and composites it onto the target image
+   * using the layer's blend mode and opacity settings.
+   * 
+   * @param image - Optional existing image to render onto. If omitted, creates a new image.
+   * @param useOffset - If true, positions the layer using its x/y offset within the parent image dimensions.
+   *                    If false, renders at (0,0) with the layer's own dimensions.
+   * @returns The XCFImage with this layer rendered onto it
+   * 
+   * @example
+   * ```typescript
+   * // Render layer to a new image (layer dimensions)
+   * const layerImage = layer.makeImage();
+   * await layerImage.writeImage('./layer.png');
+   * 
+   * // Render layer with offset onto existing canvas
+   * const canvas = new XCFImage(1920, 1080);
+   * layer.makeImage(canvas, true);
+   * await canvas.writeImage('./composited.png');
+   * ```
+   */
   makeImage(image?: XCFImage, useOffset?: boolean): XCFImage {
     if (useOffset && this.isGroup) {
       return image!;
@@ -636,6 +700,35 @@ class GimpChannel {
   }
 }
 
+/**
+ * Main parser for GIMP XCF files.
+ * 
+ * Parses XCF binary data and provides access to image metadata, layers,
+ * and rendering capabilities. Use {@link parseFileAsync} to load a file.
+ * 
+ * @example
+ * ```typescript
+ * import { XCFParser } from 'xcfreader';
+ * 
+ * // Parse and render entire image
+ * const parser = await XCFParser.parseFileAsync('./artwork.xcf');
+ * console.log(`Image size: ${parser.width}x${parser.height}`);
+ * console.log(`Layers: ${parser.layers.length}`);
+ * 
+ * const image = parser.createImage();
+ * await image.writeImage('./output.png');
+ * 
+ * // Work with individual layers
+ * for (const layer of parser.layers) {
+ *   if (layer.isVisible) {
+ *     console.log(`${layer.name}: ${layer.width}x${layer.height} at (${layer.x}, ${layer.y})`);
+ *   }
+ * }
+ * 
+ * // Find specific layer by name
+ * const bgLayer = parser.getLayerByName('Background');
+ * ```
+ */
 export class XCFParser {
   private _layers: GimpLayer[] = [];
   private _channels: GimpChannel[] = [];
@@ -662,20 +755,32 @@ export class XCFParser {
   }
 
   /**
-   * Parse an XCF file asynchronously
-   * @param file - Path to the .xcf file
-   * @returns Promise resolving to XCFParser instance
-   * @throws XCFParseError if file cannot be read or parsed
-   */
-  /**
-   * Parse an XCF file asynchronously
-   * @param file - Path to the .xcf file
-   * @returns Promise resolving to XCFParser instance
-   * @throws XCFParseError if file cannot be read or parsed
+   * Parse an XCF file asynchronously.
+   * 
+   * This is the primary method for loading XCF files. It validates the file
+   * exists and contains valid GIMP magic bytes before parsing.
+   * 
+   * @param file - Path to the .xcf file to parse
+   * @returns Promise resolving to an XCFParser instance with parsed data
+   * @throws {@link XCFParseError} if the file cannot be read or parsed
+   * @throws {@link UnsupportedFormatError} if the file is not a valid XCF file
+   * 
    * @example
-   * const parser = await XCFParser.parseFileAsync('./examples/single.xcf');
-   * const image = parser.createImage();
-   * await image.writeImage('./examples/output/flattened.png');
+   * ```typescript
+   * import { XCFParser, XCFParseError } from 'xcfreader';
+   * 
+   * try {
+   *   const parser = await XCFParser.parseFileAsync('./artwork.xcf');
+   *   console.log(`Loaded: ${parser.width}x${parser.height}, ${parser.layers.length} layers`);
+   *   
+   *   const image = parser.createImage();
+   *   await image.writeImage('./output.png');
+   * } catch (err) {
+   *   if (err instanceof XCFParseError) {
+   *     console.error('Failed to parse XCF:', err.message);
+   *   }
+   * }
+   * ```
    */
   static async parseFileAsync(file: string): Promise<XCFParser> {
     try {
@@ -814,14 +919,53 @@ export class XCFParser {
   }
 
   /**
-   * Find a layer by name
+   * Find a layer by its name.
+   * 
+   * Searches through all layers and returns the first one matching the given name.
+   * Layer names in GIMP may have suffixes like " copy" or " #1" which are automatically
+   * stripped when comparing.
+   * 
    * @param name - The name of the layer to find
-   * @returns The matching GimpLayer or undefined
+   * @returns The matching GimpLayer, or undefined if not found
+   * 
+   * @example
+   * ```typescript
+   * const bgLayer = parser.getLayerByName('Background');
+   * if (bgLayer) {
+   *   console.log(`Background opacity: ${bgLayer.opacity}`);
+   *   const bgImage = bgLayer.makeImage();
+   *   await bgImage.writeImage('./background.png');
+   * }
+   * ```
    */
   getLayerByName(name: string): GimpLayer | undefined {
     return this.layers.find((layer) => layer.name === name);
   }
 
+  /**
+   * Create a flattened image by compositing all visible layers.
+   * 
+   * Iterates through layers in reverse order (bottom to top) and composites
+   * each visible layer using its blend mode, opacity, and position settings.
+   * 
+   * @param image - Optional existing XCFImage to render onto. If omitted, creates a new image
+   *                with the XCF file's dimensions.
+   * @returns The composited XCFImage with all visible layers flattened
+   * 
+   * @example
+   * ```typescript
+   * // Create flattened image from all visible layers
+   * const parser = await XCFParser.parseFileAsync('./artwork.xcf');
+   * const image = parser.createImage();
+   * await image.writeImage('./flattened.png');
+   * 
+   * // Composite onto a custom canvas
+   * const canvas = new XCFImage(1920, 1080);
+   * canvas.fillRect(0, 0, 1920, 1080, { red: 255, green: 255, blue: 255, alpha: 255 });
+   * parser.createImage(canvas);
+   * await canvas.writeImage('./on-white-bg.png');
+   * ```
+   */
   createImage(image?: XCFImage): XCFImage {
     const resultImage: XCFImage =
       image || new XCFImage(this.width, this.height);
@@ -837,7 +981,32 @@ export class XCFParser {
 }
 
 /**
- * Represents a composited XCF image with flattened layers
+ * Represents a rendered image with pixel manipulation capabilities.
+ * 
+ * XCFImage is a thin wrapper around `pngjs` that provides a simple API
+ * for pixel manipulation and PNG output. Used as the render target for
+ * layer compositing operations.
+ * 
+ * @example
+ * ```typescript
+ * import { XCFImage } from 'xcfreader';
+ * 
+ * // Create a new 800x600 image
+ * const image = new XCFImage(800, 600);
+ * 
+ * // Fill with a background color
+ * image.fillRect(0, 0, 800, 600, { red: 240, green: 240, blue: 240, alpha: 255 });
+ * 
+ * // Set individual pixels
+ * image.setAt(100, 100, { red: 255, green: 0, blue: 0, alpha: 255 });
+ * 
+ * // Read pixel color
+ * const color = image.getAt(100, 100);
+ * console.log(`Pixel color: rgb(${color.red}, ${color.green}, ${color.blue})`);
+ * 
+ * // Save to file
+ * await image.writeImage('./output.png');
+ * ```
  */
 export class XCFImage {
   private _width: number;
