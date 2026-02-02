@@ -80,6 +80,13 @@ export interface Parasite {
 // ============================================
 
 /**
+ * Base interface for parsed properties - most parser results include a length field
+ */
+export interface ParsedPropBase {
+  length: number;
+}
+
+/**
  * Result of parsing a zero-terminated string
  */
 export interface ParsedString {
@@ -98,8 +105,7 @@ export interface ParsedRGB {
 /**
  * Result of parsing color map property
  */
-export interface ParsedColorMap {
-  length: number;
+export interface ParsedColorMap extends ParsedPropBase {
   numcolours: number;
   colours: ParsedRGB[];
 }
@@ -115,35 +121,31 @@ export interface ParsedGuide {
 /**
  * Result of parsing guides property
  */
-export interface ParsedGuides {
-  length: number;
+export interface ParsedGuides extends ParsedPropBase {
   guides: ParsedGuide[];
 }
 
 /**
  * Result of parsing mode property
  */
-export interface ParsedMode {
-  length: number;
+export interface ParsedMode extends ParsedPropBase {
   mode: number;
 }
 
 /**
  * Result of parsing parasite buffer
  */
-export interface ParsedParasiteBuffer {
-  length: number;
+export interface ParsedParasiteBuffer extends ParsedPropBase {
   parasite: Buffer;
 }
 
 /**
  * Result of parsing a single parasite array item
  */
-export interface ParsedParasiteItem {
+export interface ParsedParasiteItem extends ParsedPropBase {
   name_length: number;
   name: string;
   flags: number;
-  length: number;
   details: Buffer;
 }
 
@@ -157,87 +159,75 @@ export interface ParsedParasiteArray {
 /**
  * Property with just length field (used for END, ACTIVE_LAYER, etc.)
  */
-export interface ParsedPropLength {
-  length: number;
-}
+export interface ParsedPropLength extends ParsedPropBase {}
 
 /**
  * Property with length and layer pointer
  */
-export interface ParsedPropFloatingSelection {
-  length: number;
+export interface ParsedPropFloatingSelection extends ParsedPropBase {
   layerPtr: number;
 }
 
 /**
  * Property with length and opacity
  */
-export interface ParsedPropOpacity {
-  length: number;
+export interface ParsedPropOpacity extends ParsedPropBase {
   opacity: number;
 }
 
 /**
  * Property with length and visibility flag
  */
-export interface ParsedPropVisible {
-  length: number;
+export interface ParsedPropVisible extends ParsedPropBase {
   isVisible: number;
 }
 
 /**
  * Property with length and linked flag
  */
-export interface ParsedPropLinked {
-  length: number;
+export interface ParsedPropLinked extends ParsedPropBase {
   isLinked: number;
 }
 
 /**
  * Property with length and alpha lock flag
  */
-export interface ParsedPropLockAlpha {
-  length: number;
+export interface ParsedPropLockAlpha extends ParsedPropBase {
   alpha: number;
 }
 
 /**
  * Property with length and apply mask flag
  */
-export interface ParsedPropApplyMask {
-  length: number;
+export interface ParsedPropApplyMask extends ParsedPropBase {
   mask: number;
 }
 
 /**
  * Property with length and edit mask flag
  */
-export interface ParsedPropEditMask {
-  length: number;
+export interface ParsedPropEditMask extends ParsedPropBase {
   editmask: number;
 }
 
 /**
  * Property with length and show mask flag
  */
-export interface ParsedPropShowMask {
-  length: number;
+export interface ParsedPropShowMask extends ParsedPropBase {
   showmask: number;
 }
 
 /**
  * Property with length and show masked flag
  */
-export interface ParsedPropShowMasked {
-  length: number;
+export interface ParsedPropShowMasked extends ParsedPropBase {
   showmasked: number;
 }
 
 /**
  * Property with offsets (dx, dy)
  */
-export interface ParsedPropOffsets {
-  length: number;
+export interface ParsedPropOffsets extends ParsedPropBase {
   dx: number;
   dy: number;
 }
@@ -245,8 +235,7 @@ export interface ParsedPropOffsets {
 /**
  * Property with color (r, g, b)
  */
-export interface ParsedPropColor {
-  length: number;
+export interface ParsedPropColor extends ParsedPropBase {
   r: number;
   g: number;
   b: number;
@@ -255,16 +244,14 @@ export interface ParsedPropColor {
 /**
  * Property with compression type
  */
-export interface ParsedPropCompression {
-  length: number;
+export interface ParsedPropCompression extends ParsedPropBase {
   compressionType: number;
 }
 
 /**
  * Property with resolution (x, y)
  */
-export interface ParsedPropResolution {
-  length: number;
+export interface ParsedPropResolution extends ParsedPropBase {
   x: number;
   y: number;
 }
@@ -272,56 +259,49 @@ export interface ParsedPropResolution {
 /**
  * Property with tattoo
  */
-export interface ParsedPropTattoo {
-  length: number;
+export interface ParsedPropTattoo extends ParsedPropBase {
   tattoo: number;
 }
 
 /**
  * Property with unit
  */
-export interface ParsedPropUnit {
-  length: number;
+export interface ParsedPropUnit extends ParsedPropBase {
   c: number;
 }
 
 /**
  * Property with generic length and f value
  */
-export interface ParsedPropLengthF {
-  length: number;
+export interface ParsedPropLengthF extends ParsedPropBase {
   f: number;
 }
 
 /**
  * Property with lock content flag
  */
-export interface ParsedPropLockContent {
-  length: number;
+export interface ParsedPropLockContent extends ParsedPropBase {
   isLocked: number;
 }
 
 /**
  * Property with item path
  */
-export interface ParsedPropItemPath {
-  length: number;
+export interface ParsedPropItemPath extends ParsedPropBase {
   items: number[];
 }
 
 /**
  * Property with group item flags
  */
-export interface ParsedPropGroupItemFlags {
-  length: number;
+export interface ParsedPropGroupItemFlags extends ParsedPropBase {
   flags: number;
 }
 
 /**
  * Default/unknown property with raw buffer
  */
-export interface ParsedPropDefault {
-  length: number;
+export interface ParsedPropDefault extends ParsedPropBase {
   buffer: Buffer;
 }
 
