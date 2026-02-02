@@ -84,6 +84,7 @@
     "empty": "npm run build && node dist/examples/empty.js",
     "grey": "npm run build && node dist/examples/grey.js",
     "indexed": "npm run build && node dist/examples/indexed.js",
+    "fullColour": "npm run build && node dist/examples/fullColour.js",
     "test": "npm run build && node dist/tests/runner.js",
     "test:coverage": "npm run build && c8 node dist/tests/runner.js",
     "coverage": "npm run test:coverage",

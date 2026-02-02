@@ -19,6 +19,38 @@ export enum XCF_BaseType {
 }
 
 /**
+ * XCF image precision (bit depth and format)
+ * Since GIMP 2.10.0 (XCF version 4+)
+ * @see https://developer.gimp.org/core/standards/xcf/
+ */
+export enum XCF_Precision {
+  /** 8-bit linear integer (default for XCF v3 and earlier) */
+  U8_LINEAR = 100,
+  /** 8-bit gamma integer (most common 8-bit format) */
+  U8_GAMMA = 150,
+  /** 16-bit linear integer */
+  U16_LINEAR = 200,
+  /** 16-bit gamma integer */
+  U16_GAMMA = 250,
+  /** 32-bit linear integer */
+  U32_LINEAR = 300,
+  /** 32-bit gamma integer */
+  U32_GAMMA = 350,
+  /** 16-bit linear floating point (half float) */
+  HALF_LINEAR = 500,
+  /** 16-bit gamma floating point (half float) */
+  HALF_GAMMA = 550,
+  /** 32-bit linear floating point */
+  FLOAT_LINEAR = 600,
+  /** 32-bit gamma floating point */
+  FLOAT_GAMMA = 650,
+  /** 64-bit linear floating point (double) */
+  DOUBLE_LINEAR = 700,
+  /** 64-bit gamma floating point (double) */
+  DOUBLE_GAMMA = 750,
+}
+
+/**
  * XCF property types enum - identifies different property types in XCF files
  */
 export enum XCF_PropType {
@@ -369,6 +401,7 @@ export interface ParsedGimpHeader {
   width: number;
   height: number;
   base_type: number;
+  precision?: number; // Only present for XCF v4+ (GIMP 2.10+)
   propertyList: ParsedProperty[];
   layerList: number[];
   channelList: number[];

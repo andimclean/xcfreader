@@ -14,6 +14,7 @@ import {
   XCF_PropType,
   XCF_PropTypeMap,
   XCF_BaseType,
+  XCF_Precision,
   ColorRGB,
   ColorRGBA,
   IXCFImage,
@@ -670,6 +671,8 @@ class GimpLayer {
       // Get colormap for indexed images
       const colormap = this._parent.colormap;
       const baseType = this._parent.baseType;
+      const bytesPerChannel = this._parent.bytesPerChannel;
+      const isFloat = this._parent.isFloatingPoint;
 
       tilePointers.forEach((tptr: number, index: number) => {
         const xIndex = (index % tilesAcross) * 64;
@@ -692,6 +695,8 @@ class GimpLayer {
           mode,
           baseType,
           colormap,
+          bytesPerChannel,
+          isFloat,
         );
       });
     }
@@ -769,6 +774,77 @@ class GimpLayer {
     return Buffer.alloc(0);
   }
 
+  /**
+   * Read a channel value from the tile buffer and convert to 8-bit (0-255).
+   * Handles different precisions: 8-bit, 16-bit, 32-bit integer, and floating point.
+   *
+   * @param buffer - The tile buffer
+   * @param offset - Byte offset in the buffer
+   * @param bytesPerChannel - Number of bytes per channel (1, 2, 4, or 8)
+   * @param isFloat - Whether the precision is floating point
+   * @returns The channel value scaled to 0-255
+   */
+  private readChannelValue(
+    buffer: Buffer,
+    offset: number,
+    bytesPerChannel: number,
+    isFloat: boolean,
+  ): number {
+    if (bytesPerChannel === 1) {
+      // 8-bit integer: direct read
+      return buffer[offset];
+    } else if (bytesPerChannel === 2) {
+      if (isFloat) {
+        // 16-bit half float (IEEE 754 binary16)
+        // For simplicity, read as 16-bit int and treat as 0.0-1.0 mapping
+        const halfBits = buffer.readUInt16BE(offset);
+        const floatVal = this.halfToFloat(halfBits);
+        return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
+      } else {
+        // 16-bit integer: scale from 0-65535 to 0-255
+        const value = buffer.readUInt16BE(offset);
+        return Math.round((value / 65535) * 255);
+      }
+    } else if (bytesPerChannel === 4) {
+      if (isFloat) {
+        // 32-bit float: scale from 0.0-1.0 to 0-255
+        const floatVal = buffer.readFloatBE(offset);
+        return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
+      } else {
+        // 32-bit integer: scale from 0-4294967295 to 0-255
+        const value = buffer.readUInt32BE(offset);
+        return Math.round((value / 4294967295) * 255);
+      }
+    } else if (bytesPerChannel === 8) {
+      // 64-bit double float: scale from 0.0-1.0 to 0-255
+      const doubleVal = buffer.readDoubleBE(offset);
+      return Math.round(Math.max(0, Math.min(1, doubleVal)) * 255);
+    }
+    return 0;
+  }
+
+  /**
+   * Convert IEEE 754 binary16 (half-precision float) to a normal float.
+   * @param halfBits - The 16-bit representation
+   * @returns The float value
+   */
+  private halfToFloat(halfBits: number): number {
+    const sign = (halfBits >> 15) & 1;
+    const exponent = (halfBits >> 10) & 0x1f;
+    const fraction = halfBits & 0x3ff;
+
+    if (exponent === 0) {
+      // Subnormal or zero
+      if (fraction === 0) return sign ? -0 : 0;
+      return (sign ? -1 : 1) * Math.pow(2, -14) * (fraction / 1024);
+    } else if (exponent === 31) {
+      // Infinity or NaN
+      return fraction ? NaN : sign ? -Infinity : Infinity;
+    }
+
+    return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + fraction / 1024);
+  }
+
   copyTile(
     image: IXCFImage,
     tileBuffer: Buffer,
@@ -780,39 +856,80 @@ class GimpLayer {
     mode: CompositerMode | null,
     baseType: XCF_BaseType = XCF_BaseType.RGB,
     colormap: ColorRGB[] | null = null,
+    bytesPerChannel: number = 1,
+    isFloat: boolean = false,
   ): void {
     let bufferOffset = 0;
+
+    // Calculate number of channels from bpp and bytesPerChannel
+    const numChannels = bpp / bytesPerChannel;
 
     for (let yloop = 0; yloop < ypoints; yloop += 1) {
       for (let xloop = 0; xloop < xpoints; xloop += 1) {
         let colour: ColorRGBA;
 
         if (baseType === XCF_BaseType.INDEXED && colormap) {
-          // Indexed: look up color from palette
+          // Indexed: look up color from palette (always 8-bit index)
           const index = tileBuffer[bufferOffset];
           const paletteColor = colormap[index] || { red: 0, green: 0, blue: 0 };
           colour = {
             red: paletteColor.red,
             green: paletteColor.green,
             blue: paletteColor.blue,
-            alpha: bpp === 2 ? tileBuffer[bufferOffset + 1] : 255,
+            alpha: numChannels === 2 ? tileBuffer[bufferOffset + 1] : 255,
           };
-        } else if (bpp === 1 || bpp === 2) {
+        } else if (numChannels === 1 || numChannels === 2) {
           // Grayscale: convert gray value to RGB
-          const gray = tileBuffer[bufferOffset];
+          const gray = this.readChannelValue(
+            tileBuffer,
+            bufferOffset,
+            bytesPerChannel,
+            isFloat,
+          );
           colour = {
             red: gray,
             green: gray,
             blue: gray,
-            alpha: bpp === 2 ? tileBuffer[bufferOffset + 1] : 255,
+            alpha:
+              numChannels === 2
+                ? this.readChannelValue(
+                    tileBuffer,
+                    bufferOffset + bytesPerChannel,
+                    bytesPerChannel,
+                    isFloat,
+                  )
+                : 255,
           };
         } else {
           // RGB/RGBA
           colour = {
-            red: tileBuffer[bufferOffset],
-            green: tileBuffer[bufferOffset + 1],
-            blue: tileBuffer[bufferOffset + 2],
-            alpha: bpp === 4 ? tileBuffer[bufferOffset + 3] : 255,
+            red: this.readChannelValue(
+              tileBuffer,
+              bufferOffset,
+              bytesPerChannel,
+              isFloat,
+            ),
+            green: this.readChannelValue(
+              tileBuffer,
+              bufferOffset + bytesPerChannel,
+              bytesPerChannel,
+              isFloat,
+            ),
+            blue: this.readChannelValue(
+              tileBuffer,
+              bufferOffset + 2 * bytesPerChannel,
+              bytesPerChannel,
+              isFloat,
+            ),
+            alpha:
+              numChannels === 4
+                ? this.readChannelValue(
+                    tileBuffer,
+                    bufferOffset + 3 * bytesPerChannel,
+                    bytesPerChannel,
+                    isFloat,
+                  )
+                : 255,
           };
         }
         const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
@@ -1117,6 +1234,57 @@ export class XCFParser {
    */
   get baseType(): XCF_BaseType {
     return this._header!.base_type as XCF_BaseType;
+  }
+
+  /**
+   * The image precision (bit depth and format).
+   *
+   * Returns the precision value from the XCF header. For XCF v3 and earlier,
+   * the precision is always 8-bit gamma integer (150).
+   *
+   * @returns The precision value (see XCF_Precision enum)
+   *
+   * @example
+   * ```typescript
+   * import { XCFParser, XCF_Precision } from 'xcfreader';
+   *
+   * const parser = await XCFParser.parseFileAsync('./image.xcf');
+   * if (parser.precision === XCF_Precision.U32_GAMMA) {
+   *   console.log('This is a 32-bit gamma integer image');
+   * }
+   * ```
+   */
+  get precision(): XCF_Precision {
+    // XCF v3 and earlier don't have precision field, default to 8-bit gamma
+    if (this._version < 4 || this._header!.precision === undefined) {
+      return XCF_Precision.U8_GAMMA;
+    }
+    return this._header!.precision as XCF_Precision;
+  }
+
+  /**
+   * Get the number of bytes per channel for the current precision.
+   * @returns Number of bytes per color channel (1, 2, 4, or 8)
+   */
+  get bytesPerChannel(): number {
+    const precision = this.precision;
+    // Precision values: 100-150 = 8-bit, 200-250 = 16-bit, 300-350 = 32-bit int,
+    // 500-550 = 16-bit float (half), 600-650 = 32-bit float, 700-750 = 64-bit float
+    if (precision >= 700) return 8; // 64-bit double
+    if (precision >= 600) return 4; // 32-bit float
+    if (precision >= 500) return 2; // 16-bit half float
+    if (precision >= 300) return 4; // 32-bit integer
+    if (precision >= 200) return 2; // 16-bit integer
+    return 1; // 8-bit integer
+  }
+
+  /**
+   * Check if the image uses floating point precision.
+   * @returns True if the image uses floating point values
+   */
+  get isFloatingPoint(): boolean {
+    const precision = this.precision;
+    return precision >= 500; // 500+ are floating point formats
   }
 
   /**

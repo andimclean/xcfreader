@@ -60,6 +60,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Automatic palette lookup during rendering
     - Test 15 verifies indexed color support
   - **`indexed.ts` example**: Demonstrates parsing indexed/paletted XCF files
+  - **`fullColour.ts` example**: Demonstrates parsing full color RGB v011 XCF files
+    - Test 16 verifies RGB v011 support with high bit-depth
+  - **High bit-depth support**: Parse and render XCF files with 16-bit, 32-bit, and floating point precision
+    - `XCF_Precision` enum for all precision values (8-bit to 64-bit, integer and float)
+    - `parser.precision` getter to check image bit depth
+    - `parser.bytesPerChannel` getter returns bytes per color channel (1, 2, 4, or 8)
+    - `parser.isFloatingPoint` getter checks if precision is floating point
+    - Automatic conversion from high bit-depth to 8-bit for rendering
+    - Supports: 8-bit, 16-bit, 32-bit integer; 16-bit (half), 32-bit, 64-bit float
 
 ### Changed
 

@@ -111,6 +111,9 @@ parser.layers     // Array of GimpLayer objects
 parser.baseType   // Color mode: XCF_BaseType.RGB, GRAYSCALE, or INDEXED
 parser.isV11      // True if XCF v011 format (GIMP 2.10+ with 64-bit pointers)
 parser.colormap   // Color palette for indexed images (array of RGB), or null
+parser.precision  // Bit depth: XCF_Precision enum (U8_GAMMA, U16_LINEAR, U32_GAMMA, etc.)
+parser.bytesPerChannel    // Bytes per color channel (1, 2, 4, or 8)
+parser.isFloatingPoint    // True if floating point precision
 
 // Methods
 parser.createImage(image)           // Render all visible layers into image
@@ -190,8 +193,9 @@ interface IXCFImage {
 ## Supported Formats
 
 - **GIMP versions**: 2.10.x (v011 64-bit), 2.8.x (v010 32-bit), and earlier
-- **XCF versions**: v010 (32-bit pointers) and v011 (64-bit pointers)
+- **XCF versions**: v010 (32-bit pointers), v011 (64-bit pointers), and v012
 - **Color modes**: RGB/RGBA, Grayscale, and Indexed (paletted) images
+- **Bit depths**: 8-bit, 16-bit, 32-bit integer; 16-bit (half), 32-bit, 64-bit float
 - **Limitations**: Text and path layers have limited support
 
 ## Development
@@ -217,8 +221,9 @@ npm run single
 npm run multi
 npm run map
 npm run text
-npm run grey      # grayscale v011 example
-npm run indexed   # indexed color example
+npm run grey       # grayscale v011 example
+npm run indexed    # indexed color example
+npm run fullColour # full color RGB v011 example
 \`\`\`
 
 ## Troubleshooting
