@@ -25,7 +25,14 @@ async function main() {
     console.error('Parser returned no layers');
     process.exit(2);
   }
-  console.log('PASS: parsed', file, 'width=', parser.width, 'layers=', parser.layers.length);
+  console.log(
+    'PASS: parsed',
+    file,
+    'width=',
+    parser.width,
+    'layers=',
+    parser.layers.length
+  );
 }
 
 main().catch((err) => {

@@ -8,9 +8,9 @@ Summary
 Quick workflow
 
 - Install dev deps: `npm install`.
- - Run examples (uses `node` + `nodemon`): `npm run single`, `npm run multi`, `npm run map`, `npm run text`.
- - Build step: project uses native ESM. There is no Babel compile step by default — edits in `src/` run directly with `node`.
- - Runtime flags: not required. Source imports use explicit `.js` extensions (e.g. `import XCFCompositer from './lib/xcfcompositer.js'`), so Node resolves modules without `--experimental-specifier-resolution`.
+- Run examples (uses `node` + `nodemon`): `npm run single`, `npm run multi`, `npm run map`, `npm run text`.
+- Build step: project uses native ESM. There is no Babel compile step by default — edits in `src/` run directly with `node`.
+- Runtime flags: not required. Source imports use explicit `.js` extensions (e.g. `import XCFCompositer from './lib/xcfcompositer.js'`), so Node resolves modules without `--experimental-specifier-resolution`.
 
 Where to look (key files)
 

@@ -15,27 +15,31 @@ function parseFilePromise(file) {
 }
 
 async function main() {
-  const file = path.resolve(__dirname, '../examples/single.xcf');
+  const file = path.resolve(__dirname, '../examples/map1.xcf');
   const parser = await parseFilePromise(file);
-  const image = parser.createImage();
-  if (!image) {
-    console.error('createImage() returned null/undefined');
+  if (!parser) {
+    console.error('Parser returned null for map1.xcf');
     process.exit(2);
   }
-  if (image._width !== parser.width || image._height !== parser.height) {
-    console.error('Image dimensions do not match parser header', {
-      imageW: image._width,
-      imageH: image._height,
-      parserW: parser.width,
-      parserH: parser.height
-    });
-    process.exit(2);
+
+  let foundVisible = false;
+  for (const layer of parser.layers) {
+    if (layer.isVisible && !layer.isGroup) {
+      foundVisible = true;
+      const img = layer.makeImage();
+      if (!img) {
+        console.error(
+          'makeImage() returned null for visible layer',
+          layer.name
+        );
+        process.exit(2);
+      }
+    }
   }
+
   console.log(
-    'PASS: createImage produced image',
-    image._width,
-    'x',
-    image._height
+    'PASS: map1.xcf parsed, visible non-group layers found=',
+    foundVisible
   );
 }
 

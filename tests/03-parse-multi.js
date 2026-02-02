@@ -15,28 +15,17 @@ function parseFilePromise(file) {
 }
 
 async function main() {
-  const file = path.resolve(__dirname, '../examples/single.xcf');
+  const file = path.resolve(__dirname, '../examples/multi.xcf');
   const parser = await parseFilePromise(file);
-  const image = parser.createImage();
-  if (!image) {
-    console.error('createImage() returned null/undefined');
+  if (!parser) {
+    console.error('Parser returned null for multi.xcf');
     process.exit(2);
   }
-  if (image._width !== parser.width || image._height !== parser.height) {
-    console.error('Image dimensions do not match parser header', {
-      imageW: image._width,
-      imageH: image._height,
-      parserW: parser.width,
-      parserH: parser.height
-    });
+  if (!Array.isArray(parser.layers) || parser.layers.length === 0) {
+    console.error('Expected layers in multi.xcf');
     process.exit(2);
   }
-  console.log(
-    'PASS: createImage produced image',
-    image._width,
-    'x',
-    image._height
-  );
+  console.log('PASS: parsed multi.xcf layers=', parser.layers.length);
 }
 
 main().catch((err) => {

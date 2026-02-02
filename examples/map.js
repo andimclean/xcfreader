@@ -1,44 +1,48 @@
-import { XCFParser, XCFImage } from '../src/gimpparser';
+import { XCFParser, XCFImage } from '../src/gimpparser.js';
 import Lazy from 'lazy.js';
 import fs from 'fs';
-import Mkdirp from 'mkdirp';
-import JsonFile from 'jsonfile';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-saveLayer('/home/andi/development/xcfreader/examples/map1.xcf', (err) => console.log(err));
+const xcfPath = path.resolve(__dirname, 'map1.xcf');
+const outDirRoot = path.resolve(__dirname);
+
+saveLayer(xcfPath, (err) => console.log(err));
 
 function saveLayer(dir, callback) {
-    XCFParser.parseFile(dir, (err1, parser) => {
-        if (err1) throw err1;
+  XCFParser.parseFile(dir, (err1, parser) => {
+    if (err1) throw err1;
 
-        var details = {};
+    var details = {};
 
-        Lazy(parser.layers).each(function (layer) {
-            var groupName = layer.groupName;
+    Lazy(parser.layers).each(function (layer) {
+      var groupName = layer.groupName;
 
-            var fullDirectory = dir.substr(0, dir.lastIndexOf('/')) + '/' + groupName.substr(0, groupName.lastIndexOf('/'));
-            details[groupName] = {
-                x: layer.x,
-                y: layer.y,
-                w: layer.width,
-                h: layer.height,
-            };
+      var groupPath = path.dirname(groupName);
+      var fullDirectory = path.resolve(outDirRoot, groupPath);
+      details[groupName] = {
+        x: layer.x,
+        y: layer.y,
+        w: layer.width,
+        h: layer.height
+      };
 
-            if (layer.isVisible && !layer.isGroup) {
-                //console.log(groupName);
+      if (layer.isVisible && !layer.isGroup) {
+        if (!fs.existsSync(fullDirectory)) {
+          fs.mkdirSync(fullDirectory, { recursive: true });
+        }
 
-                if (!fs.existsSync(fullDirectory)) {
-                    Mkdirp.sync(fullDirectory);
-                }
+        var png = path.resolve(outDirRoot, groupName + '.png');
 
-                var png = dir.substr(0, dir.lastIndexOf('/')) + '/' + groupName + '.png';
+        layer.makeImage().writeImage(png, function (err4) {
+          if (err4) throw err4;
 
-                layer.makeImage().writeImage(png, function (err4) {
-                    if (err4) throw err4;
-
-                    console.log(png + " written");
-                });
-            }
+          console.log(png + ' written');
         });
+      }
     });
+  });
 }

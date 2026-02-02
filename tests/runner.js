@@ -5,7 +5,8 @@ import { pathToFileURL } from 'url';
 const testsDir = path.resolve(path.dirname(''), 'tests');
 
 function listTests() {
-  return fs.readdirSync(testsDir)
+  return fs
+    .readdirSync(testsDir)
     .filter((f) => /^[0-9]{2}-.*\.js$/.test(f))
     .sort();
 }

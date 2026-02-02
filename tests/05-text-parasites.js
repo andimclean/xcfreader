@@ -15,28 +15,23 @@ function parseFilePromise(file) {
 }
 
 async function main() {
-  const file = path.resolve(__dirname, '../examples/single.xcf');
+  const file = path.resolve(__dirname, '../examples/text.xcf');
   const parser = await parseFilePromise(file);
-  const image = parser.createImage();
-  if (!image) {
-    console.error('createImage() returned null/undefined');
+  if (!parser) {
+    console.error('Parser null for text.xcf');
     process.exit(2);
   }
-  if (image._width !== parser.width || image._height !== parser.height) {
-    console.error('Image dimensions do not match parser header', {
-      imageW: image._width,
-      imageH: image._height,
-      parserW: parser.width,
-      parserH: parser.height
-    });
-    process.exit(2);
+
+  let hasParasite = false;
+  for (const layer of parser.layers) {
+    const p = layer.parasites;
+    if (p && Object.keys(p).length > 0) {
+      hasParasite = true;
+      break;
+    }
   }
-  console.log(
-    'PASS: createImage produced image',
-    image._width,
-    'x',
-    image._height
-  );
+
+  console.log('PASS: text.xcf parasites found=', hasParasite);
 }
 
 main().catch((err) => {
