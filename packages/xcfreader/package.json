@@ -75,7 +75,7 @@
     "watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "docs": "typedoc --out docs src/gimpparser.ts",
+    "docs": "typedoc --out docs src/gimpparser.ts src/node.ts src/browser.ts src/types/index.ts --entryPointStrategy expand",
     "benchmark": "node dist/benchmarks/benchmark.js",
     "multi": "npm run build && node dist/examples/multi.js",
     "single": "npm run build && node dist/examples/single.js",

@@ -10,6 +10,7 @@ import { test09MultiLayerNames } from "./09-multi-layer-names.js";
 import { test10XCFDataImage } from "./10-xcf-data-image.js";
 import { test11BrowserExports } from "./11-browser-exports.js";
 import { test12ToBlobAndDataURL } from "./12-to-blob-dataurl.js";
+import { test13CreateImageFromLayers } from "./13-create-image-from-layers.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -25,6 +26,7 @@ const tests = [
   { name: "10-xcf-data-image.ts", fn: test10XCFDataImage },
   { name: "11-browser-exports.ts", fn: test11BrowserExports },
   { name: "12-to-blob-dataurl.ts", fn: test12ToBlobAndDataURL },
+  { name: "13-create-image-from-layers.ts", fn: test13CreateImageFromLayers },
 ];
 
 async function runTests(): Promise<void> {

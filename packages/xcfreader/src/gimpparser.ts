@@ -1029,4 +1029,55 @@ export class XCFParser {
       });
     return resultImage;
   }
+
+  /**
+   * Create a flattened image by compositing only specific layers.
+   *
+   * Unlike {@link createImage} which renders all visible layers, this method
+   * allows you to specify exactly which layers to include. Layers are rendered
+   * in the order specified (first layer is at the bottom).
+   *
+   * @param image - The IXCFImage to render onto
+   * @param layerNames - Array of layer names to include (case-sensitive)
+   * @param options - Optional settings
+   * @param options.ignoreVisibility - If true, render layers even if they are hidden (default: false)
+   * @returns The composited IXCFImage with the specified layers
+   *
+   * @example
+   * ```typescript
+   * // Render only specific layers
+   * const parser = await XCFParser.parseFileAsync('./artwork.xcf');
+   * const image = new XCFPNGImage(parser.width, parser.height);
+   * parser.createImageFromLayers(image, ['background', 'character', 'foreground']);
+   * await image.writeImage('./selected-layers.png');
+   *
+   * // Render hidden layers (useful for exporting variants)
+   * parser.createImageFromLayers(image, ['background', 'variant-b'], { ignoreVisibility: true });
+   * ```
+   */
+  createImageFromLayers(
+    image: IXCFImage,
+    layerNames: string[],
+    options?: { ignoreVisibility?: boolean }
+  ): IXCFImage {
+    const ignoreVisibility = options?.ignoreVisibility ?? false;
+
+    // Find layers by name and preserve the order specified
+    const layersToRender: GimpLayer[] = [];
+    for (const name of layerNames) {
+      const layer = this.layers.find((l) => l.name === name);
+      if (layer) {
+        layersToRender.push(layer);
+      }
+    }
+
+    // Render in order (first layer is at the bottom)
+    layersToRender.forEach((layer) => {
+      if (ignoreVisibility || layer.isVisible) {
+        layer.makeImage(image, true);
+      }
+    });
+
+    return image;
+  }
 }
