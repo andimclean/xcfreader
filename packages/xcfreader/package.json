@@ -42,8 +42,15 @@
     "dist/types/"
   ],
   "dependencies": {
-    "binary-parser": "^1.1.5",
+    "binary-parser": "^1.1.5"
+  },
+  "peerDependencies": {
     "pngjs": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pngjs": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
@@ -57,6 +64,7 @@
     "eslint": "^8.56.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
+    "pngjs": "^7.0.0",
     "typedoc": "^0.25.4",
     "typescript": "^5.3.3"
   },
