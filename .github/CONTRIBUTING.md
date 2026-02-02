@@ -62,6 +62,13 @@ npm run lint        # Run ESLint
 npm run lint:fix    # Fix linting issues
 ```
 
+## Code Style & Review Process
+
+- All code must pass ESLint and TypeScript strict mode
+- Use 2-space indentation, LF line endings
+- PRs should include tests for new features/bugfixes
+- PRs are reviewed for clarity, type safety, and documentation
+- Use clear commit messages and reference issues when possible
 ### Documentation
 
 ```bash
