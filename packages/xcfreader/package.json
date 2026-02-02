@@ -82,6 +82,7 @@
     "map": "npm run build && node dist/examples/map.js",
     "text": "npm run build && node dist/examples/text.js",
     "empty": "npm run build && node dist/examples/empty.js",
+    "grey": "npm run build && node dist/examples/grey.js",
     "test": "npm run build && node dist/tests/runner.js",
     "test:coverage": "npm run build && c8 node dist/tests/runner.js",
     "coverage": "npm run test:coverage",

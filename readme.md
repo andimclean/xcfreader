@@ -185,8 +185,8 @@ interface IXCFImage {
 ## Supported Formats
 
 - **GIMP versions**: 2.10.x and 2.8.x XCF files
-- **Color modes**: RGB/RGBA raster images
-- **Limitations**: Indexed, grayscale, text, and path layers have limited support
+- **Color modes**: RGB/RGBA and Grayscale images
+- **Limitations**: Indexed color mode and text/path layers have limited support
 
 ## Development
 

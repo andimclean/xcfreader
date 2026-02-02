@@ -13,6 +13,7 @@ import XCFCompositer from "./lib/xcfcompositer.js";
 import {
   XCF_PropType,
   XCF_PropTypeMap,
+  XCF_BaseType,
   ColorRGBA,
   IXCFImage,
   ParsedLayer,
@@ -185,7 +186,16 @@ const propertyListParser = new Parser()
     }),
   });
 
-const layerParser = new Parser()
+// Helper to check if 64-bit value is zero (for readUntil)
+const itemIsZero64 = (item: { high: number; low: number }): boolean => {
+  return item.high === 0 && item.low === 0;
+};
+
+// Parser for 64-bit big-endian offset
+const offset64Parser = new Parser().endianess("big").uint32("high").uint32("low");
+
+// V10 parsers (32-bit pointers)
+const layerParserV10 = new Parser()
   .uint32("width")
   .uint32("height")
   .uint32("type")
@@ -203,13 +213,13 @@ const layerParser = new Parser()
   .uint32("hptr")
   .uint32("mptr");
 
-const hirerarchyParser = new Parser()
+const hirerarchyParserV10 = new Parser()
   .uint32("width")
   .uint32("height")
   .uint32("bpp")
   .uint32("lptr");
 
-const levelParser = new Parser()
+const levelParserV10 = new Parser()
   .uint32("width")
   .uint32("height")
   .array("tptr", {
@@ -217,7 +227,44 @@ const levelParser = new Parser()
     readUntil: itemIsZero,
   });
 
-const gimpHeader = new Parser()
+// V11 parsers (64-bit pointers)
+const layerParserV11 = new Parser()
+  .uint32("width")
+  .uint32("height")
+  .uint32("type")
+  .uint32("name_length")
+  .string("name", {
+    encoding: "ascii",
+    zeroTerminated: true,
+  })
+  .array("propertyList", {
+    type: propertyListParser,
+    readUntil: function (item: { type: number }, _buffer: Buffer) {
+      return item.type === 0;
+    },
+  })
+  .uint32("hptr_high")
+  .uint32("hptr_low")
+  .uint32("mptr_high")
+  .uint32("mptr_low");
+
+const hirerarchyParserV11 = new Parser()
+  .uint32("width")
+  .uint32("height")
+  .uint32("bpp")
+  .uint32("lptr_high")
+  .uint32("lptr_low");
+
+const levelParserV11 = new Parser()
+  .uint32("width")
+  .uint32("height")
+  .array("tptr64", {
+    type: offset64Parser,
+    readUntil: itemIsZero64,
+  });
+
+// XCF v010 and earlier use 32-bit pointers
+const gimpHeaderV10 = new Parser()
   .endianess("big")
   .string("magic", {
     encoding: "ascii",
@@ -230,7 +277,7 @@ const gimpHeader = new Parser()
   .int8("padding", { assert: 0 })
   .uint32("width")
   .uint32("height")
-  .uint32("base_type", { assert: 0 })
+  .uint32("base_type") // 0=RGB, 1=Grayscale, 2=Indexed
   .array("propertyList", {
     type: propertyListParser,
     readUntil: function (item: { type: number }, _buffer: Buffer) {
@@ -244,6 +291,37 @@ const gimpHeader = new Parser()
   .array("channelList", {
     type: "int32be",
     readUntil: itemIsZero,
+  });
+
+// XCF v011+ use 64-bit pointers
+const gimpHeaderV11 = new Parser()
+  .endianess("big")
+  .string("magic", {
+    encoding: "ascii",
+    length: 9,
+  })
+  .string("version", {
+    encoding: "ascii",
+    length: 4,
+  })
+  .int8("padding", { assert: 0 })
+  .uint32("width")
+  .uint32("height")
+  .uint32("base_type") // 0=RGB, 1=Grayscale, 2=Indexed
+  .uint32("precision") // v011 adds precision field
+  .array("propertyList", {
+    type: propertyListParser,
+    readUntil: function (item: { type: number }, _buffer: Buffer) {
+      return item.type === 0;
+    },
+  })
+  .array("layerList64", {
+    type: offset64Parser,
+    readUntil: itemIsZero64,
+  })
+  .array("channelList64", {
+    type: offset64Parser,
+    readUntil: itemIsZero64,
   });
 
 const remove_empty = (data: number): boolean => {
@@ -292,7 +370,8 @@ class GimpLayer {
   }
 
   compile(): void {
-    this._details = layerParser.parse(this._buffer) as ParsedLayer;
+    const parser = this._parent.isV11 ? layerParserV11 : layerParserV10;
+    this._details = parser.parse(this._buffer) as ParsedLayer;
     this._compiled = true;
   }
 
@@ -548,15 +627,45 @@ class GimpLayer {
         x = this.x;
         y = this.y;
       }
-      const hDetails = hirerarchyParser.parse(
-        this._parent.getBufferForPointer(this._details!.hptr),
-      ) as ParsedHierarchy;
-      const levels = levelParser.parse(
-        this._parent.getBufferForPointer(hDetails.lptr),
-      ) as ParsedLevel;
+
+      // Select parsers based on XCF version
+      const isV11 = this._parent.isV11;
+      const hierarchyParserToUse = isV11 ? hirerarchyParserV11 : hirerarchyParserV10;
+      const levelParserToUse = isV11 ? levelParserV11 : levelParserV10;
+
+      // Get hierarchy pointer (64-bit in v11, 32-bit in v10)
+      let hptr: number;
+      if (isV11) {
+        const details = this._details as ParsedLayer & { hptr_high: number; hptr_low: number };
+        hptr = details.hptr_high * 0x100000000 + details.hptr_low;
+      } else {
+        hptr = this._details!.hptr;
+      }
+
+      const hDetails = hierarchyParserToUse.parse(
+        this._parent.getBufferForPointer(hptr),
+      ) as ParsedHierarchy & { lptr_high?: number; lptr_low?: number };
+
+      // Get level pointer (64-bit in v11, 32-bit in v10)
+      let lptr: number;
+      if (isV11) {
+        lptr = hDetails.lptr_high! * 0x100000000 + hDetails.lptr_low!;
+      } else {
+        lptr = hDetails.lptr;
+      }
+
+      const levels = levelParserToUse.parse(
+        this._parent.getBufferForPointer(lptr),
+      ) as ParsedLevel & { tptr64?: Array<{ high: number; low: number }> };
 
       const tilesAcross = Math.ceil(this.width / 64);
-      (levels.tptr || []).forEach((tptr: number, index: number) => {
+      
+      // Get tile pointers (64-bit array in v11, 32-bit array in v10)
+      const tilePointers: number[] = isV11
+        ? (levels.tptr64 || []).map((t: { high: number; low: number }) => t.high * 0x100000000 + t.low)
+        : (levels.tptr || []);
+
+      tilePointers.forEach((tptr: number, index: number) => {
         const xIndex = (index % tilesAcross) * 64;
         const yIndex = Math.floor(index / tilesAcross) * 64;
         const xpoints = Math.min(64, this.width - xIndex);
@@ -666,14 +775,25 @@ class GimpLayer {
 
     for (let yloop = 0; yloop < ypoints; yloop += 1) {
       for (let xloop = 0; xloop < xpoints; xloop += 1) {
-        const colour: ColorRGBA = {
-          red: tileBuffer[bufferOffset],
-          green: tileBuffer[bufferOffset + 1],
-          blue: tileBuffer[bufferOffset + 2],
-          alpha: 255,
-        };
-        if (bpp === 4) {
-          colour.alpha = tileBuffer[bufferOffset + 3];
+        let colour: ColorRGBA;
+
+        if (bpp === 1 || bpp === 2) {
+          // Grayscale: convert gray value to RGB
+          const gray = tileBuffer[bufferOffset];
+          colour = {
+            red: gray,
+            green: gray,
+            blue: gray,
+            alpha: bpp === 2 ? tileBuffer[bufferOffset + 1] : 255,
+          };
+        } else {
+          // RGB/RGBA
+          colour = {
+            red: tileBuffer[bufferOffset],
+            green: tileBuffer[bufferOffset + 1],
+            blue: tileBuffer[bufferOffset + 2],
+            alpha: bpp === 4 ? tileBuffer[bufferOffset + 3] : 255,
+          };
         }
         const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
         const composedColour = mode
@@ -732,7 +852,15 @@ export class XCFParser {
   private _channels: GimpChannel[] = [];
   private _buffer: Buffer | null = null;
   private _header: ParsedGimpHeader | null = null;
+  private _version: number = 0; // XCF version number (e.g., 10, 11)
   _groupLayers: GroupLayerNode = { layer: null, children: [] };
+
+  /**
+   * Check if this is an XCF v011+ file (uses 64-bit pointers)
+   */
+  get isV11(): boolean {
+    return this._version >= 11;
+  }
 
   /**
    * Parse an XCF file with callback (legacy API)
@@ -864,52 +992,74 @@ export class XCFParser {
     this._buffer = buffer;
     this._layers = [];
     this._channels = [];
-    this._header = gimpHeader.parse(buffer) as ParsedGimpHeader;
     this._groupLayers = { layer: null, children: [] };
 
-    this._layers = (this._header.layerList || [])
-      .filter(remove_empty)
-      .map((layerPointer: number) => {
-        const layer = new GimpLayer(this, this._buffer!.slice(layerPointer));
-        const path = layer.pathInfo;
-        if (!path) {
-          this._groupLayers.children.push({
-            layer:
-              layer as unknown as import("./types/index.js").GimpLayerPublic,
-            children: [],
-          });
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const item = this._groupLayers;
-          const pathData = path.data as unknown as ParsedPropItemPath;
-          const toCall = (
-            node: GroupLayerNode,
-            index: number,
-          ): GroupLayerNode => {
-            if (index === pathData.items.length) {
-              node.layer =
-                layer as unknown as import("./types/index.js").GimpLayerPublic;
-            } else {
-              if (isUnset(node.children[pathData.items[index]])) {
-                node.children[pathData.items[index]] = {
-                  layer: null,
-                  children: [],
-                };
-              }
-              node.children[pathData.items[index]] = toCall(
-                node.children[pathData.items[index]],
-                index + 1,
-              );
+    // Detect XCF version to choose correct parser
+    const version = buffer.toString("utf-8", 9, 13);
+    const versionNum = parseInt(version.replace("v", ""), 10);
+    this._version = versionNum;
+
+    let layerPointers: number[];
+
+    if (versionNum >= 11) {
+      // XCF v011+ uses 64-bit pointers and has precision field
+      const header = gimpHeaderV11.parse(buffer) as ParsedGimpHeader & {
+        layerList64?: Array<{ high: number; low: number }>;
+        channelList64?: Array<{ high: number; low: number }>;
+      };
+      this._header = header;
+
+      // Convert 64-bit pointers to numbers (JavaScript can handle up to 2^53)
+      layerPointers = (header.layerList64 || [])
+        .filter((p) => p.high !== 0 || p.low !== 0)
+        .map((p) => p.high * 0x100000000 + p.low);
+    } else {
+      // XCF v010 and earlier use 32-bit pointers
+      this._header = gimpHeaderV10.parse(buffer) as ParsedGimpHeader;
+      layerPointers = (this._header.layerList || []).filter(remove_empty);
+    }
+
+    this._layers = layerPointers.map((layerPointer: number) => {
+      const layer = new GimpLayer(this, this._buffer!.slice(layerPointer));
+      const path = layer.pathInfo;
+      if (!path) {
+        this._groupLayers.children.push({
+          layer:
+            layer as unknown as import("./types/index.js").GimpLayerPublic,
+          children: [],
+        });
+      } else {
+        const pathData = path.data as unknown as ParsedPropItemPath;
+        const toCall = (
+          node: GroupLayerNode,
+          index: number,
+        ): GroupLayerNode => {
+          if (index === pathData.items.length) {
+            node.layer =
+              layer as unknown as import("./types/index.js").GimpLayerPublic;
+          } else {
+            if (isUnset(node.children[pathData.items[index]])) {
+              node.children[pathData.items[index]] = {
+                layer: null,
+                children: [],
+              };
             }
+            node.children[pathData.items[index]] = toCall(
+              node.children[pathData.items[index]],
+              index + 1,
+            );
+          }
 
-            return node;
-          };
+          return node;
+        };
 
-          this._groupLayers = toCall(this._groupLayers, 0);
-        }
-        return layer;
-      });
+        this._groupLayers = toCall(this._groupLayers, 0);
+      }
+      return layer;
+    });
 
+    // Note: Channel parsing for v011 would need similar 64-bit handling
+    // Currently only supporting layer parsing for v011
     this._channels = (this._header.channelList || [])
       .filter(remove_empty)
       .map((channelPointer: number) => {
@@ -927,6 +1077,25 @@ export class XCFParser {
 
   get height(): number {
     return this._header!.height;
+  }
+
+  /**
+   * The base color type of the image.
+   *
+   * @returns The base type (RGB, Grayscale, or Indexed)
+   *
+   * @example
+   * ```typescript
+   * import { XCFParser, XCF_BaseType } from 'xcfreader';
+   *
+   * const parser = await XCFParser.parseFileAsync('./image.xcf');
+   * if (parser.baseType === XCF_BaseType.GRAYSCALE) {
+   *   console.log('This is a grayscale image');
+   * }
+   * ```
+   */
+  get baseType(): XCF_BaseType {
+    return this._header!.base_type as XCF_BaseType;
   }
 
   get layers(): GimpLayer[] {

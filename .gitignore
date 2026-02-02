@@ -25,3 +25,4 @@ docs/
 
 .nx/cache
 .nx/workspace-data
+packages/xcfreader/examples/output/grey-output.png

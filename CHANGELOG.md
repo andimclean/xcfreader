@@ -44,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - HTML, LCOV, and text output formats
     - 90%+ coverage on main parser module
   - **Comprehensive JSDoc documentation** with `@example` tags on all public APIs
+  - **Grayscale image support**: Parse and render grayscale XCF files
+    - `XCF_BaseType` enum for image color modes (RGB, GRAYSCALE, INDEXED)
+    - `parser.baseType` getter to check image color mode
+    - Automatic grayscale-to-RGB conversion during rendering
+    - Test 14 verifies grayscale support
 
 ### Changed
 

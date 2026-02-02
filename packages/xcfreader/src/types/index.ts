@@ -6,6 +6,19 @@
 import { Buffer } from "buffer";
 
 /**
+ * XCF image base type (color mode)
+ * @see https://developer.gimp.org/core/standards/xcf/
+ */
+export enum XCF_BaseType {
+  /** RGB color mode (3 or 4 bytes per pixel) */
+  RGB = 0,
+  /** Grayscale mode (1 or 2 bytes per pixel) */
+  GRAYSCALE = 1,
+  /** Indexed color mode (uses colormap) */
+  INDEXED = 2,
+}
+
+/**
  * XCF property types enum - identifies different property types in XCF files
  */
 export enum XCF_PropType {
