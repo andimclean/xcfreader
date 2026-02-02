@@ -2,26 +2,24 @@
   "name": "xcfreader",
   "version": "0.0.7",
   "description": "Reads in GIMP xcf files",
-  "main": "lib/gimpparser.js",
+  "type": "module",
+  "main": "src/gimpparser.js",
   "dependencies": {
     "binary-parser": "^1.1.5",
     "lazy.js": "^0.4.2",
     "pngjs-image": "^0.11.6"
   },
   "devDependencies": {
-    "babel-cli": "^6.11.4",
-    "babel-preset-es2015": "^6.9.0",
     "jsonfile": "^2.3.1",
     "mkdirp": "^0.5.1",
     "nodemon": "^2.0.21"
   },
   "scripts": {
-    "multi": "nodemon --exec babel-node examples/multi.js",
-    "single": "nodemon --exec babel-node examples/single.js",
-    "map": "nodemon --exec babel-node examples/map.js",
-    "text": "nodemon --exec babel-node examples/text.js",
-    "compile": "babel -d lib src/",
-    "prepublish": "npm run compile"
+    "multi": "nodemon --exec node --experimental-specifier-resolution=node examples/multi.js",
+    "single": "nodemon --exec node --experimental-specifier-resolution=node examples/single.js",
+    "map": "nodemon --exec node --experimental-specifier-resolution=node examples/map.js",
+    "text": "nodemon --exec node --experimental-specifier-resolution=node examples/text.js",
+    "compile": "echo \"No compile step: project uses native ESM; edit source in src/ and run examples with node\""
   },
   "repository": {
     "type": "git",
