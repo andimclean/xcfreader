@@ -1,8 +1,15 @@
-import { Parser } from 'binary-parser';
-import FS from 'fs';
-import { Buffer } from 'buffer';
-import PNGImage from 'pngjs-image';
-import XCFCompositer from './lib/xcfcompositer.js';
+/**
+ * xcfreader - Parse and render GIMP XCF files
+ * Copyright (c) 2026 Andi McLean
+ * Licensed under the MIT License
+ * https://github.com/andimclean/xcfreader
+ */
+
+import { Parser } from "binary-parser";
+import FS from "fs";
+import { Buffer } from "buffer";
+import PNGImage from "pngjs-image";
+import XCFCompositer from "./lib/xcfcompositer.js";
 
 /**
  * Error thrown when XCF file parsing fails
@@ -10,7 +17,7 @@ import XCFCompositer from './lib/xcfcompositer.js';
 export class XCFParseError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'XCFParseError';
+    this.name = "XCFParseError";
   }
 }
 
@@ -20,7 +27,7 @@ export class XCFParseError extends Error {
 export class UnsupportedFormatError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'UnsupportedFormatError';
+    this.name = "UnsupportedFormatError";
   }
 }
 
@@ -47,16 +54,22 @@ const PROP_RESOLUTION = 19;
 const PROP_TATTOO = 20;
 const PROP_PARASITES = 21;
 const PROP_UNIT = 22;
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const PROP_PATHS = 23;
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const PROP_USER_UNIT = 24;
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const PROP_VECTORS = 25;
 const PROP_TEXT_LAYER_FLAGS = 26;
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const PROP_SAMPLE_POINTS = 27;
 const PROP_LOCK_CONTENT = 28;
 const PROP_GROUP_ITEM = 29;
 const PROP_ITEM_PATH = 30;
 const PROP_GROUP_ITEM_FLAGS = 31;
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const PROP_LOCK_POSITION = 32;
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const PROP_FLOAT_OPACITY = 33;
 
 /**
@@ -84,199 +97,189 @@ export interface Parasite {
   details: Buffer;
 }
 
-const itemIsZero = (item: any, buffer: Buffer): boolean => {
+const itemIsZero = (item: any, _buffer: Buffer): boolean => {
   return item === 0;
 };
 
-const stringParser = new Parser().string('data', { zeroTerminated: true });
+const stringParser = new Parser().string("data", { zeroTerminated: true });
 
-const rgbParser = new Parser().uint8('red').uint8('greed').uint8('blue');
-
-const rgbaParser = new Parser()
-  .uint8('red')
-  .uint8('greed')
-  .uint8('blue')
-  .uint8('alpha', {
-    formatter: (alpha: number) => {
-      return Math.round((alpha / 255) * 100);
-    }
-  });
+const rgbParser = new Parser().uint8("red").uint8("greed").uint8("blue");
 
 const prop_colorMapParser = new Parser()
-  .uint32('length')
-  .uint32('numcolours')
-  .array('colours', {
+  .uint32("length")
+  .uint32("numcolours")
+  .array("colours", {
     type: rgbParser,
-    length: 'numcolours'
+    length: "numcolours",
   });
 
-const prop_guidesParser = new Parser().uint32('length').array('guides', {
-  type: new Parser().int32('c').int8('o'),
+const prop_guidesParser = new Parser().uint32("length").array("guides", {
+  type: new Parser().int32("c").int8("o"),
   length: function (this: any) {
     return this.length / 5;
-  }
+  },
 });
 
 const prop_modeParser = new Parser()
-  .uint32('length', { assert: 4 })
-  .uint32('mode');
+  .uint32("length", { assert: 4 })
+  .uint32("mode");
 
 const parasiteParser = new Parser()
-  .uint32('length')
-  .buffer('parasite', { length: 'length' });
+  .uint32("length")
+  .buffer("parasite", { length: "length" });
 
 const parasiteArrayItemParser = new Parser()
-  .uint32('name_length')
-  .string('name', {
-    encoding: 'ascii',
-    zeroTerminated: true
+  .uint32("name_length")
+  .string("name", {
+    encoding: "ascii",
+    zeroTerminated: true,
   })
-  .uint32('flags')
-  .uint32('length')
-  .buffer('details', { length: 'length' });
+  .uint32("flags")
+  .uint32("length")
+  .buffer("details", { length: "length" });
 
-const fullParasiteParser = new Parser().array('items', {
+const fullParasiteParser = new Parser().array("items", {
   type: parasiteArrayItemParser,
-  readUntil: 'eof'
+  readUntil: "eof",
 });
 
-const propLengthF = new Parser().uint32('length', { assert: 4 }).uint32('f');
+const propLengthF = new Parser().uint32("length", { assert: 4 }).uint32("f");
 
 const propertyListParser = new Parser()
-  .endianess('big')
-  .uint32('type')
-  .choice('data', {
-    tag: 'type',
+  .endianess("big")
+  .uint32("type")
+  .choice("data", {
+    tag: "type",
     choices: {
-      [PROP_END]: new Parser().uint32('length', { assert: 0 }),
+      [PROP_END]: new Parser().uint32("length", { assert: 0 }),
       [PROP_COLORMAP]: prop_colorMapParser,
-      [PROP_ACTIVE_LAYER]: new Parser().uint32('length', { assert: 0 }),
-      [PROP_ACTIVE_CHANNEL]: new Parser().uint32('length', { assert: 0 }),
-      [PROP_SELECTION]: new Parser().uint32('length', { assert: 0 }),
+      [PROP_ACTIVE_LAYER]: new Parser().uint32("length", { assert: 0 }),
+      [PROP_ACTIVE_CHANNEL]: new Parser().uint32("length", { assert: 0 }),
+      [PROP_SELECTION]: new Parser().uint32("length", { assert: 0 }),
       [PROP_FLOATING_SELECTION]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('layerPtr'),
-      [PROP_OPACITY]: new Parser().uint32('length').uint32('opacity'),
+        .uint32("length", { assert: 4 })
+        .uint32("layerPtr"),
+      [PROP_OPACITY]: new Parser().uint32("length").uint32("opacity"),
       [PROP_MODE]: prop_modeParser,
       [PROP_VISIBLE]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('isVisible'),
+        .uint32("length", { assert: 4 })
+        .uint32("isVisible"),
       [PROP_LINKED]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('isLinked'),
+        .uint32("length", { assert: 4 })
+        .uint32("isLinked"),
       [PROP_LOCK_ALPHA]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('alpha'),
+        .uint32("length", { assert: 4 })
+        .uint32("alpha"),
       [PROP_APPLY_MASK]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('mask'),
+        .uint32("length", { assert: 4 })
+        .uint32("mask"),
       [PROP_EDIT_MASK]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('editmask'),
+        .uint32("length", { assert: 4 })
+        .uint32("editmask"),
       [PROP_SHOW_MASK]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('showmask'),
+        .uint32("length", { assert: 4 })
+        .uint32("showmask"),
       [PROP_SHOW_MASKED]: new Parser()
-        .uint32('length', { assert: 4 })
-        .uint32('showmasked'),
+        .uint32("length", { assert: 4 })
+        .uint32("showmasked"),
       [PROP_OFFSETS]: new Parser()
-        .uint32('length', { assert: 8 })
-        .int32('dx')
-        .int32('dy'),
+        .uint32("length", { assert: 8 })
+        .int32("dx")
+        .int32("dy"),
       [PROP_COLOR]: new Parser()
-        .uint32('length', { assert: 3 })
-        .int8('r')
-        .int8('g')
-        .int8('b'),
+        .uint32("length", { assert: 3 })
+        .int8("r")
+        .int8("g")
+        .int8("b"),
       [PROP_COMPRESSION]: new Parser()
-        .uint32('length', { assert: 1 })
-        .uint8('compressionType'),
+        .uint32("length", { assert: 1 })
+        .uint8("compressionType"),
       [PROP_GUIDES]: prop_guidesParser,
       [PROP_RESOLUTION]: new Parser()
-        .uint32('length')
-        .floatle('x')
-        .floatle('y'),
-      [PROP_TATTOO]: new Parser().uint32('length').uint32('tattoo'),
+        .uint32("length")
+        .floatle("x")
+        .floatle("y"),
+      [PROP_TATTOO]: new Parser().uint32("length").uint32("tattoo"),
       [PROP_PARASITES]: parasiteParser,
-      [PROP_UNIT]: new Parser().uint32('length').uint32('c'),
+      [PROP_UNIT]: new Parser().uint32("length").uint32("c"),
       [PROP_TEXT_LAYER_FLAGS]: propLengthF,
-      [PROP_LOCK_CONTENT]: new Parser().uint32('length').uint32('isLocked'),
-      [PROP_GROUP_ITEM]: new Parser().uint32('length', { assert: 0 }),
+      [PROP_LOCK_CONTENT]: new Parser().uint32("length").uint32("isLocked"),
+      [PROP_GROUP_ITEM]: new Parser().uint32("length", { assert: 0 }),
       [PROP_ITEM_PATH]: new Parser()
-        .uint32('length', {
+        .uint32("length", {
           formatter: function (value: number) {
             return value / 4;
-          }
+          },
         })
-        .array('items', { type: 'uint32be', length: 'length' }),
-      [PROP_GROUP_ITEM_FLAGS]: new Parser().uint32('length').uint32('flags')
+        .array("items", { type: "uint32be", length: "length" }),
+      [PROP_GROUP_ITEM_FLAGS]: new Parser().uint32("length").uint32("flags"),
     },
-    defaultChoice: new Parser().uint32('length').buffer('buffer', {
+    defaultChoice: new Parser().uint32("length").buffer("buffer", {
       length: function (this: any) {
         return this.length;
-      }
-    })
+      },
+    }),
   });
 
 const layerParser = new Parser()
-  .uint32('width')
-  .uint32('height')
-  .uint32('type')
-  .uint32('name_length')
-  .string('name', {
-    encoding: 'ascii',
-    zeroTerminated: true
+  .uint32("width")
+  .uint32("height")
+  .uint32("type")
+  .uint32("name_length")
+  .string("name", {
+    encoding: "ascii",
+    zeroTerminated: true,
   })
-  .array('propertyList', {
+  .array("propertyList", {
     type: propertyListParser,
-    readUntil: function (item: any, buffer: Buffer) {
+    readUntil: function (item: any, _buffer: Buffer) {
       return item.type === 0;
-    }
+    },
   })
-  .uint32('hptr')
-  .uint32('mptr');
+  .uint32("hptr")
+  .uint32("mptr");
 
 const hirerarchyParser = new Parser()
-  .uint32('width')
-  .uint32('height')
-  .uint32('bpp')
-  .uint32('lptr');
+  .uint32("width")
+  .uint32("height")
+  .uint32("bpp")
+  .uint32("lptr");
 
 const levelParser = new Parser()
-  .uint32('width')
-  .uint32('height')
-  .array('tptr', {
-    type: 'uint32be',
-    readUntil: itemIsZero
+  .uint32("width")
+  .uint32("height")
+  .array("tptr", {
+    type: "uint32be",
+    readUntil: itemIsZero,
   });
 
 const gimpHeader = new Parser()
-  .endianess('big')
-  .string('magic', {
-    encoding: 'ascii',
-    length: 9
+  .endianess("big")
+  .string("magic", {
+    encoding: "ascii",
+    length: 9,
   })
-  .string('version', {
-    encoding: 'ascii',
-    length: 4
+  .string("version", {
+    encoding: "ascii",
+    length: 4,
   })
-  .int8('padding', { assert: 0 })
-  .uint32('width')
-  .uint32('height')
-  .uint32('base_type', { assert: 0 })
-  .array('propertyList', {
+  .int8("padding", { assert: 0 })
+  .uint32("width")
+  .uint32("height")
+  .uint32("base_type", { assert: 0 })
+  .array("propertyList", {
     type: propertyListParser,
-    readUntil: function (item: any, buffer: Buffer) {
+    readUntil: function (item: any, _buffer: Buffer) {
       return item.type === 0;
-    }
+    },
   })
-  .array('layerList', {
-    type: 'int32be',
-    readUntil: itemIsZero
+  .array("layerList", {
+    type: "int32be",
+    readUntil: itemIsZero,
   })
-  .array('channelList', {
-    type: 'int32be',
-    readUntil: itemIsZero
+  .array("channelList", {
+    type: "int32be",
+    readUntil: itemIsZero,
   });
 
 const remove_empty = (data: number): boolean => {
@@ -285,14 +288,6 @@ const remove_empty = (data: number): boolean => {
 
 const isUnset = (value: any): boolean => {
   return value === null || value === undefined;
-};
-
-const findProperty = (propertyList: any[], propType: number): any => {
-  if (!propertyList) return null;
-  const found = propertyList.find((property) => {
-    return property.type === propType;
-  });
-  return found ? found.data : null;
 };
 
 /**
@@ -328,12 +323,12 @@ class GimpLayer {
     }
     if (isUnset(this._name)) {
       this._name = this._details.name;
-      let pos = this._name!.indexOf(' copy');
+      let pos = this._name!.indexOf(" copy");
 
       if (pos > 0) {
         this._name = this._name!.substring(0, pos);
       }
-      pos = this._name!.indexOf(' #');
+      pos = this._name!.indexOf(" #");
       if (pos > 0) {
         this._name = this._name!.substring(0, pos);
       }
@@ -372,7 +367,7 @@ class GimpLayer {
       name.push(item.layer.name);
     }
 
-    return name.join('/');
+    return name.join("/");
   }
 
   /**
@@ -399,21 +394,21 @@ class GimpLayer {
    * Get the X offset of this layer
    */
   get x(): number {
-    return this.getProps(PROP_OFFSETS, 'dx');
+    return this.getProps(PROP_OFFSETS, "dx");
   }
 
   /**
    * Get the Y offset of this layer
    */
   get y(): number {
-    return this.getProps(PROP_OFFSETS, 'dy');
+    return this.getProps(PROP_OFFSETS, "dy");
   }
 
   /**
    * Check if this layer is visible
    */
   get isVisible(): boolean {
-    return this.getProps(PROP_VISIBLE, 'isVisible') !== 0;
+    return this.getProps(PROP_VISIBLE, "isVisible") !== 0;
   }
 
   /**
@@ -427,7 +422,7 @@ class GimpLayer {
    * Get the color/blend mode of this layer
    */
   get colourMode(): number {
-    return this.getProps(PROP_MODE, 'mode');
+    return this.getProps(PROP_MODE, "mode");
   }
 
   /**
@@ -441,7 +436,7 @@ class GimpLayer {
    * Get the opacity of this layer (0-100)
    */
   get opacity(): number {
-    return this.getProps(PROP_OPACITY, 'opacity');
+    return this.getProps(PROP_OPACITY, "opacity");
   }
 
   /**
@@ -456,15 +451,15 @@ class GimpLayer {
         const parsedParasite = fullParasiteParser.parse(parasiteData);
         (parsedParasite.items || []).forEach((parasiteItem: any) => {
           const parasiteName = parasiteItem.name;
-          if (parasiteName === 'gimp-text-layer') {
+          if (parasiteName === "gimp-text-layer") {
             const text = stringParser.parse(parasiteItem.details).data;
             const fields: Record<string, string> = {};
             const matches = text.match(/(\(.*\))+/g) || [];
             matches.forEach((item: string) => {
-              const itemParts = item.substring(1, item.length - 1).split(' ');
+              const itemParts = item.substring(1, item.length - 1).split(" ");
               const key = itemParts[0];
-              const value = itemParts.slice(1).join(' ');
-              fields[key] = value.replace(/^["]+/, '').replace(/["]+$/, '');
+              const value = itemParts.slice(1).join(" ");
+              fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
             });
             this._parasites![parasiteName] = fields;
           }
@@ -486,8 +481,8 @@ class GimpLayer {
       });
     }
 
-    if (index && this._props[prop] && this._props[prop]['data']) {
-      return this._props[prop]['data'][index];
+    if (index && this._props[prop] && this._props[prop]["data"]) {
+      return this._props[prop]["data"][index];
     }
     return this._props[prop];
   }
@@ -513,10 +508,10 @@ class GimpLayer {
         image = new XCFImage(w, h);
       }
       hDetails = hirerarchyParser.parse(
-        this._parent.getBufferForPointer(this._details.hptr)
+        this._parent.getBufferForPointer(this._details.hptr),
       );
       levels = levelParser.parse(
-        this._parent.getBufferForPointer(hDetails.lptr)
+        this._parent.getBufferForPointer(hDetails.lptr),
       );
 
       tilesAcross = Math.ceil(this.width / 64);
@@ -531,14 +526,14 @@ class GimpLayer {
             this._parent.getBufferForPointer(tptr),
             xpoints,
             ypoints,
-            hDetails.bpp
+            hDetails.bpp,
           ),
           x + xIndex,
           y + yIndex,
           xpoints,
           ypoints,
           hDetails.bpp,
-          mode
+          mode,
         );
       });
     }
@@ -549,7 +544,7 @@ class GimpLayer {
     compressedData: Buffer,
     xpoints: number,
     ypoints: number,
-    bpp: number
+    bpp: number,
   ): Buffer {
     const size = xpoints * ypoints;
     if (size > 0) {
@@ -560,7 +555,7 @@ class GimpLayer {
         let offset = bppLoop;
 
         while (currentSize > 0) {
-          let length = compressedData[compressOffset];
+          const length = compressedData[compressOffset];
 
           compressOffset += 1;
           if (length < 127) {
@@ -625,7 +620,7 @@ class GimpLayer {
     xpoints: number,
     ypoints: number,
     bpp: number,
-    mode: any
+    mode: any,
   ): void {
     let bufferOffset = 0;
 
@@ -635,7 +630,7 @@ class GimpLayer {
           red: tileBuffer[bufferOffset],
           green: tileBuffer[bufferOffset + 1],
           blue: tileBuffer[bufferOffset + 2],
-          alpha: 255
+          alpha: 255,
         };
         if (bpp === 4) {
           colour.alpha = tileBuffer[bufferOffset + 3];
@@ -676,7 +671,7 @@ export class XCFParser {
    */
   static parseFile(
     file: string,
-    callback: (err: any, parser?: XCFParser) => void
+    callback: (err: any, parser?: XCFParser) => void,
   ): void {
     XCFParser.parseFileAsync(file)
       .then((parser) => callback(null, parser))
@@ -697,9 +692,9 @@ export class XCFParser {
       const data = await FS.promises.readFile(file);
 
       // Validate XCF magic bytes
-      if (data.length < 14 || data.toString('utf-8', 0, 4) !== 'gimp') {
+      if (data.length < 14 || data.toString("utf-8", 0, 4) !== "gimp") {
         throw new UnsupportedFormatError(
-          'Invalid XCF file: missing GIMP magic bytes'
+          "Invalid XCF file: missing GIMP magic bytes",
         );
       }
 
@@ -729,7 +724,8 @@ export class XCFParser {
         if (!path) {
           this._groupLayers.children.push({ layer: layer, children: [] });
         } else {
-          let item = this._groupLayers;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const item = this._groupLayers;
           const toCall = (item: any, index: number): any => {
             if (index === path.data.length) {
               item.layer = layer;
@@ -737,12 +733,12 @@ export class XCFParser {
               if (isUnset(item.children[path.data.items[index]])) {
                 item.children[path.data.items[index]] = {
                   layer: null,
-                  children: []
+                  children: [],
                 };
               }
               item.children[path.data.items[index]] = toCall(
                 item.children[path.data.items[index]],
-                index + 1
+                index + 1,
               );
             }
 
@@ -781,7 +777,7 @@ export class XCFParser {
     if (isUnset(this._groupLayers)) {
       this._groupLayers = {};
       (this.layers || []).forEach((layer) => {
-        const segments = layer.groupName.split('/');
+        const segments = layer.groupName.split("/");
         let cursor = this._groupLayers;
 
         for (let i = 0; i < segments.length - 1; ++i) {
@@ -808,7 +804,8 @@ export class XCFParser {
   }
 
   createImage(image?: XCFImage): XCFImage {
-    let resultImage: XCFImage = image || new XCFImage(this.width, this.height);
+    const resultImage: XCFImage =
+      image || new XCFImage(this.width, this.height);
 
     (this.layers || [])
       .slice()
@@ -850,7 +847,7 @@ export class XCFImage {
         fillRect: () => {},
         writeImage: (filename: string, callback?: (err?: Error) => void) => {
           if (callback) callback();
-        }
+        },
       };
     }
   }
@@ -883,7 +880,7 @@ export class XCFImage {
       red: this._image.getRed(idx),
       green: this._image.getGreen(idx),
       blue: this._image.getBlue(idx),
-      alpha: this._image.getAlpha(idx)
+      alpha: this._image.getAlpha(idx),
     };
   }
 
@@ -900,7 +897,7 @@ export class XCFImage {
     y: number,
     w: number,
     h: number,
-    colour: ColorRGBA
+    colour: ColorRGBA,
   ): void {
     return this._image.fillRect(x, y, w, h, colour);
   }

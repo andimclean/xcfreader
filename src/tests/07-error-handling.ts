@@ -5,7 +5,6 @@ import {
 } from '../gimpparser.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import FS from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

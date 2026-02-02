@@ -4,10 +4,15 @@ node_modules/
 # Compiled output
 dist/
 lib/
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+src/**/*.d.ts.map
 
 # Generated files
 examples/output/*.png
 examples/map1
+docs/
 
 # IDE & environment
 .browse*

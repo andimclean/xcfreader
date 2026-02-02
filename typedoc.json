@@ -1,0 +1,10 @@
+{
+  "entryPoints": ["src/gimpparser.ts"],
+  "out": "docs",
+  "theme": "default",
+  "readme": "readme.md",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeInternal": false,
+  "disableSources": false
+}

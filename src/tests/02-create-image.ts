@@ -1,4 +1,4 @@
-import { XCFParser, XCFImage } from '../gimpparser.js';
+import { XCFParser } from '../gimpparser.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
