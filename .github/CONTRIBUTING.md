@@ -171,6 +171,31 @@ When modifying parsing or rendering:
 - See `.github/copilot-instructions.md` for architecture details
 - Review existing tests for usage examples
 
+## Adding a New XCF Property Parser
+
+To add support for a new XCF property type:
+
+1. **Define the Property Type**
+   - Add a new constant (e.g., `PROP_MY_THING = N`) in `src/gimpparser.ts` near the other property constants.
+
+2. **Create a Parser**
+   - Implement a new parser for your property using `new Parser()` (see existing property parsers for examples).
+
+3. **Register the Parser**
+   - Add your parser to the `propertyListParser.choice(...).choices` object with the key `[PROP_MY_THING]`.
+
+4. **Access the Property**
+   - Use `layer.getProps(PROP_MY_THING)` to retrieve your property from a layer.
+
+5. **Test Your Parser**
+   - Add or update a test in `src/tests/` to verify your property is parsed correctly.
+   - Run `npm test` to ensure all tests pass.
+
+6. **Document the Change**
+   - Update JSDoc comments and the API documentation as needed.
+
+See `.github/copilot-instructions.md` for more details on the parsing architecture.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
