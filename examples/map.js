@@ -12,13 +12,13 @@ const outDirRoot = path.resolve(__dirname);
 
 saveLayer(xcfPath, (err) => console.log(err));
 
-function saveLayer(dir, callback) {
-  XCFParser.parseFile(dir, (err1, parser) => {
-    if (err1) throw err1;
+async function saveLayer(dir, callback) {
+  const parser = await XCFParser.parseFileAsync(dir);
+      try {
+          const parser = await XCFParser.parseFileAsync(dir);
+          var details = {};
 
-    var details = {};
-
-    (parser.layers || []).forEach(function (layer) {
+  (parser.layers || []).forEach(function (layer) {
       var groupName = layer.groupName;
 
       var groupPath = path.dirname(groupName);
@@ -44,5 +44,8 @@ function saveLayer(dir, callback) {
         });
       }
     });
+      } catch (err) {
+          callback(err);
+      }
   });
 }

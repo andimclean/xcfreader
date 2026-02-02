@@ -11,20 +11,23 @@ const xcfPath = path.resolve(__dirname, 'single.xcf');
 const outDir = path.resolve(__dirname, 'output');
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-GimpParser.parseFile(xcfPath, function (err, parser) {
-  if (err) throw err;
-  var layers;
-  console.log('finished');
-  console.log('width : ' + parser.width);
-  console.log('height : ' + parser.height);
+(async function main() {
+  try {
+    const parser = await GimpParser.parseFileAsync(xcfPath);
+    console.log('finished');
+    console.log('width : ' + parser.width);
+    console.log('height : ' + parser.height);
 
-  layers = parser.layers;
-
-  var image = PNGImage.createImage(layers[0].width, layers[0].height);
-  console.log(image);
-  layers[0].makeImage(image, true);
-  image.writeImage(path.resolve(outDir, 'single.png'), function (err) {
-    if (err) throw err;
-    console.log('Image written to file');
-  });
-});
+    const layers = parser.layers;
+    const image = PNGImage.createImage(layers[0].width, layers[0].height);
+    console.log(image);
+    layers[0].makeImage(image, true);
+    image.writeImage(path.resolve(outDir, 'single.png'), function (err) {
+      if (err) throw err;
+      console.log('Image written to file');
+    });
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+})();

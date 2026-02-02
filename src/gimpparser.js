@@ -553,19 +553,17 @@ class GimpChannel {
 }
 class XCFParser {
   static parseFile(file, callback) {
-    var parser = new XCFParser();
-    FS.readFile(file, function (err, data) {
-      if (err) callback(err);
-
-      try {
-        parser.parse(data);
-        callback(null, parser);
-      } catch (error) {
-        callback(error);
-      }
-    });
+    XCFParser.parseFileAsync(file)
+      .then((parser) => callback(null, parser))
+      .catch((err) => callback(err));
   }
 
+  static async parseFileAsync(file) {
+    const data = await FS.promises.readFile(file);
+    const parser = new XCFParser();
+    parser.parse(data);
+    return parser;
+  }
   constructor() {
     this._layers = {};
     this._channels = {};

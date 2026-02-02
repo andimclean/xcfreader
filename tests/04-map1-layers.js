@@ -5,18 +5,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function parseFilePromise(file) {
-  return new Promise((resolve, reject) => {
-    XCFParser.parseFile(file, (err, parser) => {
-      if (err) reject(err);
-      else resolve(parser);
-    });
-  });
-}
-
 async function main() {
   const file = path.resolve(__dirname, '../examples/map1.xcf');
-  const parser = await parseFilePromise(file);
+  const parser = await XCFParser.parseFileAsync(file);
   if (!parser) {
     console.error('Parser returned null for map1.xcf');
     process.exit(2);
