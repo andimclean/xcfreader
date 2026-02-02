@@ -14,6 +14,7 @@ import {
   XCF_PropType,
   XCF_PropTypeMap,
   XCF_BaseType,
+  ColorRGB,
   ColorRGBA,
   IXCFImage,
   ParsedLayer,
@@ -24,6 +25,7 @@ import {
   ParsedParasiteItem,
   ParsedParasiteArray,
   ParsedPropItemPath,
+  ParsedRGB,
   CompositerMode,
   GroupLayerNode,
 } from "./types/index.js";
@@ -665,6 +667,10 @@ class GimpLayer {
         ? (levels.tptr64 || []).map((t: { high: number; low: number }) => t.high * 0x100000000 + t.low)
         : (levels.tptr || []);
 
+      // Get colormap for indexed images
+      const colormap = this._parent.colormap;
+      const baseType = this._parent.baseType;
+
       tilePointers.forEach((tptr: number, index: number) => {
         const xIndex = (index % tilesAcross) * 64;
         const yIndex = Math.floor(index / tilesAcross) * 64;
@@ -684,6 +690,8 @@ class GimpLayer {
           ypoints,
           hDetails.bpp,
           mode,
+          baseType,
+          colormap,
         );
       });
     }
@@ -770,6 +778,8 @@ class GimpLayer {
     ypoints: number,
     bpp: number,
     mode: CompositerMode | null,
+    baseType: XCF_BaseType = XCF_BaseType.RGB,
+    colormap: ColorRGB[] | null = null,
   ): void {
     let bufferOffset = 0;
 
@@ -777,7 +787,17 @@ class GimpLayer {
       for (let xloop = 0; xloop < xpoints; xloop += 1) {
         let colour: ColorRGBA;
 
-        if (bpp === 1 || bpp === 2) {
+        if (baseType === XCF_BaseType.INDEXED && colormap) {
+          // Indexed: look up color from palette
+          const index = tileBuffer[bufferOffset];
+          const paletteColor = colormap[index] || { red: 0, green: 0, blue: 0 };
+          colour = {
+            red: paletteColor.red,
+            green: paletteColor.green,
+            blue: paletteColor.blue,
+            alpha: bpp === 2 ? tileBuffer[bufferOffset + 1] : 255,
+          };
+        } else if (bpp === 1 || bpp === 2) {
           // Grayscale: convert gray value to RGB
           const gray = tileBuffer[bufferOffset];
           colour = {
@@ -853,6 +873,7 @@ export class XCFParser {
   private _buffer: Buffer | null = null;
   private _header: ParsedGimpHeader | null = null;
   private _version: number = 0; // XCF version number (e.g., 10, 11)
+  private _props: Partial<XCF_PropTypeMap> | null = null;
   _groupLayers: GroupLayerNode = { layer: null, children: [] };
 
   /**
@@ -1096,6 +1117,73 @@ export class XCFParser {
    */
   get baseType(): XCF_BaseType {
     return this._header!.base_type as XCF_BaseType;
+  }
+
+  /**
+   * Get a property from the image header's property list.
+   *
+   * @typeParam T - The property type (inferred from prop parameter)
+   * @param prop - The property type to retrieve (from XCF_PropType enum)
+   * @param index - Optional sub-field to extract from the property data
+   * @returns The property value, a specific field value if index is provided, or null if not found
+   */
+  getProps<T extends XCF_PropType>(
+    prop: T,
+    index?: string,
+  ): XCF_PropTypeMap[T] | number | null {
+    if (!this._props) {
+      this._props = {};
+      (this._header!.propertyList || []).forEach(
+        (property: ParsedProperty) => {
+          (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
+            property.type
+          ] = property;
+        },
+      );
+    }
+
+    const propValue = this._props[prop];
+    if (index && propValue && "data" in propValue) {
+      return (propValue.data as Record<string, number>)[index];
+    }
+    return propValue ?? null;
+  }
+
+  /**
+   * The color palette for indexed color images.
+   *
+   * Returns an array of RGB color objects if this is an indexed color image,
+   * or null for RGB/Grayscale images.
+   *
+   * @returns Array of RGB colors, or null if not an indexed image
+   *
+   * @example
+   * ```typescript
+   * import { XCFParser, XCF_BaseType } from 'xcfreader';
+   *
+   * const parser = await XCFParser.parseFileAsync('./indexed.xcf');
+   * if (parser.baseType === XCF_BaseType.INDEXED && parser.colormap) {
+   *   console.log(`Palette has ${parser.colormap.length} colors`);
+   *   parser.colormap.forEach((color, i) => {
+   *     console.log(`Color ${i}: rgb(${color.red}, ${color.green}, ${color.blue})`);
+   *   });
+   * }
+   * ```
+   */
+  get colormap(): ColorRGB[] | null {
+    if (this._header!.base_type !== XCF_BaseType.INDEXED) {
+      return null;
+    }
+    const colormapProp = this.getProps(XCF_PropType.COLORMAP);
+    if (colormapProp && typeof colormapProp === "object" && "data" in colormapProp) {
+      const data = colormapProp.data as { colours: ParsedRGB[] };
+      return data.colours.map((c: ParsedRGB) => ({
+        red: c.red,
+        green: c.greed, // Note: typo in parser "greed" instead of "green"
+        blue: c.blue,
+      }));
+    }
+    return null;
   }
 
   get layers(): GimpLayer[] {

@@ -110,6 +110,7 @@ parser.height     // Image height in pixels
 parser.layers     // Array of GimpLayer objects
 parser.baseType   // Color mode: XCF_BaseType.RGB, GRAYSCALE, or INDEXED
 parser.isV11      // True if XCF v011 format (GIMP 2.10+ with 64-bit pointers)
+parser.colormap   // Color palette for indexed images (array of RGB), or null
 
 // Methods
 parser.createImage(image)           // Render all visible layers into image
@@ -190,8 +191,8 @@ interface IXCFImage {
 
 - **GIMP versions**: 2.10.x (v011 64-bit), 2.8.x (v010 32-bit), and earlier
 - **XCF versions**: v010 (32-bit pointers) and v011 (64-bit pointers)
-- **Color modes**: RGB/RGBA and Grayscale images
-- **Limitations**: Indexed color mode and text/path layers have limited support
+- **Color modes**: RGB/RGBA, Grayscale, and Indexed (paletted) images
+- **Limitations**: Text and path layers have limited support
 
 ## Development
 

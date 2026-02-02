@@ -12,6 +12,7 @@ import { test11BrowserExports } from "./11-browser-exports.js";
 import { test12ToBlobAndDataURL } from "./12-to-blob-dataurl.js";
 import { test13CreateImageFromLayers } from "./13-create-image-from-layers.js";
 import { test14GrayscaleSupport } from "./14-grayscale-support.js";
+import { test15IndexedColorSupport } from "./15-indexed-color-support.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -29,6 +30,7 @@ const tests = [
   { name: "12-to-blob-dataurl.ts", fn: test12ToBlobAndDataURL },
   { name: "13-create-image-from-layers.ts", fn: test13CreateImageFromLayers },
   { name: "14-grayscale-support.ts", fn: test14GrayscaleSupport },
+  { name: "15-indexed-color-support.ts", fn: test15IndexedColorSupport },
 ];
 
 async function runTests(): Promise<void> {

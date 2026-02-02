@@ -55,6 +55,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Automatic version detection and parser selection
     - `grey.xcf` example file and `npm run grey` script for testing
     - Backward compatible with older v010 XCF files
+  - **Indexed color mode support**: Parse and render indexed/paletted XCF files
+    - `parser.colormap` getter to access the color palette (array of RGB colors)
+    - Automatic palette lookup during rendering
+    - Test 15 verifies indexed color support
 
 ### Changed
 
