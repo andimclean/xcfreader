@@ -1,3 +1,5 @@
+[![Coverage Status](https://img.shields.io/badge/coverage-81%25-brightgreen)](./coverage)
+
 # xcfreader
 # API Documentation
 

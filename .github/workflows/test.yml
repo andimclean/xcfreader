@@ -37,3 +37,19 @@ jobs:
           npm run single &
           sleep 2
           kill %1 2>/dev/null || true
+
+      - name: Run coverage
+        run: npm run coverage
+
+      - name: Enforce minimum coverage
+        run: |
+          COVERAGE=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")
+          echo "Line coverage: $COVERAGE%"
+          MIN=80
+          WARN=85
+          if [ "$(echo "$COVERAGE < $MIN" | bc)" -eq 1 ]; then
+            echo "::error ::Test coverage ($COVERAGE%) is below minimum threshold ($MIN%)"
+            exit 1
+          elif [ "$(echo "$COVERAGE < $WARN" | bc)" -eq 1 ]; then
+            echo "::warning ::Test coverage ($COVERAGE%) is below warning threshold ($WARN%)"
+          fi
