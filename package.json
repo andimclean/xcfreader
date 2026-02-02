@@ -1,6 +1,6 @@
 {
   "name": "xcfreader",
-  "version": "0.0.8",
+  "version": "1.0.0",
   "description": "Reads in GIMP xcf files",
   "type": "module",
   "main": "dist/gimpparser.js",

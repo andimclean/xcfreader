@@ -1,3 +1,6 @@
+### Breaking
+
+- `XCFImage.writeImage()` changed from callback to Promise-based API. Update all usages to `await image.writeImage(filename)`.
 # Changelog
 
 All notable changes to this project will be documented in this file.

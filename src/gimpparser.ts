@@ -673,6 +673,7 @@ export class XCFParser {
     file: string,
     callback: (err: any, parser?: XCFParser) => void,
   ): void {
+    console.warn('XCFParser.parseFile() is deprecated. Use parseFileAsync() with async/await instead.');
     XCFParser.parseFileAsync(file)
       .then((parser) => callback(null, parser))
       .catch((err) => callback(err));
@@ -684,6 +685,16 @@ export class XCFParser {
    * @returns Promise resolving to XCFParser instance
    * @throws XCFParseError if file cannot be read or parsed
    */
+  /**
+   * Parse an XCF file asynchronously
+   * @param file - Path to the .xcf file
+   * @returns Promise resolving to XCFParser instance
+   * @throws XCFParseError if file cannot be read or parsed
+   * @example
+   * const parser = await XCFParser.parseFileAsync('./examples/single.xcf');
+   * const image = parser.createImage();
+   * await image.writeImage('./examples/output/flattened.png');
+   */
   static async parseFileAsync(file: string): Promise<XCFParser> {
     try {
       // Validate file exists
@@ -694,7 +705,7 @@ export class XCFParser {
       // Validate XCF magic bytes
       if (data.length < 14 || data.toString("utf-8", 0, 4) !== "gimp") {
         throw new UnsupportedFormatError(
-          "Invalid XCF file: missing GIMP magic bytes",
+          `Invalid XCF file "${file}": missing GIMP magic bytes`,
         );
       }
 
@@ -705,7 +716,7 @@ export class XCFParser {
       if (err instanceof UnsupportedFormatError) {
         throw err;
       }
-      throw new XCFParseError(`Failed to parse XCF file: ${err.message}`);
+      throw new XCFParseError(`Failed to parse XCF file "${file}": ${err.message}`);
     }
   }
 

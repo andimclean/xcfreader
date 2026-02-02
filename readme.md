@@ -64,7 +64,20 @@ const parser = await XCFParser.parseFileAsync("./examples/single.xcf");
 console.log(parser.width, parser.height);
 console.log("layers:", parser.layers.length);
 const image = parser.createImage(); // returns an XCFImage with flattened visible layers
-image.writeImage("./examples/output/flattened.png");
+await image.writeImage("./examples/output/flattened.png");
+## Usage (TypeScript)
+
+```typescript
+import { XCFParser } from "./dist/gimpparser.js";
+
+async function main() {
+  const parser = await XCFParser.parseFileAsync("./examples/single.xcf");
+  const image = parser.createImage();
+  await image.writeImage("./examples/output/flattened.png");
+}
+
+main();
+```
 
 // Or using callbacks (legacy)
 XCFParser.parseFile("./examples/single.xcf", (err, parser) => {
