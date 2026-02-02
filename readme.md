@@ -69,6 +69,21 @@ canvas.height = parser.height;
 ctx.putImageData(image.imageData, 0, 0);
 \`\`\`
 
+#### Debugging in the Browser Demo
+
+The browser demo (`examples/browser-demo.html`) includes advanced diagnostics for XCF parsing and file loading. To enable raw header/byte/version debug output, add `?debug=1` to the URL:
+
+```
+examples/browser-demo.html?debug=1
+```
+
+This will show:
+- Raw bytes 0–20 (hex and ASCII)
+- Parsed version string and version number
+- Internal header and layer info
+
+By default, this debug output is hidden for normal users.
+
 ### Script Tag (IIFE)
 
 \`\`\`html

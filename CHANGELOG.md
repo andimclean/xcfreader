@@ -132,3 +132,11 @@ See git log for detailed commit history.
 
 For full commit history, see the git log.
 - Basic XCF parsing and layer rendering
+
+## [Unreleased]
+
+### Added
+- Browser demo: Add `?debug=1` URL toggle to show raw byte/version diagnostics (header bytes, version string/number, internals) for advanced troubleshooting. By default, debug output is hidden for normal users.
+
+### Changed
+- Diagnostics and debug output in `examples/browser-demo.html` are now only visible when explicitly enabled via the URL toggle.
