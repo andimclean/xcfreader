@@ -32,46 +32,42 @@ export class UnsupportedFormatError extends Error {
   }
 }
 
-const PROP_END = 0;
-const PROP_COLORMAP = 1;
-const PROP_ACTIVE_LAYER = 2;
-const PROP_ACTIVE_CHANNEL = 3;
-const PROP_SELECTION = 4;
-const PROP_FLOATING_SELECTION = 5;
-const PROP_OPACITY = 6;
-const PROP_MODE = 7;
-const PROP_VISIBLE = 8;
-const PROP_LINKED = 9;
-const PROP_LOCK_ALPHA = 10;
-const PROP_APPLY_MASK = 11;
-const PROP_EDIT_MASK = 12;
-const PROP_SHOW_MASK = 13;
-const PROP_SHOW_MASKED = 14;
-const PROP_OFFSETS = 15;
-const PROP_COLOR = 16;
-const PROP_COMPRESSION = 17;
-const PROP_GUIDES = 18;
-const PROP_RESOLUTION = 19;
-const PROP_TATTOO = 20;
-const PROP_PARASITES = 21;
-const PROP_UNIT = 22;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_PATHS = 23;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_USER_UNIT = 24;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_VECTORS = 25;
-const PROP_TEXT_LAYER_FLAGS = 26;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_SAMPLE_POINTS = 27;
-const PROP_LOCK_CONTENT = 28;
-const PROP_GROUP_ITEM = 29;
-const PROP_ITEM_PATH = 30;
-const PROP_GROUP_ITEM_FLAGS = 31;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_LOCK_POSITION = 32;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_FLOAT_OPACITY = 33;
+enum XCF_PropType {
+  END = 0,
+  COLORMAP = 1,
+  ACTIVE_LAYER = 2,
+  ACTIVE_CHANNEL = 3,
+  SELECTION = 4,
+  FLOATING_SELECTION = 5,
+  OPACITY = 6,
+  MODE = 7,
+  VISIBLE = 8,
+  LINKED = 9,
+  LOCK_ALPHA = 10,
+  APPLY_MASK = 11,
+  EDIT_MASK = 12,
+  SHOW_MASK = 13,
+  SHOW_MASKED = 14,
+  OFFSETS = 15,
+  COLOR = 16,
+  COMPRESSION = 17,
+  GUIDES = 18,
+  RESOLUTION = 19,
+  TATTOO = 20,
+  PARASITES = 21,
+  UNIT = 22,
+  PATHS = 23,
+  USER_UNIT = 24,
+  VECTORS = 25,
+  TEXT_LAYER_FLAGS = 26,
+  SAMPLE_POINTS = 27,
+  LOCK_CONTENT = 28,
+  GROUP_ITEM = 29,
+  ITEM_PATH = 30,
+  GROUP_ITEM_FLAGS = 31,
+  LOCK_POSITION = 32,
+  FLOAT_OPACITY = 33,
+}
 
 /**
  * RGB color with red, green, blue components (0-255)
@@ -152,68 +148,68 @@ const propertyListParser = new Parser()
   .choice("data", {
     tag: "type",
     choices: {
-      [PROP_END]: new Parser().uint32("length", { assert: 0 }),
-      [PROP_COLORMAP]: prop_colorMapParser,
-      [PROP_ACTIVE_LAYER]: new Parser().uint32("length", { assert: 0 }),
-      [PROP_ACTIVE_CHANNEL]: new Parser().uint32("length", { assert: 0 }),
-      [PROP_SELECTION]: new Parser().uint32("length", { assert: 0 }),
-      [PROP_FLOATING_SELECTION]: new Parser()
+      [XCF_PropType.END]: new Parser().uint32("length", { assert: 0 }),
+      [XCF_PropType.COLORMAP]: prop_colorMapParser,
+      [XCF_PropType.ACTIVE_LAYER]: new Parser().uint32("length", { assert: 0 }),
+      [XCF_PropType.ACTIVE_CHANNEL]: new Parser().uint32("length", { assert: 0 }),
+      [XCF_PropType.SELECTION]: new Parser().uint32("length", { assert: 0 }),
+      [XCF_PropType.FLOATING_SELECTION]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("layerPtr"),
-      [PROP_OPACITY]: new Parser().uint32("length").uint32("opacity"),
-      [PROP_MODE]: prop_modeParser,
-      [PROP_VISIBLE]: new Parser()
+      [XCF_PropType.OPACITY]: new Parser().uint32("length").uint32("opacity"),
+      [XCF_PropType.MODE]: prop_modeParser,
+      [XCF_PropType.VISIBLE]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("isVisible"),
-      [PROP_LINKED]: new Parser()
+      [XCF_PropType.LINKED]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("isLinked"),
-      [PROP_LOCK_ALPHA]: new Parser()
+      [XCF_PropType.LOCK_ALPHA]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("alpha"),
-      [PROP_APPLY_MASK]: new Parser()
+      [XCF_PropType.APPLY_MASK]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("mask"),
-      [PROP_EDIT_MASK]: new Parser()
+      [XCF_PropType.EDIT_MASK]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("editmask"),
-      [PROP_SHOW_MASK]: new Parser()
+      [XCF_PropType.SHOW_MASK]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("showmask"),
-      [PROP_SHOW_MASKED]: new Parser()
+      [XCF_PropType.SHOW_MASKED]: new Parser()
         .uint32("length", { assert: 4 })
         .uint32("showmasked"),
-      [PROP_OFFSETS]: new Parser()
+      [XCF_PropType.OFFSETS]: new Parser()
         .uint32("length", { assert: 8 })
         .int32("dx")
         .int32("dy"),
-      [PROP_COLOR]: new Parser()
+      [XCF_PropType.COLOR]: new Parser()
         .uint32("length", { assert: 3 })
         .int8("r")
         .int8("g")
         .int8("b"),
-      [PROP_COMPRESSION]: new Parser()
+      [XCF_PropType.COMPRESSION]: new Parser()
         .uint32("length", { assert: 1 })
         .uint8("compressionType"),
-      [PROP_GUIDES]: prop_guidesParser,
-      [PROP_RESOLUTION]: new Parser()
+      [XCF_PropType.GUIDES]: prop_guidesParser,
+      [XCF_PropType.RESOLUTION]: new Parser()
         .uint32("length")
         .floatle("x")
         .floatle("y"),
-      [PROP_TATTOO]: new Parser().uint32("length").uint32("tattoo"),
-      [PROP_PARASITES]: parasiteParser,
-      [PROP_UNIT]: new Parser().uint32("length").uint32("c"),
-      [PROP_TEXT_LAYER_FLAGS]: propLengthF,
-      [PROP_LOCK_CONTENT]: new Parser().uint32("length").uint32("isLocked"),
-      [PROP_GROUP_ITEM]: new Parser().uint32("length", { assert: 0 }),
-      [PROP_ITEM_PATH]: new Parser()
+      [XCF_PropType.TATTOO]: new Parser().uint32("length").uint32("tattoo"),
+      [XCF_PropType.PARASITES]: parasiteParser,
+      [XCF_PropType.UNIT]: new Parser().uint32("length").uint32("c"),
+      [XCF_PropType.TEXT_LAYER_FLAGS]: propLengthF,
+      [XCF_PropType.LOCK_CONTENT]: new Parser().uint32("length").uint32("isLocked"),
+      [XCF_PropType.GROUP_ITEM]: new Parser().uint32("length", { assert: 0 }),
+      [XCF_PropType.ITEM_PATH]: new Parser()
         .uint32("length", {
           formatter: function (value: number) {
             return value / 4;
           },
         })
         .array("items", { type: "uint32be", length: "length" }),
-      [PROP_GROUP_ITEM_FLAGS]: new Parser().uint32("length").uint32("flags"),
+      [XCF_PropType.GROUP_ITEM_FLAGS]: new Parser().uint32("length").uint32("flags"),
     },
     defaultChoice: new Parser().uint32("length").buffer("buffer", {
       length: function (this: any) {
@@ -340,7 +336,7 @@ class GimpLayer {
   }
 
   get pathInfo(): any {
-    return this.getProps(PROP_ITEM_PATH);
+    return this.getProps(XCF_PropType.ITEM_PATH);
   }
 
   /**
@@ -395,35 +391,35 @@ class GimpLayer {
    * Get the X offset of this layer
    */
   get x(): number {
-    return this.getProps(PROP_OFFSETS, "dx");
+    return this.getProps(XCF_PropType.OFFSETS, "dx");
   }
 
   /**
    * Get the Y offset of this layer
    */
   get y(): number {
-    return this.getProps(PROP_OFFSETS, "dy");
+    return this.getProps(XCF_PropType.OFFSETS, "dy");
   }
 
   /**
    * Check if this layer is visible
    */
   get isVisible(): boolean {
-    return this.getProps(PROP_VISIBLE, "isVisible") !== 0;
+    return this.getProps(XCF_PropType.VISIBLE, "isVisible") !== 0;
   }
 
   /**
    * Check if this layer is a group (folder)
    */
   get isGroup(): boolean {
-    return this.getProps(PROP_GROUP_ITEM) !== null;
+    return this.getProps(XCF_PropType.GROUP_ITEM) !== null;
   }
 
   /**
    * Get the color/blend mode of this layer
    */
   get colourMode(): number {
-    return this.getProps(PROP_MODE, "mode");
+    return this.getProps(XCF_PropType.MODE, "mode");
   }
 
   /**
@@ -437,7 +433,7 @@ class GimpLayer {
    * Get the opacity of this layer (0-100)
    */
   get opacity(): number {
-    return this.getProps(PROP_OPACITY, "opacity");
+    return this.getProps(XCF_PropType.OPACITY, "opacity");
   }
 
   /**
@@ -445,7 +441,7 @@ class GimpLayer {
    */
   get parasites(): Record<string, any> {
     if (this._parasites === undefined) {
-      const parasite = this.getProps(PROP_PARASITES);
+      const parasite = this.getProps(XCF_PropType.PARASITES);
       this._parasites = {};
       if (parasite) {
         const parasiteData = parasite.data.parasite;
