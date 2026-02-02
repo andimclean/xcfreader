@@ -1,3 +1,6 @@
 dist/
 node_modules/
 *.log
+# Coverage
+coverage/
+.c8_output/
