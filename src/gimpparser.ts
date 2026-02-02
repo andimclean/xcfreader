@@ -847,9 +847,7 @@ export class XCFImage {
         pack: () => ({ pipe: () => {} }),
         setAt: () => {},
         fillRect: () => {},
-        writeImage: (filename: string, callback?: (err?: Error) => void) => {
-          if (callback) callback();
-        },
+        writeImage: (_filename: string) => Promise.resolve(),
       };
     }
   }
@@ -916,20 +914,22 @@ export class XCFImage {
   /**
    * Write the image to a PNG file
    * @param filename - Path where to save the PNG file
-   * @param callback - Optional callback function
+   * @returns Promise that resolves when the file is written
    */
-  writeImage(filename: string, callback?: (err?: Error) => void): void {
-    try {
-      if (typeof this._image.pack === "function") {
-        const stream = this._image.pack().pipe(FS.createWriteStream(filename));
-        stream.on("finish", () => callback && callback());
-        stream.on("error", (err: Error) => callback && callback(err));
-      } else {
-        if (callback) callback();
+  writeImage(filename: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof this._image.pack === "function") {
+          const stream = this._image.pack().pipe(FS.createWriteStream(filename));
+          stream.on("finish", () => resolve());
+          stream.on("error", (err: Error) => reject(err));
+        } else {
+          resolve();
+        }
+      } catch (err: any) {
+        reject(err);
       }
-    } catch (err: any) {
-      if (callback) callback(err);
-    }
+    });
   }
 }
 

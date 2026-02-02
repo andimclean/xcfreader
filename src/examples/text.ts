@@ -26,13 +26,11 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
         console.log(layer.parasites);
       });
 
-    image.writeImage(path.resolve(outDir, "multi1.png"), () => {
-      console.log("Image 1 saved");
-    });
+    await image.writeImage(path.resolve(outDir, "multi1.png"));
+    console.log("Image 1 saved");
 
-    parser.createImage().writeImage(path.resolve(outDir, "multi2.png"), () => {
-      console.log("Image 2 saved");
-    });
+    await parser.createImage().writeImage(path.resolve(outDir, "multi2.png"));
+    console.log("Image 2 saved");
   } catch (err) {
     console.error(err);
     process.exit(1);

@@ -14,9 +14,8 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
   try {
     const parser = await GimpParser.parseFileAsync(xcfPath);
     const image = parser.createImage();
-    image.writeImage(path.resolve(outDir, "single1.png"), () => {
-      console.log("Image 1 saved");
-    });
+    await image.writeImage(path.resolve(outDir, "single1.png"));
+    console.log("Image 1 saved");
   } catch (err) {
     console.error(err);
     process.exit(1);
