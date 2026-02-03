@@ -20,7 +20,9 @@ jobs:
         run: npm run coverage
       - name: Generate badge SVG
         run: |
-          COVERAGE=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")
+          COVERAGE=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct" 2>/dev/null || echo "")
+          if [ -z "$COVERAGE" ]; then COVERAGE="0"; fi
+          echo "COVERAGE=$COVERAGE"
           COLOR=red
           if [ "$(echo "$COVERAGE >= 90" | bc)" -eq 1 ]; then COLOR=brightgreen; elif [ "$(echo "$COVERAGE >= 80" | bc)" -eq 1 ]; then COLOR=yellow; fi
           echo "Generating badge for $COVERAGE% ($COLOR)"
