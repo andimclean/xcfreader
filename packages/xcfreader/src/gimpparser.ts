@@ -195,7 +195,10 @@ const itemIsZero64 = (item: { high: number; low: number }): boolean => {
 };
 
 // Parser for 64-bit big-endian offset
-const offset64Parser = new Parser().endianess("big").uint32("high").uint32("low");
+const offset64Parser = new Parser()
+  .endianess("big")
+  .uint32("high")
+  .uint32("low");
 
 // V10 parsers (32-bit pointers)
 const layerParserV10 = new Parser()
@@ -633,13 +636,18 @@ class GimpLayer {
 
       // Select parsers based on XCF version
       const isV11 = this._parent.isV11;
-      const hierarchyParserToUse = isV11 ? hirerarchyParserV11 : hirerarchyParserV10;
+      const hierarchyParserToUse = isV11
+        ? hirerarchyParserV11
+        : hirerarchyParserV10;
       const levelParserToUse = isV11 ? levelParserV11 : levelParserV10;
 
       // Get hierarchy pointer (64-bit in v11, 32-bit in v10)
       let hptr: number;
       if (isV11) {
-        const details = this._details as ParsedLayer & { hptr_high: number; hptr_low: number };
+        const details = this._details as ParsedLayer & {
+          hptr_high: number;
+          hptr_low: number;
+        };
         hptr = details.hptr_high * 0x100000000 + details.hptr_low;
       } else {
         hptr = this._details!.hptr;
@@ -662,11 +670,13 @@ class GimpLayer {
       ) as ParsedLevel & { tptr64?: Array<{ high: number; low: number }> };
 
       const tilesAcross = Math.ceil(this.width / 64);
-      
+
       // Get tile pointers (64-bit array in v11, 32-bit array in v10)
       const tilePointers: number[] = isV11
-        ? (levels.tptr64 || []).map((t: { high: number; low: number }) => t.high * 0x100000000 + t.low)
-        : (levels.tptr || []);
+        ? (levels.tptr64 || []).map(
+            (t: { high: number; low: number }) => t.high * 0x100000000 + t.low,
+          )
+        : levels.tptr || [];
 
       // Get colormap for indexed images
       const colormap = this._parent.colormap;
@@ -795,15 +805,13 @@ class GimpLayer {
       return buffer[offset];
     } else if (bytesPerChannel === 2) {
       if (isFloat) {
-        // 16-bit half float (IEEE 754 binary16)
-        // For simplicity, read as 16-bit int and treat as 0.0-1.0 mapping
-        const halfBits = buffer.readUInt16BE(offset);
-        const floatVal = this.halfToFloat(halfBits);
+        // 16-bit float: scale from 0.0-1.0 to 0-255
+        const floatVal = this.halfToFloat(buffer.readUInt16BE(offset));
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
-        // 16-bit integer: scale from 0-65535 to 0-255
+        // 16-bit integer: scale from 0-65535 to 0-255 using integer math (divisor 257)
         const value = buffer.readUInt16BE(offset);
-        return Math.round((value / 65535) * 255);
+        return (value / 257) | 0;
       }
     } else if (bytesPerChannel === 4) {
       if (isFloat) {
@@ -811,9 +819,9 @@ class GimpLayer {
         const floatVal = buffer.readFloatBE(offset);
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
-        // 32-bit integer: scale from 0-4294967295 to 0-255
+        // 32-bit integer: scale from 0-4294967295 to 0-255 using integer math (divisor 16843009)
         const value = buffer.readUInt32BE(offset);
-        return Math.round((value / 4294967295) * 255);
+        return (value / 16843009) | 0;
       }
     } else if (bytesPerChannel === 8) {
       // 64-bit double float: scale from 0.0-1.0 to 0-255
@@ -822,7 +830,6 @@ class GimpLayer {
     }
     return 0;
   }
-
   /**
    * Convert IEEE 754 binary16 (half-precision float) to a normal float.
    * @param halfBits - The 16-bit representation
@@ -860,7 +867,7 @@ class GimpLayer {
     isFloat: boolean = false,
   ): void {
     const numChannels = bpp / bytesPerChannel;
-    
+
     // Fast path: 8-bit RGB/RGBA with direct buffer access and no compositing
     if (
       bytesPerChannel === 1 &&
@@ -869,10 +876,12 @@ class GimpLayer {
       baseType === XCF_BaseType.RGB &&
       image.getDataBuffer
     ) {
-      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const dataBuffer = image.getDataBuffer() as
+        | Uint8Array
+        | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
-      
+
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
         const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
         for (let xloop = 0; xloop < xpoints; xloop += 1) {
@@ -905,23 +914,25 @@ class GimpLayer {
       baseType === XCF_BaseType.RGB &&
       image.getDataBuffer
     ) {
-      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const dataBuffer = image.getDataBuffer() as
+        | Uint8Array
+        | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
-      
+
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
         const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
         for (let xloop = 0; xloop < xpoints; xloop += 1) {
           const bufIdx = pixelIdx + xloop * 4;
-          // Read 16-bit values and scale to 0-255
-          const r = Math.round((tileBuffer.readUInt16BE(tileOffset) / 65535) * 255);
-          const g = Math.round((tileBuffer.readUInt16BE(tileOffset + 2) / 65535) * 255);
-          const b = Math.round((tileBuffer.readUInt16BE(tileOffset + 4) / 65535) * 255);
+          // Read 16-bit values and scale to 0-255 using integer math (divisor 257)
+          const r = (tileBuffer.readUInt16BE(tileOffset) / 257) | 0;
+          const g = (tileBuffer.readUInt16BE(tileOffset + 2) / 257) | 0;
+          const b = (tileBuffer.readUInt16BE(tileOffset + 4) / 257) | 0;
           dataBuffer[bufIdx] = r;
           dataBuffer[bufIdx + 1] = g;
           dataBuffer[bufIdx + 2] = b;
           if (numChannels === 4) {
-            const a = Math.round((tileBuffer.readUInt16BE(tileOffset + 6) / 65535) * 255);
+            const a = (tileBuffer.readUInt16BE(tileOffset + 6) / 257) | 0;
             dataBuffer[bufIdx + 3] = a;
             tileOffset += 8;
           } else {
@@ -941,23 +952,25 @@ class GimpLayer {
       baseType === XCF_BaseType.RGB &&
       image.getDataBuffer
     ) {
-      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const dataBuffer = image.getDataBuffer() as
+        | Uint8Array
+        | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
-      
+
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
         const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
         for (let xloop = 0; xloop < xpoints; xloop += 1) {
           const bufIdx = pixelIdx + xloop * 4;
-          // Read 32-bit values and scale to 0-255
-          const r = Math.round((tileBuffer.readUInt32BE(tileOffset) / 4294967295) * 255);
-          const g = Math.round((tileBuffer.readUInt32BE(tileOffset + 4) / 4294967295) * 255);
-          const b = Math.round((tileBuffer.readUInt32BE(tileOffset + 8) / 4294967295) * 255);
+          // Read 32-bit values and scale to 0-255 using integer math (divisor 16843009)
+          const r = (tileBuffer.readUInt32BE(tileOffset) / 16843009) | 0;
+          const g = (tileBuffer.readUInt32BE(tileOffset + 4) / 16843009) | 0;
+          const b = (tileBuffer.readUInt32BE(tileOffset + 8) / 16843009) | 0;
           dataBuffer[bufIdx] = r;
           dataBuffer[bufIdx + 1] = g;
           dataBuffer[bufIdx + 2] = b;
           if (numChannels === 4) {
-            const a = Math.round((tileBuffer.readUInt32BE(tileOffset + 12) / 4294967295) * 255);
+            const a = (tileBuffer.readUInt32BE(tileOffset + 12) / 16843009) | 0;
             dataBuffer[bufIdx + 3] = a;
             tileOffset += 16;
           } else {
@@ -1270,8 +1283,7 @@ export class XCFParser {
       const path = layer.pathInfo;
       if (!path) {
         this._groupLayers.children.push({
-          layer:
-            layer as unknown as import("./types/index.js").GimpLayerPublic,
+          layer: layer as unknown as import("./types/index.js").GimpLayerPublic,
           children: [],
         });
       } else {
@@ -1409,13 +1421,11 @@ export class XCFParser {
   ): XCF_PropTypeMap[T] | number | null {
     if (!this._props) {
       this._props = {};
-      (this._header!.propertyList || []).forEach(
-        (property: ParsedProperty) => {
-          (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
-            property.type
-          ] = property;
-        },
-      );
+      (this._header!.propertyList || []).forEach((property: ParsedProperty) => {
+        (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
+          property.type
+        ] = property;
+      });
     }
 
     const propValue = this._props[prop];
@@ -1451,7 +1461,11 @@ export class XCFParser {
       return null;
     }
     const colormapProp = this.getProps(XCF_PropType.COLORMAP);
-    if (colormapProp && typeof colormapProp === "object" && "data" in colormapProp) {
+    if (
+      colormapProp &&
+      typeof colormapProp === "object" &&
+      "data" in colormapProp
+    ) {
       const data = colormapProp.data as { colours: ParsedRGB[] };
       return data.colours.map((c: ParsedRGB) => ({
         red: c.red,
@@ -1591,7 +1605,7 @@ export class XCFParser {
   createImageFromLayers(
     image: IXCFImage,
     layerNames: string[],
-    options?: { ignoreVisibility?: boolean }
+    options?: { ignoreVisibility?: boolean },
   ): IXCFImage {
     const ignoreVisibility = options?.ignoreVisibility ?? false;
 
