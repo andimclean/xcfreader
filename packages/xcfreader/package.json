@@ -68,7 +68,8 @@
     "playwright": "^1.58.1",
     "pngjs": "^7.0.0",
     "typedoc": "^0.25.4",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "badge-maker": "^3.3.0"
   },
   "scripts": {
     "build": "tsc",

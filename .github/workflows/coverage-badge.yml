@@ -24,7 +24,7 @@ jobs:
           COLOR=red
           if [ "$(echo "$COVERAGE >= 90" | bc)" -eq 1 ]; then COLOR=brightgreen; elif [ "$(echo "$COVERAGE >= 80" | bc)" -eq 1 ]; then COLOR=yellow; fi
           echo "Generating badge for $COVERAGE% ($COLOR)"
-          npx badge -s "coverage-$COVERAGE%25-$COLOR" -o coverage-badge.svg
+          npx badge-maker --label coverage --message "$COVERAGE%" --color "$COLOR" --out coverage-badge.svg
       - name: Commit and push badge
         run: |
           git config --global user.name "github-actions"
