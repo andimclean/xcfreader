@@ -126,6 +126,15 @@ export class XCFDataImage implements IXCFImage {
   }
 
   /**
+   * Get the underlying mutable RGBA buffer for direct pixel manipulation.
+   * Returns the actual data buffer for performance-critical operations.
+   * @returns The mutable Uint8ClampedArray containing RGBA pixel data
+   */
+  getDataBuffer(): Uint8ClampedArray {
+    return this._data;
+  }
+
+  /**
    * Get the underlying ImageData object for direct canvas rendering.
    *
    * Note: This creates a new ImageData-compatible object each time it's called.

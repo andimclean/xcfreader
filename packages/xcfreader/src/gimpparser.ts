@@ -859,10 +859,46 @@ class GimpLayer {
     bytesPerChannel: number = 1,
     isFloat: boolean = false,
   ): void {
-    let bufferOffset = 0;
-
-    // Calculate number of channels from bpp and bytesPerChannel
     const numChannels = bpp / bytesPerChannel;
+    
+    // Fast path: 8-bit RGB/RGBA with direct buffer access and no compositing
+    if (
+      bytesPerChannel === 1 &&
+      !isFloat &&
+      mode === null &&
+      baseType === XCF_BaseType.RGB &&
+      image.getDataBuffer
+    ) {
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const imageWidth = image.width;
+      let tileOffset = 0;
+      
+      for (let yloop = 0; yloop < ypoints; yloop += 1) {
+        const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
+        for (let xloop = 0; xloop < xpoints; xloop += 1) {
+          const bufIdx = pixelIdx + xloop * 4;
+          if (numChannels === 4) {
+            // RGBA
+            dataBuffer[bufIdx] = tileBuffer[tileOffset];
+            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1];
+            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2];
+            dataBuffer[bufIdx + 3] = tileBuffer[tileOffset + 3];
+            tileOffset += 4;
+          } else {
+            // RGB
+            dataBuffer[bufIdx] = tileBuffer[tileOffset];
+            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1];
+            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2];
+            dataBuffer[bufIdx + 3] = 255;
+            tileOffset += 3;
+          }
+        }
+      }
+      return;
+    }
+
+    // General path: handle all other cases
+    let bufferOffset = 0;
 
     for (let yloop = 0; yloop < ypoints; yloop += 1) {
       for (let xloop = 0; xloop < xpoints; xloop += 1) {

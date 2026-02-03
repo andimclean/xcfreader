@@ -347,6 +347,16 @@ class XCFCompositer {
   }
 
   compose(backColour: Color, layerColour: Color): Color {
+    // Fast path: full opacity and fully opaque layer color (common case)
+    if (this._opacity === 1.0 && (layerColour.alpha ?? 255) === 255) {
+      return {
+        red: layerColour.red,
+        green: layerColour.green,
+        blue: layerColour.blue,
+        alpha: 255,
+      };
+    }
+
     const a1 = xcfToFloat(backColour.alpha ?? 255);
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
     const red = floatToXcf(
@@ -424,6 +434,20 @@ class GeneralCompositer extends XCFCompositer {
   compose(backColour: Color, layerColour: Color): Color {
     const a1 = xcfToFloat(backColour.alpha ?? 255);
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
+
+    // Fast path: full opacity and fully opaque layer color
+    if (a2 === 1.0) {
+      const red = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.red)));
+      const green = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.green)));
+      const blue = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.blue)));
+      return {
+        red: red,
+        green: green,
+        blue: blue,
+        alpha: 255,
+      };
+    }
+
     const red = floatToXcf(
       this.performBlend(
         a1,

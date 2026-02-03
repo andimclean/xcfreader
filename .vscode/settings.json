@@ -5,6 +5,38 @@
       "approve": true,
       "matchCommandLine": true
     },
-    "npm ci": true
+    "npm ci": true,
+    "/^cd \"c:\\\\Users\\\\panda\\\\dev\\\\xcfreader\\\\packages\\\\xcfreader\" && npm run build$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cd \"c:\\\\Users\\\\panda\\\\dev\\\\xcfreader\\\\packages\\\\xcfreader\" && npm run benchmark$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cd \"c:\\\\Users\\\\panda\\\\dev\\\\xcfreader\\\\packages\\\\xcfreader\" && npm run benchmark 2>&1 \\| tail -15$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cd \"c:\\\\Users\\\\panda\\\\dev\\\\xcfreader\\\\packages\\\\xcfreader\" && npm run single 2>&1 \\| head -20$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "npm run multi": true,
+    "timeout": true,
+    "npm run map": true,
+    "npm run text": true,
+    "/^cd \"c:\\\\Users\\\\panda\\\\dev\\\\xcfreader\\\\packages\\\\xcfreader\" && npm run single 2>&1$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cd \"c:\\\\Users\\\\panda\\\\dev\\\\xcfreader\\\\packages\\\\xcfreader\" && npm run single$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cd \"c:\\\\Users\\\\panda\\\\dev\\\\xcfreader\\\\packages\\\\xcfreader\" && npm run build && node dist/examples/single\\.js$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   }
 }

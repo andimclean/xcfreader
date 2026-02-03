@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Performance optimizations for image rendering**:
+  - Added optional `getDataBuffer()` method to `IXCFImage` interface for direct buffer access
+  - Fast path in `copyTile()` for 8-bit RGB/RGBA images without compositing
+  - Specialized compositing fast paths for common cases (full opacity, fully opaque layers)
+  - Direct buffer access in both `XCFPNGImage` and `XCFDataImage` implementations
+  - Inline pixel offset calculations to improve cache efficiency
+
+### Changed
+
+- **Performance improvements** (benchmarks show 13.2% overall speedup):
+  - Single-layer files: **37.8% faster**
+  - Multi-layer files: **20.9% faster**
+  - Indexed color files: **15.1% faster**
+  - Text layers: **32.0% faster**
+  - Overall rendering time reduced from 582ms to 505ms across all test files
+  - Eliminated per-pixel object allocation in hot path
+  - Reduced float/int conversion overhead in compositing
+
 ## [0.0.8] - 2026-02-02
 
 ### Added

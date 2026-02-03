@@ -531,4 +531,12 @@ export interface IXCFImage {
    * @returns Uint8Array of RGBA pixel data (4 bytes per pixel)
    */
   getPixelData(): Uint8Array;
+
+  /**
+   * Get the underlying mutable RGBA buffer for direct pixel manipulation.
+   * This is optional and used for performance optimization in rendering.
+   * Unlike getPixelData() which may return a copy, this returns the actual buffer.
+   * @returns The mutable Uint8Array or Uint8ClampedArray buffer, or undefined if not supported
+   */
+  getDataBuffer?(): Uint8Array | Uint8ClampedArray;
 }

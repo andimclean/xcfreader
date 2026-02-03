@@ -137,6 +137,15 @@ export class XCFPNGImage implements IXCFImage {
   }
 
   /**
+   * Get the underlying mutable RGBA buffer for direct pixel manipulation.
+   * Returns the actual pngjs data buffer for performance-critical operations.
+   * @returns The mutable Buffer containing RGBA pixel data
+   */
+  getDataBuffer(): Uint8Array {
+    return this._image.data;
+  }
+
+  /**
    * Get the image width in pixels
    */
   get width(): number {
