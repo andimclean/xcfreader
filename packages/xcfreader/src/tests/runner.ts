@@ -18,6 +18,8 @@ import { test17Int32 } from "./17-int32-support.js";
 
 import { test18CompositerModes } from "./18-compositer-modes.js";
 import { test19Logger } from "./19-logger.js";
+import { test20CompositerBranches } from "./20-compositer-branches.js";
+import { test21CompositerEdgeCases } from "./21-compositer-edge-cases.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -40,6 +42,8 @@ const tests = [
   { name: "17-int32-support.ts", fn: test17Int32 },
   { name: "18-compositer-modes.ts", fn: test18CompositerModes },
   { name: "19-logger.ts", fn: test19Logger },
+  { name: "20-compositer-branches.ts", fn: test20CompositerBranches },
+  { name: "21-compositer-edge-cases.ts", fn: test21CompositerEdgeCases },
 ];
 
 async function runTests(): Promise<void> {

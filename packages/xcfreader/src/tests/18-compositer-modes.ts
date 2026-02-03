@@ -16,7 +16,7 @@ export async function test18CompositerModes(): Promise<void> {
     CompositerMode.LIGHTEN_ONLY,
     CompositerMode.HUE,
     CompositerMode.SATURATION,
-    CompositerMode.COLOR,
+    CompositerMode.COLOUR,
     CompositerMode.VALUE,
     CompositerMode.DIVIDE,
     CompositerMode.DODGE,
@@ -24,7 +24,7 @@ export async function test18CompositerModes(): Promise<void> {
     CompositerMode.HARD_LIGHT,
     CompositerMode.SOFT_LIGHT,
     CompositerMode.GRAIN_EXTRACT,
-    CompositerMode.GRAIN_MERGE
+    CompositerMode.GRAIN_MERGE,
   ];
   for (const mode of modes) {
     const compositer = new GeneralCompositer(mode, 255);
@@ -34,7 +34,9 @@ export async function test18CompositerModes(): Promise<void> {
       throw new Error(`Mode ${mode} did not return a number`);
     }
   }
-  Logger.log("PASS: GeneralCompositer.chooseFunction returns numbers for all modes");
+  Logger.log(
+    "PASS: GeneralCompositer.chooseFunction returns numbers for all modes",
+  );
 
   // Test: Normal compositing blends two colors as expected (compose method)
   const compositer = new GeneralCompositer(CompositerMode.NORMAL, 128);

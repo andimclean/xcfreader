@@ -19,6 +19,7 @@ export enum CompositerMode {
   LIGHTEN_ONLY = 10,
   HUE = 11,
   SATURATION = 12,
+  COLOUR = 13,
   VALUE = 14,
   DIVIDE = 15,
   DODGE = 16,
@@ -545,4 +546,4 @@ class HsvCompositor extends XCFCompositer {
 }
 
 export default XCFCompositer;
-export { GeneralCompositer };
+export { GeneralCompositer, DissolveCompositer, HsvCompositor };
