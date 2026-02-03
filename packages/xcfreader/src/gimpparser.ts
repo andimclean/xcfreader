@@ -897,6 +897,78 @@ class GimpLayer {
       return;
     }
 
+    // Fast path: 16-bit integer RGB/RGBA with direct buffer access and no compositing
+    if (
+      bytesPerChannel === 2 &&
+      !isFloat &&
+      mode === null &&
+      baseType === XCF_BaseType.RGB &&
+      image.getDataBuffer
+    ) {
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const imageWidth = image.width;
+      let tileOffset = 0;
+      
+      for (let yloop = 0; yloop < ypoints; yloop += 1) {
+        const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
+        for (let xloop = 0; xloop < xpoints; xloop += 1) {
+          const bufIdx = pixelIdx + xloop * 4;
+          // Read 16-bit values and scale to 0-255
+          const r = Math.round((tileBuffer.readUInt16BE(tileOffset) / 65535) * 255);
+          const g = Math.round((tileBuffer.readUInt16BE(tileOffset + 2) / 65535) * 255);
+          const b = Math.round((tileBuffer.readUInt16BE(tileOffset + 4) / 65535) * 255);
+          dataBuffer[bufIdx] = r;
+          dataBuffer[bufIdx + 1] = g;
+          dataBuffer[bufIdx + 2] = b;
+          if (numChannels === 4) {
+            const a = Math.round((tileBuffer.readUInt16BE(tileOffset + 6) / 65535) * 255);
+            dataBuffer[bufIdx + 3] = a;
+            tileOffset += 8;
+          } else {
+            dataBuffer[bufIdx + 3] = 255;
+            tileOffset += 6;
+          }
+        }
+      }
+      return;
+    }
+
+    // Fast path: 32-bit integer RGB/RGBA with direct buffer access and no compositing
+    if (
+      bytesPerChannel === 4 &&
+      !isFloat &&
+      mode === null &&
+      baseType === XCF_BaseType.RGB &&
+      image.getDataBuffer
+    ) {
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const imageWidth = image.width;
+      let tileOffset = 0;
+      
+      for (let yloop = 0; yloop < ypoints; yloop += 1) {
+        const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
+        for (let xloop = 0; xloop < xpoints; xloop += 1) {
+          const bufIdx = pixelIdx + xloop * 4;
+          // Read 32-bit values and scale to 0-255
+          const r = Math.round((tileBuffer.readUInt32BE(tileOffset) / 4294967295) * 255);
+          const g = Math.round((tileBuffer.readUInt32BE(tileOffset + 4) / 4294967295) * 255);
+          const b = Math.round((tileBuffer.readUInt32BE(tileOffset + 8) / 4294967295) * 255);
+          dataBuffer[bufIdx] = r;
+          dataBuffer[bufIdx + 1] = g;
+          dataBuffer[bufIdx + 2] = b;
+          if (numChannels === 4) {
+            const a = Math.round((tileBuffer.readUInt32BE(tileOffset + 12) / 4294967295) * 255);
+            dataBuffer[bufIdx + 3] = a;
+            tileOffset += 16;
+          } else {
+            dataBuffer[bufIdx + 3] = 255;
+            tileOffset += 12;
+          }
+        }
+      }
+      return;
+    }
+
     // General path: handle all other cases
     let bufferOffset = 0;
 
