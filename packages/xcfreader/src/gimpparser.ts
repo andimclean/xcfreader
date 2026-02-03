@@ -358,6 +358,9 @@ const isUnset = (value: unknown): boolean => {
  * await image.writeImage('./layer-output.png');
  * ```
  */
+/**
+ * @internal
+ */
 class GimpLayer {
   private _parent: XCFParser;
   private _buffer: Buffer;
@@ -1064,6 +1067,9 @@ class GimpLayer {
   }
 }
 
+/**
+ * @internal
+ */
 class GimpChannel {
   private _parent: XCFParser;
   private _buffer: Buffer;
@@ -1177,7 +1183,10 @@ export class XCFParser {
       // Validate XCF magic bytes
       if (data.length < 14 || data.toString("utf-8", 0, 4) !== "gimp") {
         throw new UnsupportedFormatError(
-          `Invalid XCF file "${file}": missing GIMP magic bytes`,
+          `Invalid XCF file "${file}": missing GIMP magic bytes.\n` +
+          `This file does not appear to be a valid GIMP XCF file.\n` +
+          `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
+          `Please verify the file and try exporting from GIMP again.`,
         );
       }
 
@@ -1189,7 +1198,11 @@ export class XCFParser {
         throw err;
       }
       const message = err instanceof Error ? err.message : String(err);
-      throw new XCFParseError(`Failed to parse XCF file "${file}": ${message}`);
+      throw new XCFParseError(
+        `Failed to parse XCF file "${file}": ${message}\n` +
+        `This may be due to file corruption, unsupported features, or an invalid file format.\n` +
+        `If this is a valid XCF file, please report this issue with the file details.`
+      );
     }
   }
 
@@ -1231,14 +1244,18 @@ export class XCFParser {
       buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
     } else {
       throw new XCFParseError(
-        "Invalid input: expected Buffer, ArrayBuffer, or Uint8Array",
+        "Invalid input: expected Buffer, ArrayBuffer, or Uint8Array.\n" +
+        "Please provide a valid XCF file as a Node.js Buffer, browser ArrayBuffer, or Uint8Array."
       );
     }
 
     // Validate XCF magic bytes
     if (buffer.length < 14 || buffer.toString("utf-8", 0, 4) !== "gimp") {
       throw new UnsupportedFormatError(
-        "Invalid XCF data: missing GIMP magic bytes",
+        "Invalid XCF data: missing GIMP magic bytes.\n" +
+        "This does not appear to be a valid GIMP XCF file.\n" +
+        "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
+        "Please verify the file and try exporting from GIMP again."
       );
     }
 
