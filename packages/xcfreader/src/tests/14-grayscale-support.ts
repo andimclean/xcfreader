@@ -3,6 +3,11 @@
  */
 import { Logger } from "../lib/logger.js";
 import { XCFParser, XCFPNGImage, XCF_BaseType } from "../node.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function test14GrayscaleSupport(): Promise<void> {
   // Test 1: Verify XCF_BaseType enum values
@@ -17,7 +22,7 @@ export async function test14GrayscaleSupport(): Promise<void> {
   }
 
   // Test 2: Parse grey.xcf (grayscale v011 file with 64-bit pointers)
-  const greyParser = await XCFParser.parseFileAsync("./examples/grey.xcf");
+  const greyParser = await XCFParser.parseFileAsync(path.resolve(__dirname, "../../../../example-xcf/grey.xcf"));
   
   if (greyParser.baseType !== XCF_BaseType.GRAYSCALE) {
     throw new Error(`Expected grey.xcf baseType to be GRAYSCALE (1), got ${greyParser.baseType}`);
@@ -55,7 +60,7 @@ export async function test14GrayscaleSupport(): Promise<void> {
   }
 
   // Test 6: Verify RGB file still works
-  const rgbParser = await XCFParser.parseFileAsync("./examples/single.xcf");
+  const rgbParser = await XCFParser.parseFileAsync(path.resolve(__dirname, "../../../../example-xcf/single.xcf"));
   if (rgbParser.baseType !== XCF_BaseType.RGB) {
     throw new Error(`Expected single.xcf baseType to be RGB (0), got ${rgbParser.baseType}`);
   }

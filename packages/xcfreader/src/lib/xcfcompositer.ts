@@ -437,9 +437,15 @@ class GeneralCompositer extends XCFCompositer {
 
     // Fast path: full opacity and fully opaque layer color
     if (a2 === 1.0) {
-      const red = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.red)));
-      const green = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.green)));
-      const blue = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.blue)));
+      const red = floatToXcf(
+        this.chooseFunction(0, xcfToFloat(layerColour.red)),
+      );
+      const green = floatToXcf(
+        this.chooseFunction(0, xcfToFloat(layerColour.green)),
+      );
+      const blue = floatToXcf(
+        this.chooseFunction(0, xcfToFloat(layerColour.blue)),
+      );
       return {
         red: red,
         green: green,

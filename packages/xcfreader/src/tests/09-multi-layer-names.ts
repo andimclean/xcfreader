@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function test09MultiLayerNames(): Promise<void> {
-  const xcfPath = path.resolve(__dirname, "../../examples/multi.xcf");
+  const xcfPath = path.resolve(__dirname, "../../../../example-xcf/multi.xcf");
   const parser = await XCFParser.parseFileAsync(xcfPath);
 
   const expectedLayerNames = [

@@ -1184,9 +1184,9 @@ export class XCFParser {
       if (data.length < 14 || data.toString("utf-8", 0, 4) !== "gimp") {
         throw new UnsupportedFormatError(
           `Invalid XCF file "${file}": missing GIMP magic bytes.\n` +
-          `This file does not appear to be a valid GIMP XCF file.\n` +
-          `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
-          `Please verify the file and try exporting from GIMP again.`,
+            `This file does not appear to be a valid GIMP XCF file.\n` +
+            `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
+            `Please verify the file and try exporting from GIMP again.`,
         );
       }
 
@@ -1200,8 +1200,8 @@ export class XCFParser {
       const message = err instanceof Error ? err.message : String(err);
       throw new XCFParseError(
         `Failed to parse XCF file "${file}": ${message}\n` +
-        `This may be due to file corruption, unsupported features, or an invalid file format.\n` +
-        `If this is a valid XCF file, please report this issue with the file details.`
+          `This may be due to file corruption, unsupported features, or an invalid file format.\n` +
+          `If this is a valid XCF file, please report this issue with the file details.`,
       );
     }
   }
@@ -1245,7 +1245,7 @@ export class XCFParser {
     } else {
       throw new XCFParseError(
         "Invalid input: expected Buffer, ArrayBuffer, or Uint8Array.\n" +
-        "Please provide a valid XCF file as a Node.js Buffer, browser ArrayBuffer, or Uint8Array."
+          "Please provide a valid XCF file as a Node.js Buffer, browser ArrayBuffer, or Uint8Array.",
       );
     }
 
@@ -1253,9 +1253,9 @@ export class XCFParser {
     if (buffer.length < 14 || buffer.toString("utf-8", 0, 4) !== "gimp") {
       throw new UnsupportedFormatError(
         "Invalid XCF data: missing GIMP magic bytes.\n" +
-        "This does not appear to be a valid GIMP XCF file.\n" +
-        "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
-        "Please verify the file and try exporting from GIMP again."
+          "This does not appear to be a valid GIMP XCF file.\n" +
+          "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
+          "Please verify the file and try exporting from GIMP again.",
       );
     }
 

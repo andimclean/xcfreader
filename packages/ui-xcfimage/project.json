@@ -1,0 +1,21 @@
+{
+  "name": "ui-xcfimage",
+  "projectType": "library",
+  "root": "packages/ui-xcfimage",
+  "sourceRoot": "packages/ui-xcfimage/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build --prefix packages/ui-xcfimage"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx playwright test"
+      }
+    }
+  },
+  "tags": []
+}

@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function test05TextParasites(): Promise<void> {
-  const xcfPath = path.resolve(__dirname, '../../examples/text.xcf');
+  const xcfPath = path.resolve(__dirname, '../../../../example-xcf/text.xcf');
   const parser = await XCFParser.parseFileAsync(xcfPath);
 
   let hasParasites = false;

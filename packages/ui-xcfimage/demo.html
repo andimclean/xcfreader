@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>gpp-xcfimage Demo</title>
+    <!-- Load xcfreader browser bundle first to provide global XCFReader -->
+    <script src="/packages/ui-xcfimage/dist/xcfreader.browser.js"></script>
+    <script src="/packages/ui-xcfimage/dist/gpp-xcfimage.iife.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    gpp-xcfimage { display: block; margin-bottom: 2em; }
+    canvas { border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>&lt;gpp-xcfimage&gt; Demo</h1>
+  <p>Render a GIMP XCF file as a web component. Try changing the attributes below:</p>
+  <gpp-xcfimage id="xcf1" src="/example-xcf/single.xcf"></gpp-xcfimage>
+  <label>
+    src: <input id="srcInput" value="/example-xcf/single.xcf" size="40">
+  </label>
+  <label>
+    visible: <input id="visibleInput" value="" size="20" placeholder="layer1,layer2">
+  </label>
+  <label>
+    forcevisible: <input id="forceInput" type="checkbox">
+  </label>
+  <button id="updateBtn">Update</button>
+  <script>
+    const el = document.getElementById('xcf1');
+    document.getElementById('updateBtn').onclick = () => {
+      el.setAttribute('src', document.getElementById('srcInput').value);
+      el.setAttribute('visible', document.getElementById('visibleInput').value);
+      if (document.getElementById('forceInput').checked) {
+        el.setAttribute('forcevisible', '');
+      } else {
+        el.removeAttribute('forcevisible');
+      }
+    };
+  </script>
+</body>
+</html>

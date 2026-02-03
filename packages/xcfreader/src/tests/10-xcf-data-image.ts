@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function test10XCFDataImage(): Promise<void> {
-  const xcfPath = path.resolve(__dirname, '../../examples/single.xcf');
+  const xcfPath = path.resolve(__dirname, '../../../../example-xcf/single.xcf');
   
   // Read file as buffer and convert to ArrayBuffer (simulating browser usage)
   const fileBuffer = fs.readFileSync(xcfPath);

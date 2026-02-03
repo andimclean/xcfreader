@@ -1,9 +1,6 @@
 {
   "name": "xcfreader-monorepo",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "license": "MIT",
   "description": "Monorepo for xcfreader and related packages",
   "devDependencies": {
