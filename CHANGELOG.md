@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Correct integer scaling for 16/32-bit channels (div 257/16843009) for accurate color mapping and improved performance in high bit-depth images.
+- Updated benchmark: total time now 473.78ms (18.6% faster overall).
+
 ### Added
 
 - **Performance optimizations for image rendering**:
