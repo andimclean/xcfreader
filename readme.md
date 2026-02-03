@@ -269,6 +269,20 @@ npm run fullColour # full color RGB v011 example
 - [examples/browser-demo.html](packages/xcfreader/examples/browser-demo.html) - Interactive browser demo
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) - Architecture documentation
 
+
+## Contributing
+
+We welcome contributions from the community! You can help by:
+
+- Reporting bugs or suggesting features via [issues](https://github.com/andimclean/xcfreader/issues)
+- Submitting pull requests for bugfixes, new features, or documentation improvements
+- Reviewing open issues and helping other users
+- Improving tests, benchmarks, or examples
+
+See our [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed guidelines, setup instructions, and tips for getting started.
+
+Whether you're a first-time contributor or a seasoned developer, your input is valued. Thank you for helping make xcfreader better!
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
