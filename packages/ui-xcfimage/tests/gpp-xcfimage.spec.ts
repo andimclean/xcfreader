@@ -26,12 +26,19 @@ test.describe('<gpp-xcfimage> web component', () => {
     });
     // Wait for the canvas to be rendered (width > 0)
     await page.waitForFunction(canvas => Number(canvas.getAttribute('width')) > 0, canvasHandle, { timeout: 10000 });
-    // Change attributes and check
-    await page.evaluate(el => el.setAttribute('visible', 'single.png'), elHandle);
+    // Verify layers attribute is set as JSON tree after load
+    const layersJson = await page.evaluate(el => el.getAttribute('layers'), elHandle);
+    expect(layersJson).toBeTruthy();
+    const tree = JSON.parse(layersJson!);
+    expect(tree.children).toBeDefined();
+    expect(tree.children.length).toBeGreaterThan(0);
+    expect(tree.children[0].name).toBe('single.png');
+    expect(tree.children[0].index).toBe(0);
+
+    // Change attributes using layer index and check
+    await page.evaluate(el => el.setAttribute('visible', '0'), elHandle);
     await page.evaluate(el => el.setAttribute('forcevisible', ''), elHandle);
-    // Optionally, check canvas size or other effects
     const width = await page.evaluate(canvas => canvas.getAttribute('width'), canvasHandle);
     expect(Number(width)).toBeGreaterThan(0);
-    // (Duplicate code removed)
   });
 });

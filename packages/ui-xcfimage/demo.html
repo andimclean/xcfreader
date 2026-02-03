@@ -10,33 +10,149 @@
     body { font-family: sans-serif; margin: 2em; }
     gpp-xcfimage { display: block; margin-bottom: 2em; }
     canvas { border: 1px solid #ccc; }
+    .controls { display: flex; gap: 1.5em; align-items: flex-start; flex-wrap: wrap; margin-bottom: 1em; }
+    .controls label { display: block; margin-bottom: 0.3em; }
+    #layerTree { list-style: none; padding: 0; margin: 0.3em 0 0 0; }
+    #layerTree ul { list-style: none; padding-left: 1.2em; margin: 0; }
+    #layerTree li { padding: 0.15em 0; }
+    #layerTree label { cursor: pointer; }
+    #layerTree .group-toggle { cursor: pointer; user-select: none; margin-right: 0.2em; }
+    #layerTree .group-name { font-weight: bold; }
   </style>
 </head>
 <body>
   <h1>&lt;gpp-xcfimage&gt; Demo</h1>
   <p>Render a GIMP XCF file as a web component. Try changing the attributes below:</p>
+  <div class="controls">
+    <div>
+      <label>src: <input id="srcInput" value="/example-xcf/single.xcf" size="40"></label>
+      <button id="loadBtn">Load</button>
+    </div>
+    <div>
+      <label>forcevisible: <input id="forceInput" type="checkbox"></label>
+    </div>
+    <div>
+      <strong>Layers:</strong>
+      <div id="layerTree"><em>Load an XCF to see layers</em></div>
+    </div>
+  </div>
   <gpp-xcfimage id="xcf1" src="/example-xcf/single.xcf"></gpp-xcfimage>
-  <label>
-    src: <input id="srcInput" value="/example-xcf/single.xcf" size="40">
-  </label>
-  <label>
-    visible: <input id="visibleInput" value="" size="20" placeholder="layer1,layer2">
-  </label>
-  <label>
-    forcevisible: <input id="forceInput" type="checkbox">
-  </label>
-  <button id="updateBtn">Update</button>
   <script>
     const el = document.getElementById('xcf1');
-    document.getElementById('updateBtn').onclick = () => {
-      el.setAttribute('src', document.getElementById('srcInput').value);
-      el.setAttribute('visible', document.getElementById('visibleInput').value);
-      if (document.getElementById('forceInput').checked) {
+    const layerTree = document.getElementById('layerTree');
+    const forceInput = document.getElementById('forceInput');
+
+    function buildTree(node, parentUl) {
+      if (!node) return;
+      const li = document.createElement('li');
+
+      if (node.name) {
+        if (node.isGroup) {
+          // Group: toggle arrow + bold name + checkbox
+          const toggle = document.createElement('span');
+          toggle.className = 'group-toggle';
+          toggle.textContent = '\u25BE'; // down arrow
+          li.appendChild(toggle);
+
+          const label = document.createElement('label');
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = true;
+          cb.value = String(node.index);
+          cb.dataset.group = 'true';
+          cb.addEventListener('change', function () {
+            // Toggle all children when group checkbox changes
+            const childCbs = li.querySelectorAll('ul input[type=checkbox]');
+            childCbs.forEach(c => { c.checked = this.checked; });
+            updateVisible();
+          });
+          label.appendChild(cb);
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'group-name';
+          nameSpan.textContent = ' ' + node.name;
+          label.appendChild(nameSpan);
+          li.appendChild(label);
+
+          toggle.addEventListener('click', () => {
+            const childUl = li.querySelector('ul');
+            if (childUl) {
+              const collapsed = childUl.style.display === 'none';
+              childUl.style.display = collapsed ? '' : 'none';
+              toggle.textContent = collapsed ? '\u25BE' : '\u25B8'; // down / right arrow
+            }
+          });
+        } else {
+          // Leaf layer: checkbox + name
+          const label = document.createElement('label');
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = true;
+          cb.value = String(node.index);
+          cb.addEventListener('change', updateVisible);
+          label.appendChild(cb);
+          label.append(' ' + node.name);
+          li.appendChild(label);
+        }
+      }
+
+      if (node.children && node.children.length > 0) {
+        const ul = document.createElement('ul');
+        node.children.forEach(child => buildTree(child, ul));
+        li.appendChild(ul);
+      }
+
+      parentUl.appendChild(li);
+    }
+
+    function buildLayerTree(tree) {
+      layerTree.innerHTML = '';
+      if (!tree.children || tree.children.length === 0) {
+        layerTree.innerHTML = '<em>No layers found</em>';
+        return;
+      }
+      const ul = document.createElement('ul');
+      tree.children.forEach(child => buildTree(child, ul));
+      layerTree.appendChild(ul);
+    }
+
+    function updateVisible() {
+      const allCbs = [...layerTree.querySelectorAll('input[type=checkbox]:not([data-group])')];
+      const checked = allCbs.filter(cb => cb.checked).map(cb => cb.value);
+      if (checked.length === allCbs.length) {
+        el.setAttribute('visible', '');
+      } else {
+        el.setAttribute('visible', checked.join(','));
+      }
+      if (forceInput.checked) {
         el.setAttribute('forcevisible', '');
       } else {
         el.removeAttribute('forcevisible');
       }
-    };
+    }
+
+    forceInput.addEventListener('change', updateVisible);
+
+    const observer = new MutationObserver(mutations => {
+      for (const m of mutations) {
+        if (m.attributeName === 'layers') {
+          try {
+            const tree = JSON.parse(el.getAttribute('layers'));
+            buildLayerTree(tree);
+          } catch (e) {
+            layerTree.innerHTML = '<em>Error reading layers</em>';
+          }
+        }
+      }
+    });
+    observer.observe(el, { attributes: true, attributeFilter: ['layers'] });
+
+    function loadSrc() {
+      el.setAttribute('src', document.getElementById('srcInput').value);
+    }
+    document.getElementById('loadBtn').onclick = loadSrc;
+    document.getElementById('srcInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') loadSrc();
+    });
   </script>
 </body>
 </html>

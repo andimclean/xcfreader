@@ -95,6 +95,23 @@ This will show:
 
 By default, this debug output is hidden for normal users.
 
+### Web Component
+
+The `ui-xcfimage` package provides a `<gpp-xcfimage>` custom element for rendering XCF files with zero JavaScript required:
+
+\`\`\`html
+<script src="path/to/xcfreader.browser.js"></script>
+<script src="path/to/gpp-xcfimage.iife.js"></script>
+
+<!-- Render all visible layers -->
+<gpp-xcfimage src="/images/artwork.xcf"></gpp-xcfimage>
+
+<!-- Render specific layers by index -->
+<gpp-xcfimage src="/images/artwork.xcf" visible="0,3,5"></gpp-xcfimage>
+\`\`\`
+
+After loading, the element exposes a `layers` attribute with the full layer hierarchy as JSON, including unique indices for each layer. See [packages/ui-xcfimage/README.md](packages/ui-xcfimage/README.md) for full documentation.
+
 ### Script Tag (IIFE)
 
 \`\`\`html
@@ -271,10 +288,18 @@ npm run fullColour # full color RGB v011 example
 - **Unsupported layer types** - Try flattening or exporting as standard RGB in GIMP
 - **Blank/corrupted output** - Check layer visibility and opacity in GIMP
 
+## Packages
+
+| Package | Description |
+| ------- | ----------- |
+| [packages/xcfreader](packages/xcfreader) | Core XCF parser (Node.js + browser) |
+| [packages/ui-xcfimage](packages/ui-xcfimage) | `<gpp-xcfimage>` web component |
+
 ## See Also
 
 - [CHANGELOG.md](CHANGELOG.md) - Version history
-- [examples/browser-demo.html](packages/xcfreader/examples/browser-demo.html) - Interactive browser demo
+- [packages/ui-xcfimage/README.md](packages/ui-xcfimage/README.md) - Web component documentation
+- [example-xcf/browser-demo.html](example-xcf/browser-demo.html) - Interactive browser demo
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) - Architecture documentation
 
 ## Contributing

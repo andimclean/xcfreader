@@ -7,10 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`ui-xcfimage` package**: `<gpp-xcfimage>` web component for rendering XCF files in the browser
+  - `src`, `visible` (by layer index), and `forcevisible` attributes
+  - `layers` read-only attribute exposes hierarchical layer tree as JSON after load
+  - Layer indices for unique identification (handles duplicate layer names)
+  - Interactive demo with collapsible layer tree, checkboxes, and Enter-to-load
+  - Playwright test suite
+
 ### Fixed
 
 - Correct integer scaling for 16/32-bit channels (div 257/16843009) for accurate color mapping and improved performance in high bit-depth images.
 - Updated benchmark: total time now 473.78ms (18.6% faster overall).
+- **ESLint plugin conflict**: Package-level `.eslintrc.json` was missing `root: true`, causing duplicate plugin errors
+- **Test and example file paths**: Corrected relative path depth (5 levels to 4) and added `path.resolve(__dirname, ...)` for ES module compatibility in tests 13-17
+- **Test 13 console.log**: Replaced with `Logger.log` to match project conventions
+- **Example-xcf directory**: Moved to monorepo root so both packages and the dev server can access test files
 
 ### Added
 

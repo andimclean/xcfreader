@@ -1,33 +1,88 @@
 # ui-xcfimage
 
-A web component `<gpp-xcfimage>` for rendering GIMP XCF files using xcfreader.
+A web component `<gpp-xcfimage>` for rendering GIMP XCF files in the browser using xcfreader.
 
 ## Usage
 
-```
-<gpp-xcfimage src="/path/to/file.xcf" visible="Layer 1,Layer 2" forcevisible></gpp-xcfimage>
+```html
+<script src="path/to/xcfreader.browser.js"></script>
+<script src="path/to/gpp-xcfimage.iife.js"></script>
+
+<gpp-xcfimage src="/path/to/file.xcf"></gpp-xcfimage>
 ```
 
-- `src`: URL to the XCF file
-- `visible`: Comma-separated list of layer names to display (optional)
-- `forcevisible`: If present, forces layers in `visible` to be shown even if hidden in the file
+## Attributes
+
+| Attribute      | Type   | Description                                                                 |
+| -------------- | ------ | --------------------------------------------------------------------------- |
+| `src`          | string | URL to the XCF file to load and render                                      |
+| `visible`      | string | Comma-separated layer **indices** to display (empty = all visible layers)   |
+| `forcevisible` | flag   | If present, forces layers in `visible` to render even if hidden in the file |
+| `layers`       | string | **Read-only.** JSON tree of layer hierarchy, set automatically after load   |
+
+### The `layers` attribute
+
+After an XCF file loads, the element sets a `layers` attribute containing a JSON tree matching the file's layer hierarchy. Each node has:
+
+```json
+{
+  "name": "Layer Name",
+  "index": 0,
+  "isGroup": false,
+  "isVisible": true,
+  "children": []
+}
+```
+
+- `name` - the layer's display name (may have duplicates)
+- `index` - unique index into the flat `layers` array, used for the `visible` attribute
+- `isGroup` - true for group/folder layers
+- `isVisible` - the layer's visibility in the XCF file
+- `children` - nested child layers (for groups)
+
+### Layer indices for `visible`
+
+Because layer names can be duplicated (e.g. multiple layers named "br_red"), the `visible` attribute uses numeric indices rather than names:
+
+```html
+<!-- Show only layers at index 0 and 3 -->
+<gpp-xcfimage src="/file.xcf" visible="0,3"></gpp-xcfimage>
+
+<!-- Show all visible layers (default) -->
+<gpp-xcfimage src="/file.xcf"></gpp-xcfimage>
+```
+
+## Demo
+
+The included `demo.html` provides an interactive UI with:
+
+- A src input field (press Enter or click Load)
+- A hierarchical layer tree with checkboxes for toggling individual layers
+- Collapsible group layers with toggle-all support
+- A forcevisible checkbox
+
+Run from the monorepo root:
+
+```bash
+cd packages/ui-xcfimage
+npm run serve
+# Open http://localhost:3000/packages/ui-xcfimage/demo.html
+```
 
 ## Development
 
-- Build: `npm run build`
-- Source: `src/gpp-xcfimage.ts`
+```bash
+npm run build   # Compile TypeScript + bundle with esbuild
+npm run test    # Run Playwright browser tests
+npm run serve   # Serve demo from monorepo root
+```
 
 ## How it works
 
-- Downloads and parses the XCF file using xcfreader (browser bundle)
-- Renders only the specified visible layers, optionally overriding their visibility
-- Uses a shadow DOM canvas for rendering
-
-## Example
-
-```
-<gpp-xcfimage src="/images/art.xcf" visible="Background,Text" forcevisible></gpp-xcfimage>
-```
+- Loads the XCF file via `fetch` and parses it with `XCFParser.parseBuffer()`
+- Serializes the `groupLayers` tree into the `layers` attribute as JSON
+- Renders selected layers onto a shadow DOM canvas in correct compositing order (bottom-to-top)
+- Uses `XCFDataImage` for browser-compatible pixel data and `ImageData` for canvas output
 
 ## License
 
