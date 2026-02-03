@@ -136,9 +136,13 @@ For full commit history, see the git log.
 ## [Unreleased]
 
 ### Added
+ - Refactored all compositing mode constants to a type-safe `CompositerMode` enum. All compositing logic and APIs now use this enum for improved reliability and maintainability.
+ - Added/updated tests for compositer modes and logger, increasing coverage for blending logic and utility classes.
 - Browser demo: Add `?debug=1` URL toggle to show raw byte/version diagnostics (header bytes, version string/number, internals) for advanced troubleshooting. By default, debug output is hidden for normal users.
 
 ### Changed
+ - All usages of compositing/blend mode constants now reference the `CompositerMode` enum instead of numeric constants.
+ - Improved type safety and code clarity in compositing logic and related tests.
 - Diagnostics and debug output in `examples/browser-demo.html` are now only visible when explicitly enabled via the URL toggle.
 
 ### Added

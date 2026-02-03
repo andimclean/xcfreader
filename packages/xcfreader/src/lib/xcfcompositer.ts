@@ -5,33 +5,29 @@
  * https://github.com/andimclean/xcfreader
  */
 
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_MODE_NORMAL = 0;
-const PROP_MODE_DISSOLVE = 1;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_MODE_BEHIND = 2;
-const PROP_MODE_MULTIPLY = 3;
-const PROP_MODE_SCREEN = 4;
-const PROP_MODE_OVERLAY = 5;
-const PROP_MODE_DIFFERENCE = 6;
-const PROP_MODE_ADDITION = 7;
-const PROP_MODE_SUBTRACT = 8;
-const PROP_MODE_DRAKEN_ONLY = 9;
-const PROP_MODE_LIGHTEN_ONLY = 10;
-const PROP_MODE_HUE = 11;
-const PROP_MODE_SATURATION = 12;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_MODE_COLOR = 13;
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-const PROP_MODE_COLOUR = 13;
-const PROP_MODE_VALUE = 14;
-const PROP_MODE_DIVIDE = 15;
-const PROP_MODE_DODGE = 16;
-const PROP_MODE_BURN = 17;
-const PROP_MODE_HARD_LIGHT = 18;
-const PROP_MODE_SOFT_LIGHT = 19;
-const PROP_MODE_GRAIN_EXTRACT = 20;
-const PROP_MODE_GRAIN_MERGE = 21;
+export enum CompositerMode {
+  NORMAL = 0,
+  DISSOLVE = 1,
+  BEHIND = 2,
+  MULTIPLY = 3,
+  SCREEN = 4,
+  OVERLAY = 5,
+  DIFFERENCE = 6,
+  ADDITION = 7,
+  SUBTRACT = 8,
+  DRAKEN_ONLY = 9,
+  LIGHTEN_ONLY = 10,
+  HUE = 11,
+  SATURATION = 12,
+  VALUE = 14,
+  DIVIDE = 15,
+  DODGE = 16,
+  BURN = 17,
+  HARD_LIGHT = 18,
+  SOFT_LIGHT = 19,
+  GRAIN_EXTRACT = 20,
+  GRAIN_MERGE = 21,
+}
 
 interface Color {
   red: number;
@@ -76,7 +72,7 @@ class HsvColor {
       red: floatToXcf(this._rgb!.red),
       green: floatToXcf(this._rgb!.green),
       blue: floatToXcf(this._rgb!.blue),
-      alpha: this._rgb!.alpha
+      alpha: this._rgb!.alpha,
     };
   }
 
@@ -85,7 +81,7 @@ class HsvColor {
       red: xcfToFloat(rgb.red),
       green: xcfToFloat(rgb.green),
       blue: xcfToFloat(rgb.blue),
-      alpha: rgb.alpha ?? 255
+      alpha: rgb.alpha ?? 255,
     };
     this._hsv = null;
   }
@@ -126,14 +122,14 @@ class HsvColor {
   generateRGB(): void {
     if (isUnset(this._rgb)) {
       if (isUnset(this._hsv)) {
-        throw new Error('RGB or HSV has not been set');
+        throw new Error("RGB or HSV has not been set");
       }
       if (this._hsv!.saturation === 0) {
         this._rgb = {
           red: this._hsv!.value,
           green: this._hsv!.value,
           blue: this._hsv!.value,
-          alpha: this._hsv!.alpha
+          alpha: this._hsv!.alpha,
         };
       } else {
         let hue = this._hsv!.hue;
@@ -156,7 +152,7 @@ class HsvColor {
               red: this._hsv!.value,
               green: t,
               blue: w,
-              alpha: this._hsv!.alpha
+              alpha: this._hsv!.alpha,
             };
             break;
           case 1:
@@ -164,7 +160,7 @@ class HsvColor {
               red: q,
               green: this._hsv!.value,
               blue: w,
-              alpha: this._hsv!.alpha
+              alpha: this._hsv!.alpha,
             };
             break;
           case 2:
@@ -172,7 +168,7 @@ class HsvColor {
               red: w,
               green: this._hsv!.value,
               blue: t,
-              alpha: this._hsv!.alpha
+              alpha: this._hsv!.alpha,
             };
             break;
           case 3:
@@ -180,7 +176,7 @@ class HsvColor {
               red: w,
               green: q,
               blue: this._hsv!.value,
-              alpha: this._hsv!.alpha
+              alpha: this._hsv!.alpha,
             };
             break;
           case 4:
@@ -188,7 +184,7 @@ class HsvColor {
               red: t,
               green: w,
               blue: this._hsv!.value,
-              alpha: this._hsv!.alpha
+              alpha: this._hsv!.alpha,
             };
             break;
           case 5:
@@ -196,7 +192,7 @@ class HsvColor {
               red: this._hsv!.value,
               green: w,
               blue: q,
-              alpha: this._hsv!.alpha
+              alpha: this._hsv!.alpha,
             };
             break;
           default:
@@ -214,7 +210,7 @@ class HsvColor {
       red: floatToXcf(this._hsv!.hue),
       green: floatToXcf(this._hsv!.saturation),
       blue: floatToXcf(this._hsv!.value),
-      alpha: this._hsv!.alpha
+      alpha: this._hsv!.alpha,
     };
   }
 
@@ -223,7 +219,7 @@ class HsvColor {
       hue: xcfToFloat(hsv.red),
       saturation: xcfToFloat(hsv.green),
       value: xcfToFloat(hsv.blue),
-      alpha: hsv.alpha ?? 255
+      alpha: hsv.alpha ?? 255,
     };
     this._rgb = null;
   }
@@ -264,7 +260,7 @@ class HsvColor {
   generateHSV(): void {
     if (isUnset(this._hsv)) {
       if (isUnset(this._rgb)) {
-        throw new Error('HSV or RGB has not been set');
+        throw new Error("HSV or RGB has not been set");
       }
 
       const max = Math.max(this._rgb!.red, this._rgb!.green, this._rgb!.blue);
@@ -274,7 +270,7 @@ class HsvColor {
         hue: 0,
         saturation: 0,
         value: (min + max) / 2,
-        alpha: this._rgb!.alpha
+        alpha: this._rgb!.alpha,
       };
 
       if (min === max) {
@@ -312,39 +308,39 @@ class HsvColor {
 }
 
 class XCFCompositer {
-  protected _mode: number;
+  protected _mode: CompositerMode;
   protected _opacity: number;
 
-  static makeCompositer(mode: number, opacity: number): XCFCompositer {
+  static makeCompositer(mode: CompositerMode, opacity: number): XCFCompositer {
     switch (mode) {
-      case PROP_MODE_DISSOLVE:
+      case CompositerMode.DISSOLVE:
         return new DissolveCompositer(mode, opacity);
-      case PROP_MODE_MULTIPLY:
-      case PROP_MODE_SCREEN:
-      case PROP_MODE_OVERLAY:
-      case PROP_MODE_DIFFERENCE:
-      case PROP_MODE_ADDITION:
-      case PROP_MODE_SUBTRACT:
-      case PROP_MODE_DRAKEN_ONLY:
-      case PROP_MODE_LIGHTEN_ONLY:
-      case PROP_MODE_DIVIDE:
-      case PROP_MODE_DODGE:
-      case PROP_MODE_BURN:
-      case PROP_MODE_HARD_LIGHT:
-      case PROP_MODE_SOFT_LIGHT:
-      case PROP_MODE_GRAIN_EXTRACT:
-      case PROP_MODE_GRAIN_MERGE:
+      case CompositerMode.MULTIPLY:
+      case CompositerMode.SCREEN:
+      case CompositerMode.OVERLAY:
+      case CompositerMode.DIFFERENCE:
+      case CompositerMode.ADDITION:
+      case CompositerMode.SUBTRACT:
+      case CompositerMode.DRAKEN_ONLY:
+      case CompositerMode.LIGHTEN_ONLY:
+      case CompositerMode.DIVIDE:
+      case CompositerMode.DODGE:
+      case CompositerMode.BURN:
+      case CompositerMode.HARD_LIGHT:
+      case CompositerMode.SOFT_LIGHT:
+      case CompositerMode.GRAIN_EXTRACT:
+      case CompositerMode.GRAIN_MERGE:
         return new GeneralCompositer(mode, opacity);
-      case PROP_MODE_HUE:
-      case PROP_MODE_SATURATION:
-      case PROP_MODE_VALUE:
+      case CompositerMode.HUE:
+      case CompositerMode.SATURATION:
+      case CompositerMode.VALUE:
         return new HsvCompositor(mode, opacity);
     }
     // return the default compositer
     return new XCFCompositer(mode, opacity);
   }
 
-  constructor(mode: number, opacity: number) {
+  constructor(mode: CompositerMode, opacity: number) {
     this._mode = mode;
     this._opacity = xcfToFloat(opacity);
   }
@@ -357,30 +353,30 @@ class XCFCompositer {
         a1,
         xcfToFloat(backColour.red),
         a2,
-        xcfToFloat(layerColour.red)
-      )
+        xcfToFloat(layerColour.red),
+      ),
     );
     const green = floatToXcf(
       this.blend(
         a1,
         xcfToFloat(backColour.green),
         a2,
-        xcfToFloat(layerColour.green)
-      )
+        xcfToFloat(layerColour.green),
+      ),
     );
     const blue = floatToXcf(
       this.blend(
         a1,
         xcfToFloat(backColour.blue),
         a2,
-        xcfToFloat(layerColour.blue)
-      )
+        xcfToFloat(layerColour.blue),
+      ),
     );
     return {
       red: red,
       green: green,
       blue: blue,
-      alpha: floatToXcf(1 - (1 - a1) * (1 - a2))
+      alpha: floatToXcf(1 - (1 - a1) * (1 - a2)),
     };
   }
 
@@ -418,7 +414,7 @@ class DissolveCompositer extends XCFCompositer {
       red: random < a2 ? layerColour.red : backColour.red,
       green: random < a2 ? layerColour.green : backColour.green,
       blue: random < a2 ? layerColour.blue : backColour.blue,
-      alpha: random < a2 ? 255 : backColour.alpha
+      alpha: random < a2 ? 255 : backColour.alpha,
     };
   }
 }
@@ -428,19 +424,34 @@ class GeneralCompositer extends XCFCompositer {
     const a1 = xcfToFloat(backColour.alpha ?? 255);
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
     const red = floatToXcf(
-      this.performBlend(a1, xcfToFloat(backColour.red), a2, xcfToFloat(layerColour.red))
+      this.performBlend(
+        a1,
+        xcfToFloat(backColour.red),
+        a2,
+        xcfToFloat(layerColour.red),
+      ),
     );
     const green = floatToXcf(
-      this.performBlend(a1, xcfToFloat(backColour.green), a2, xcfToFloat(layerColour.green))
+      this.performBlend(
+        a1,
+        xcfToFloat(backColour.green),
+        a2,
+        xcfToFloat(layerColour.green),
+      ),
     );
     const blue = floatToXcf(
-      this.performBlend(a1, xcfToFloat(backColour.blue), a2, xcfToFloat(layerColour.blue))
+      this.performBlend(
+        a1,
+        xcfToFloat(backColour.blue),
+        a2,
+        xcfToFloat(layerColour.blue),
+      ),
     );
     return {
       red: red,
       green: green,
       blue: blue,
-      alpha: floatToXcf(a1)
+      alpha: floatToXcf(a1),
     };
   }
 
@@ -450,35 +461,35 @@ class GeneralCompositer extends XCFCompositer {
 
   chooseFunction(x1: number, x2: number): number {
     switch (this._mode) {
-      case PROP_MODE_MULTIPLY:
+      case CompositerMode.MULTIPLY:
         return x1 * x2;
-      case PROP_MODE_SCREEN:
+      case CompositerMode.SCREEN:
         return 1 - (1 - x1) * (1 - x2);
-      case PROP_MODE_OVERLAY:
+      case CompositerMode.OVERLAY:
         return Math.pow((1 - x2) * x1, 2) + Math.pow(x2 * (1 - (1 - x2)), 2);
-      case PROP_MODE_DIFFERENCE:
+      case CompositerMode.DIFFERENCE:
         return x1 > x2 ? x1 - x2 : x2 - x1;
-      case PROP_MODE_ADDITION:
+      case CompositerMode.ADDITION:
         return this.clamp(x1 + x2);
-      case PROP_MODE_SUBTRACT:
+      case CompositerMode.SUBTRACT:
         return this.clamp(x1 - x2);
-      case PROP_MODE_DRAKEN_ONLY:
+      case CompositerMode.DRAKEN_ONLY:
         return Math.min(x1, x2);
-      case PROP_MODE_LIGHTEN_ONLY:
+      case CompositerMode.LIGHTEN_ONLY:
         return Math.max(x1, x2);
-      case PROP_MODE_DIVIDE:
+      case CompositerMode.DIVIDE:
         return this.clamp(this.div(x1, x2));
-      case PROP_MODE_DODGE:
+      case CompositerMode.DODGE:
         return this.clamp(this.div(x1, 1 - x2));
-      case PROP_MODE_BURN:
+      case CompositerMode.BURN:
         return this.clamp(this.div(1 - (1 - x1), x2));
-      case PROP_MODE_HARD_LIGHT:
+      case CompositerMode.HARD_LIGHT:
         return x2 < 0.5 ? 2 * x1 * x2 : 1 - 2 * (1 - x1) * (1 - x2);
-      case PROP_MODE_SOFT_LIGHT:
+      case CompositerMode.SOFT_LIGHT:
         return (1 - x2) * Math.pow(x1, 2) + x2 * (1 - Math.pow(1 - x1, 2));
-      case PROP_MODE_GRAIN_EXTRACT:
+      case CompositerMode.GRAIN_EXTRACT:
         return this.clamp(x1 - x2 + 0.5);
-      case PROP_MODE_GRAIN_MERGE:
+      case CompositerMode.GRAIN_MERGE:
         return this.clamp(x1 + x2 - 0.5);
     }
     return x2;
@@ -486,13 +497,13 @@ class GeneralCompositer extends XCFCompositer {
 }
 
 class HsvCompositor extends XCFCompositer {
-  constructor(mode: number, opacity: number) {
+  constructor(mode: CompositerMode, opacity: number) {
     super(mode, opacity);
   }
 
   compose(backColour: Color, layerColour: Color): Color {
     const inA = xcfToFloat(backColour.alpha ?? 255);
-    const laA = xcfToFloat((layerColour.alpha ?? 255));
+    const laA = xcfToFloat(layerColour.alpha ?? 255);
 
     const compA = Math.min(inA, laA) * this._opacity;
 
@@ -507,15 +518,15 @@ class HsvCompositor extends XCFCompositer {
       backHsv.rgb = backColour;
 
       switch (this._mode) {
-        case PROP_MODE_HUE:
+        case CompositerMode.HUE:
           if (layerHSV.saturation) {
             backHsv.hue = layerHSV.hue;
           }
           break;
-        case PROP_MODE_VALUE:
+        case CompositerMode.VALUE:
           backHsv.value = layerHSV.value;
           break;
-        case PROP_MODE_SATURATION:
+        case CompositerMode.SATURATION:
           backHsv.saturation = layerHSV.saturation;
           break;
       }
@@ -525,7 +536,7 @@ class HsvCompositor extends XCFCompositer {
         red: newRgb.red * ratio + (1 - ratio) * backColour.red,
         green: newRgb.green * ratio + (1 - ratio) * backColour.green,
         blue: newRgb.blue * ratio + (1 - ratio) * backColour.blue,
-        alpha: newRgb.alpha
+        alpha: newRgb.alpha,
       };
     }
 
@@ -534,3 +545,4 @@ class HsvCompositor extends XCFCompositer {
 }
 
 export default XCFCompositer;
+export { GeneralCompositer };

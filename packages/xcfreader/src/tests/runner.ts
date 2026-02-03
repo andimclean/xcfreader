@@ -15,6 +15,9 @@ import { test14GrayscaleSupport } from "./14-grayscale-support.js";
 import { test15IndexedColorSupport } from "./15-indexed-color-support.js";
 import { test16FullColorSupport } from "./16-fullcolour-support.js";
 import { test17Int32 } from "./17-int32-support.js";
+
+import { test18CompositerModes } from "./18-compositer-modes.js";
+import { test19Logger } from "./19-logger.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -35,6 +38,8 @@ const tests = [
   { name: "15-indexed-color-support.ts", fn: test15IndexedColorSupport },
   { name: "16-fullcolour-support.ts", fn: test16FullColorSupport },
   { name: "17-int32-support.ts", fn: test17Int32 },
+  { name: "18-compositer-modes.ts", fn: test18CompositerModes },
+  { name: "19-logger.ts", fn: test19Logger },
 ];
 
 async function runTests(): Promise<void> {
