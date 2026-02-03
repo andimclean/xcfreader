@@ -1,6 +1,6 @@
 ## Coverage
 
-[![Coverage Status](https://img.shields.io/badge/coverage-81%25-brightgreen)](./coverage)
+[![Coverage Status](./coverage-badge.svg)](./coverage)
 
 - Code coverage is measured using c8 and reported in CI.
 - The badge above reflects the latest main branch coverage.
