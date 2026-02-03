@@ -9,8 +9,8 @@
     "dist/examples/**",
     "dist/benchmarks/**"
   ],
-  "reporter": ["text", "html", "lcov"],
-  "report-dir": "coverage",
+  "reporter": ["text", "json"],
+  "report-dir": "../../coverage",
   "temp-directory": ".c8_output",
   "clean": true
 }

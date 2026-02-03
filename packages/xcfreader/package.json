@@ -90,7 +90,7 @@
     "test": "npm run build && node dist/tests/runner.js",
     "test:coverage": "npm run build && c8 node dist/tests/runner.js",
     "test:browser": "playwright test tests/browser-demo.spec.ts",
-    "coverage": "c8 npm test && c8 report --reporter=lcov && c8 report --reporter=text-summary"
+    "coverage": "c8 npm test && c8 report --reporter=lcov && c8 report --reporter=text-summary && c8 report --reporter=json-summary"
   },
   "repository": {
     "type": "git",
