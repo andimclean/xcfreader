@@ -3,7 +3,6 @@ node_modules/
 
 # Compiled output
 dist/
-lib/
 src/**/*.js
 src/**/*.js.map
 src/**/*.d.ts
