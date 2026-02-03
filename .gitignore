@@ -28,3 +28,4 @@ docs/
 .nx/cache
 .nx/workspace-data
 coverage/
+packages/xcfreader/lastbenchmark.txt
