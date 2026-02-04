@@ -11,13 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [18.x, 20.x, 22.x]
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js
+
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm ci
-      - run: npm test
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/ui-xcfimage
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Run xcfreader tests
+        run: npm run test:xcfreader
+
+      - name: Run xcfreader browser tests
+        run: npm run test:browser
+
+      - name: Run ui-xcfimage tests
+        run: npm run test:ui

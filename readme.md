@@ -125,24 +125,33 @@ npm run test:browser
 npm run coverage
 ```
 
+## Need Help?
+
+Having issues? Check our comprehensive guides:
+
+- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[FAQ](TROUBLESHOOTING.md#faq)** - Frequently asked questions
+- [GitHub Issues](https://github.com/andimclean/xcfreader/issues) - Report bugs or request features
+
 ## Contributing
 
 We welcome contributions from the community! You can help by:
 
+- **[Contributing Guide](.github/CONTRIBUTING.md)** - Setup instructions and guidelines
 - Reporting bugs or suggesting features via [issues](https://github.com/andimclean/xcfreader/issues)
 - Submitting pull requests for bugfixes, new features, or documentation improvements
 - Reviewing open issues and helping other users
 - Improving tests, benchmarks, or examples
 
-See our [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed guidelines, setup instructions, and tips for getting started.
-
 Whether you're a first-time contributor or a seasoned developer, your input is valued. Thank you for helping make xcfreader better!
 
-## See Also
+## Documentation
 
-- [CHANGELOG.md](CHANGELOG.md) - Version history
-- [packages/xcfreader/readme.md](packages/xcfreader/readme.md) - Core library documentation
-- [packages/ui-xcfimage/README.md](packages/ui-xcfimage/README.md) - Web component documentation
+- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Contributing Guide](.github/CONTRIBUTING.md)** - How to contribute
+- **[xcfreader API](packages/xcfreader/readme.md)** - Core library documentation
+- **[ui-xcfimage Web Component](packages/ui-xcfimage/README.md)** - Web component documentation
+- [CHANGELOG.md](CHANGELOG.md) - Version history and release notes
 - [example-xcf/browser-demo.html](example-xcf/browser-demo.html) - Interactive browser demo
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) - Architecture documentation
 

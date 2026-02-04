@@ -23,10 +23,25 @@ docs/
 .env
 .env.local
 
+# Test & Coverage artifacts
+*.tsbuildinfo
+.c8_output/
+test-results/
+packages/*/coverage/
+packages/*/test-results/
+packages/*/.c8_output/
+coverage-final.json
+coverage-summary.json
+coverage-combined.json
 
-
+# Nx cache
 .nx/cache
 .nx/workspace-data
+
+# Coverage
 coverage/
 packages/xcfreader/lastbenchmark.txt
 packages/ui-xcfimage/coverage-tmp/
+
+# Output directories
+output/

@@ -20,6 +20,10 @@ import { test18CompositerModes } from "./18-compositer-modes.js";
 import { test19Logger } from "./19-logger.js";
 import { test20CompositerBranches } from "./20-compositer-branches.js";
 import { test21CompositerEdgeCases } from "./21-compositer-edge-cases.js";
+import { test22ParserEdgeCases } from "./unit/22-parser-edge-cases.js";
+import { test23PrecisionConversion } from "./unit/23-precision-conversion.js";
+import { test24PropertyParsing } from "./unit/24-property-parsing.js";
+import { test25LayerHierarchy } from "./unit/25-layer-hierarchy.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -44,6 +48,10 @@ const tests = [
   { name: "19-logger.ts", fn: test19Logger },
   { name: "20-compositer-branches.ts", fn: test20CompositerBranches },
   { name: "21-compositer-edge-cases.ts", fn: test21CompositerEdgeCases },
+  { name: "22-parser-edge-cases.ts (unit)", fn: test22ParserEdgeCases },
+  { name: "23-precision-conversion.ts (unit)", fn: test23PrecisionConversion },
+  { name: "24-property-parsing.ts (unit)", fn: test24PropertyParsing },
+  { name: "25-layer-hierarchy.ts (unit)", fn: test25LayerHierarchy },
 ];
 
 async function runTests(): Promise<void> {
