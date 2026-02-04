@@ -1,6 +1,6 @@
-# ui-xcfimage
+# @theprogrammingiantpanda/ui-xcfimage
 
-A web component `<gpp-xcfimage>` for rendering GIMP XCF files in the browser using xcfreader.
+A web component `<gpp-xcfimage>` for rendering GIMP XCF files in the browser using @theprogrammingiantpanda/xcfreader.
 
 ## Usage
 

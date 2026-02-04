@@ -1,5 +1,5 @@
 {
-  "name": "xcfreader",
+  "name": "@theprogrammingiantpanda/xcfreader",
   "version": "1.0.0",
   "description": "Reads in GIMP xcf files",
   "type": "module",
@@ -91,6 +91,9 @@
     "test:coverage": "npm run build && c8 node dist/tests/runner.js",
     "test:browser": "playwright test tests/browser-demo.spec.ts",
     "coverage": "c8 npm test && c8 report --reporter=lcov && c8 report --reporter=text-summary && c8 report --reporter=json-summary"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",
