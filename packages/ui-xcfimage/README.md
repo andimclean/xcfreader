@@ -5,11 +5,18 @@ A web component `<gpp-xcfimage>` for rendering GIMP XCF files in the browser usi
 ## Usage
 
 ```html
-<script src="path/to/xcfreader.browser.js"></script>
-<script src="path/to/gpp-xcfimage.iife.js"></script>
+<!-- Standalone bundle - includes xcfreader -->
+<script src="path/to/gpp-xcfimage.iife.min.js"></script>
 
 <gpp-xcfimage src="/path/to/file.xcf"></gpp-xcfimage>
 ```
+
+The bundle is self-contained and includes all dependencies (xcfreader, binary-parser, etc.).
+
+**Available bundles:**
+- `gpp-xcfimage.iife.min.js` - **Recommended**: Minified production version (~99KB)
+- `gpp-xcfimage.iife.js` - Development version with sourcemap (~140KB)
+- `gpp-xcfimage.js` - ESM module version for bundlers
 
 ## Attributes
 

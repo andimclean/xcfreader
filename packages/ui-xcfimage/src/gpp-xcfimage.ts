@@ -1,5 +1,4 @@
-// @ts-expect-error: global XCFReader from browser bundle
-const { XCFParser, XCFDataImage } = window.XCFReader;
+import { XCFParser, XCFDataImage } from 'xcfreader/browser';
 
 /**
  * <gpp-xcfimage src="..." visible="0,2,5" forcevisible>
@@ -16,7 +15,7 @@ export class GPpXCFImage extends HTMLElement {
   private src: string | null = null;
   private visibleIndices: Set<number> = new Set();
   private forceVisible: boolean = false;
-  private parser: typeof XCFParser | null = null;
+  private parser: ReturnType<typeof XCFParser.parseBuffer> | null = null;
 
   constructor() {
     super();

@@ -2,6 +2,14 @@
 
 All notable changes to this package will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Standalone bundle**: xcfreader is now bundled directly into the web component - no separate script tag required
+- Migrated from global `window.XCFReader` dependency to direct ES module imports
+- Added minified production build (`gpp-xcfimage.iife.min.js`, ~99KB)
+
 ## [0.1.0] - 2026-02-03
 
 ### Added

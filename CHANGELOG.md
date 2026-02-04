@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation restructure**: Split monorepo README structure for better organization
+  - Root `readme.md` is now a concise monorepo overview with links to packages
+  - `packages/xcfreader/readme.md` contains full xcfreader library documentation
+  - `packages/ui-xcfimage/README.md` contains web component documentation
+  - Each package has complete, standalone documentation
+
 ### Added
 
 - **`ui-xcfimage` package**: `<gpp-xcfimage>` web component for rendering XCF files in the browser
@@ -15,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Layer indices for unique identification (handles duplicate layer names)
   - Interactive demo with collapsible layer tree, checkboxes, and Enter-to-load
   - Playwright test suite
+  - **Standalone bundle**: All dependencies (xcfreader, binary-parser) bundled into single file - no separate xcfreader script tag required
+  - Minified production build available (~99KB)
 
 ### Fixed
 
