@@ -9,6 +9,9 @@ All notable changes to this package will be documented in this file.
 - **Standalone bundle**: xcfreader is now bundled directly into the web component - no separate script tag required
 - Migrated from global `window.XCFReader` dependency to direct ES module imports
 - Added minified production build (`gpp-xcfimage.iife.min.js`, ~99KB)
+- **Demo improvement**: Replaced text input with dropdown listing all example XCF files for easier testing
+  - Auto-loads when selection changes
+  - Includes descriptive labels (grayscale, paletted, RGB v011, etc.)
 
 ## [0.1.0] - 2026-02-03
 

@@ -24,7 +24,21 @@
   <p>Render a GIMP XCF file as a web component. Try changing the attributes below:</p>
   <div class="controls">
     <div>
-      <label>src: <input id="srcInput" value="/example-xcf/single.xcf" size="40"></label>
+      <!-- NOTE: Update this list when new XCF files are added to /example-xcf/ -->
+      <label>src:
+        <select id="srcInput">
+          <option value="/example-xcf/single.xcf" selected>single.xcf</option>
+          <option value="/example-xcf/multi.xcf">multi.xcf</option>
+          <option value="/example-xcf/map1.xcf">map1.xcf</option>
+          <option value="/example-xcf/text.xcf">text.xcf</option>
+          <option value="/example-xcf/empty.xcf">empty.xcf</option>
+          <option value="/example-xcf/grey.xcf">grey.xcf (grayscale)</option>
+          <option value="/example-xcf/indexed.xcf">indexed.xcf (paletted)</option>
+          <option value="/example-xcf/fullColour.xcf">fullColour.xcf (RGB v011)</option>
+          <option value="/example-xcf/int32.xcf">int32.xcf (32-bit int)</option>
+          <option value="/example-xcf/float32.xcf">float32.xcf (32-bit float)</option>
+        </select>
+      </label>
       <button id="loadBtn">Load</button>
     </div>
     <div>
@@ -149,9 +163,8 @@
       el.setAttribute('src', document.getElementById('srcInput').value);
     }
     document.getElementById('loadBtn').onclick = loadSrc;
-    document.getElementById('srcInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') loadSrc();
-    });
+    // Auto-load when dropdown selection changes
+    document.getElementById('srcInput').addEventListener('change', loadSrc);
   </script>
 </body>
 </html>

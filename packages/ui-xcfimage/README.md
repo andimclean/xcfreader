@@ -63,7 +63,7 @@ Because layer names can be duplicated (e.g. multiple layers named "br_red"), the
 
 The included `demo.html` provides an interactive UI with:
 
-- A src input field (press Enter or click Load)
+- A dropdown to select example XCF files (auto-loads on change)
 - A hierarchical layer tree with checkboxes for toggling individual layers
 - Collapsible group layers with toggle-all support
 - A forcevisible checkbox
