@@ -2,6 +2,31 @@
 
 A web component `<gpp-xcfimage>` for rendering GIMP XCF files in the browser using @theprogrammingiantpanda/xcfreader.
 
+## Installation
+
+### CDN (Recommended for Quick Start)
+
+Use directly from a CDN without any build step:
+
+```html
+<!-- Latest version from jsDelivr -->
+<script src="https://cdn.jsdelivr.net/npm/@theprogrammingiantpanda/ui-xcfimage@latest/dist/gpp-xcfimage.iife.min.js"></script>
+
+<!-- Or from unpkg -->
+<script src="https://unpkg.com/@theprogrammingiantpanda/ui-xcfimage@latest/dist/gpp-xcfimage.iife.min.js"></script>
+
+<!-- Pin to a specific version (recommended for production) -->
+<script src="https://cdn.jsdelivr.net/npm/@theprogrammingiantpanda/ui-xcfimage@0.1.1/dist/gpp-xcfimage.iife.min.js"></script>
+
+<gpp-xcfimage src="/path/to/file.xcf"></gpp-xcfimage>
+```
+
+### npm
+
+```bash
+npm install @theprogrammingiantpanda/ui-xcfimage
+```
+
 ## Usage
 
 ```html

@@ -4,6 +4,9 @@ A monorepo for parsing and rendering GIMP XCF files in TypeScript/JavaScript.
 
 ![CI](https://github.com/andimclean/xcfreader/actions/workflows/ci.yml/badge.svg)
 [![Coverage Status](./coverage-badge.svg)](./coverage)
+[![npm version](https://img.shields.io/npm/v/@theprogrammingiantpanda/xcfreader.svg)](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)
+[![npm downloads](https://img.shields.io/npm/dm/@theprogrammingiantpanda/xcfreader.svg)](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Coverage
 

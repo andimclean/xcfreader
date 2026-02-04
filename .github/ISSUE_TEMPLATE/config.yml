@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/andimclean/xcfreader#readme
+    about: Read the documentation and examples
+  - name: 🔧 Troubleshooting Guide
+    url: https://github.com/andimclean/xcfreader/blob/master/TROUBLESHOOTING.md
+    about: Common issues and solutions
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/andimclean/xcfreader/security/advisories/new
+    about: Report a security vulnerability privately
