@@ -1,6 +1,6 @@
 {
   "name": "@theprogrammingiantpanda/ui-xcfimage",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Web component <gpp-xcfimage> for rendering GIMP XCF files using xcfreader.",
   "type": "module",
   "main": "dist/gpp-xcfimage.js",
