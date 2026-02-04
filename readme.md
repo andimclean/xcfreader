@@ -16,8 +16,8 @@ A monorepo for parsing and rendering GIMP XCF files in TypeScript/JavaScript.
 
 | Package | Description | Links |
 | ------- | ----------- | ----- |
-| **[xcfreader](packages/xcfreader)** | Core XCF parser library for Node.js and browser | [README](packages/xcfreader/readme.md) · [npm](https://www.npmjs.com/package/xcfreader) |
-| **[ui-xcfimage](packages/ui-xcfimage)** | `<gpp-xcfimage>` web component for rendering XCF files | [README](packages/ui-xcfimage/README.md) |
+| **[xcfreader](packages/xcfreader)** | Core XCF parser library for Node.js and browser | [README](packages/xcfreader/readme.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader) |
+| **[ui-xcfimage](packages/ui-xcfimage)** | `<gpp-xcfimage>` web component for rendering XCF files | [README](packages/ui-xcfimage/README.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage) |
 
 ## Quick Start
 
@@ -27,7 +27,7 @@ Parse and render GIMP XCF files in Node.js or the browser.
 
 **Node.js:**
 ```typescript
-import { XCFParser, XCFPNGImage } from 'xcfreader/node';
+import { XCFParser, XCFPNGImage } from '@theprogrammingiantpanda/xcfreader/node';
 
 const parser = await XCFParser.parseFileAsync('./image.xcf');
 const image = new XCFPNGImage(parser.width, parser.height);
@@ -37,7 +37,7 @@ await image.writeImage('./output.png');
 
 **Browser:**
 ```typescript
-import { XCFParser, XCFDataImage } from 'xcfreader/browser';
+import { XCFParser, XCFDataImage } from '@theprogrammingiantpanda/xcfreader/browser';
 
 const arrayBuffer = await file.arrayBuffer();
 const parser = XCFParser.parseBuffer(arrayBuffer);
@@ -85,7 +85,7 @@ After loading, the element exposes a `layers` attribute with the full layer hier
 ### xcfreader Library
 
 ```bash
-npm install xcfreader
+npm install @theprogrammingiantpanda/xcfreader
 
 # For Node.js PNG output (optional)
 npm install pngjs
@@ -94,7 +94,7 @@ npm install pngjs
 ### Web Component
 
 ```bash
-npm install ui-xcfimage
+npm install @theprogrammingiantpanda/ui-xcfimage
 ```
 
 Or use the standalone IIFE bundle directly in `<script>` tags (no build step required).
