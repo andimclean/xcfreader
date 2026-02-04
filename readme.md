@@ -7,9 +7,10 @@ A monorepo for parsing and rendering GIMP XCF files in TypeScript/JavaScript.
 
 ## Coverage
 
-- Code coverage is measured using c8 and reported in CI.
-- The badge above reflects the latest main branch coverage.
-- CI will fail if line coverage drops below 80% and will emit a warning if below 85%.
+- Combined code coverage across both packages: **87.85%**
+- xcfreader: 87.54% | ui-xcfimage: 95%
+- Coverage measured using c8 (xcfreader) and Playwright V8 coverage (ui-xcfimage)
+- CI enforces minimum 80% coverage (warning at 85%)
 
 ## Packages
 

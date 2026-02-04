@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `packages/xcfreader/readme.md` contains full xcfreader library documentation
   - `packages/ui-xcfimage/README.md` contains web component documentation
   - Each package has complete, standalone documentation
+- **CI improvements**: Test and coverage now includes both packages
+  - Combined coverage tracking (xcfreader + ui-xcfimage)
+  - Total coverage: 87.85% (exceeds 85% threshold)
+  - Separate test suites for Node.js and browser tests
 
 ### Added
 

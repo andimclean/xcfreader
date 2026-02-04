@@ -24,7 +24,15 @@
       "Bash(git push)",
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(gh api:*)",
+      "Bash(gh browse:*)",
+      "Bash(npm audit:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(gh repo view:*)",
+      "Bash(cat:*)"
     ]
   }
 }

@@ -26,11 +26,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/ui-xcfimage
+
       - name: Build TypeScript
         run: npm run build
 
-      - name: Run tests
-        run: npm test
+      - name: Run xcfreader tests
+        run: npm run test:xcfreader
+
+      - name: Run ui-xcfimage tests
+        run: npm run test:ui
 
       - name: Run examples
         run: |
@@ -38,8 +45,11 @@ jobs:
           sleep 2
           kill %1 2>/dev/null || true
 
-      - name: Run coverage
+      - name: Run xcfreader coverage
         run: npm run coverage
+
+      - name: Calculate combined coverage
+        run: node calculate-total-coverage.mjs
 
       - name: Run benchmark
         run: |
@@ -49,13 +59,15 @@ jobs:
 
       - name: Enforce minimum coverage
         run: |
-          COVERAGE=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")
-          echo "Line coverage: $COVERAGE%"
+          COVERAGE=$(node -p "require('./coverage-combined.json').total.lines.pct")
+          echo "Combined line coverage: $COVERAGE%"
           MIN=80
           WARN=85
           if [ "$(echo "$COVERAGE < $MIN" | bc)" -eq 1 ]; then
-            echo "::error ::Test coverage ($COVERAGE%) is below minimum threshold ($MIN%)"
+            echo "::error ::Combined test coverage ($COVERAGE%) is below minimum threshold ($MIN%)"
             exit 1
           elif [ "$(echo "$COVERAGE < $WARN" | bc)" -eq 1 ]; then
-            echo "::warning ::Test coverage ($COVERAGE%) is below warning threshold ($WARN%)"
+            echo "::warning ::Combined test coverage ($COVERAGE%) is below warning threshold ($WARN%)"
+          else
+            echo "::notice ::Combined coverage ($COVERAGE%) meets quality standards ✅"
           fi

@@ -3,12 +3,21 @@
   "private": true,
   "license": "MIT",
   "description": "Monorepo for xcfreader and related packages",
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "nx": "22.4.4"
   },
   "scripts": {
-    "test": "npm run --workspace=packages/xcfreader test",
+    "test": "npm run --workspace=packages/xcfreader test && npm run --workspace=packages/ui-xcfimage test",
+    "test:xcfreader": "npm run --workspace=packages/xcfreader test",
+    "test:ui": "npm run --workspace=packages/ui-xcfimage test",
     "test:browser": "npm run --workspace=packages/xcfreader test:browser",
-    "coverage": "npm run --workspace=packages/xcfreader coverage"
+    "coverage": "npm run --workspace=packages/xcfreader coverage",
+    "coverage:all": "npm run coverage && npm run --workspace=packages/ui-xcfimage test:coverage",
+    "coverage:combined": "npm run coverage && node calculate-total-coverage.mjs",
+    "build": "npm run --workspace=packages/xcfreader build && npm run --workspace=packages/ui-xcfimage build",
+    "benchmark": "npm run --workspace=packages/xcfreader benchmark"
   }
 }
