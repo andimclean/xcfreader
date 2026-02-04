@@ -1,33 +1,86 @@
 {
   "name": "xcfreader",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "root": "packages/xcfreader",
   "sourceRoot": "packages/xcfreader/src",
   "targets": {
     "build": {
       "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
       "options": {
-        "command": "npm run build --workspace xcfreader"
+        "command": "tsc",
+        "cwd": "packages/xcfreader"
+      }
+    },
+    "build:browser": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "outputs": ["{projectRoot}/dist/xcfreader.browser.*"],
+      "options": {
+        "command": "node esbuild.config.mjs",
+        "cwd": "packages/xcfreader"
+      }
+    },
+    "build:all": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build", "build:browser"],
+      "options": {
+        "command": "echo 'Build complete'"
       }
     },
     "test": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
-        "command": "npm run test --workspace xcfreader"
+        "command": "node dist/tests/runner.js",
+        "cwd": "packages/xcfreader"
+      }
+    },
+    "test:browser": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test tests/browser-demo.spec.ts",
+        "cwd": "packages/xcfreader"
+      }
+    },
+    "coverage": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "c8 npm test && c8 report --reporter=lcov && c8 report --reporter=text-summary && c8 report --reporter=json-summary",
+        "cwd": "packages/xcfreader"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run lint --workspace xcfreader"
+        "command": "eslint src --ext .ts",
+        "cwd": "packages/xcfreader"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint src --ext .ts --fix",
+        "cwd": "packages/xcfreader"
+      }
+    },
+    "benchmark": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "node dist/benchmarks/benchmark.js",
+        "cwd": "packages/xcfreader"
       }
     },
     "docs": {
       "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/docs"],
       "options": {
-        "command": "npm run docs --workspace xcfreader"
+        "command": "typedoc --out docs src/gimpparser.ts src/node.ts src/browser.ts src/types/index.ts --entryPointStrategy expand",
+        "cwd": "packages/xcfreader"
       }
     }
   },
-  "tags": []
+  "tags": ["library", "parser"]
 }
