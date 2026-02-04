@@ -1,0 +1,69 @@
+{
+  "version": "1.0.1",
+  "date": "2026-02-04T00:00:00.000Z",
+  "results": [
+    {
+      "name": "single.xcf",
+      "parseTime": 5.5,
+      "renderTime": 2.3,
+      "totalTime": 7.8,
+      "fileSize": 44619
+    },
+    {
+      "name": "multi.xcf",
+      "parseTime": 8.2,
+      "renderTime": 5.1,
+      "totalTime": 13.3,
+      "fileSize": 91702
+    },
+    {
+      "name": "text.xcf",
+      "parseTime": 12.4,
+      "renderTime": 3.8,
+      "totalTime": 16.2,
+      "fileSize": 115422
+    },
+    {
+      "name": "empty.xcf",
+      "parseTime": 0.8,
+      "renderTime": 0.2,
+      "totalTime": 1.0,
+      "fileSize": 661
+    },
+    {
+      "name": "fullColour.xcf",
+      "parseTime": 450.0,
+      "renderTime": 180.0,
+      "totalTime": 630.0,
+      "fileSize": 6483246
+    },
+    {
+      "name": "float32.xcf",
+      "parseTime": 8.5,
+      "renderTime": 4.2,
+      "totalTime": 12.7,
+      "fileSize": 70504
+    },
+    {
+      "name": "int32.xcf",
+      "parseTime": 9.1,
+      "renderTime": 4.5,
+      "totalTime": 13.6,
+      "fileSize": 71068
+    },
+    {
+      "name": "grey.xcf",
+      "parseTime": 85.0,
+      "renderTime": 45.0,
+      "totalTime": 130.0,
+      "fileSize": 1020098
+    },
+    {
+      "name": "indexed.xcf",
+      "parseTime": 195.0,
+      "renderTime": 88.0,
+      "totalTime": 283.0,
+      "fileSize": 2323872
+    }
+  ]
+}

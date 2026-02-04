@@ -60,6 +60,15 @@ jobs:
           echo "Benchmark results:" && cat benchmark-output.txt
           echo "::notice ::Benchmark results are for information only and do not affect CI status."
 
+      - name: Check performance regression
+        run: |
+          cd packages/xcfreader
+          if [ -f benchmark-baseline.json ]; then
+            npm run benchmark:check || echo "::warning ::Performance regression detected. Review benchmark results."
+          else
+            echo "::notice ::No baseline found. Run 'npm run benchmark:baseline' to create one."
+          fi
+
       - name: Enforce minimum coverage
         run: |
           COVERAGE=$(node -p "require('./coverage-combined.json').total.lines.pct")

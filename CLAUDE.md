@@ -1,5 +1,8 @@
 # CLAUDE.md - Project Notes
 
+## Important Guidelines
+- **NEVER commit changes unless the user explicitly requests it** - Always wait for user confirmation before creating commits
+
 ## Project Structure
 - Monorepo with packages in `packages/` directory
 - Main package: `packages/xcfreader` - GIMP XCF file parser

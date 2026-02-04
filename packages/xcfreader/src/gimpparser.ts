@@ -594,8 +594,8 @@ class GimpLayer {
     }
 
     const propValue = this._props[prop];
-    if (index && propValue && "data" in propValue) {
-      return (propValue.data as Record<string, number>)[index];
+    if (index && propValue && typeof propValue === "object" && propValue !== null && "data" in (propValue as object)) {
+      return ((propValue as unknown as { data: Record<string, number> }).data)[index];
     }
     return propValue ?? null;
   }
@@ -1446,8 +1446,8 @@ export class XCFParser {
     }
 
     const propValue = this._props[prop];
-    if (index && propValue && "data" in propValue) {
-      return (propValue.data as Record<string, number>)[index];
+    if (index && propValue && typeof propValue === "object" && propValue !== null && "data" in (propValue as object)) {
+      return ((propValue as unknown as { data: Record<string, number> }).data)[index];
     }
     return propValue ?? null;
   }

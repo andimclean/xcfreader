@@ -36,7 +36,7 @@ async function benchmark(): Promise<void> {
 
   for (const filename of files) {
 
-    const filePath = path.resolve(__dirname, `../../examples/${filename}`);
+    const filePath = path.resolve(__dirname, `../../../../example-xcf/${filename}`);
 
     // Measure parse time
     const parseStart = performance.now();
