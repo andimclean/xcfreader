@@ -33,7 +33,7 @@ const precisionNames: Record<number, string> = {
 };
 
 async function main(): Promise<void> {
-  const xcfPath = path.resolve(__dirname, "../../examples/fullColour.xcf");
+  const xcfPath = path.resolve(__dirname, "../../../../example-xcf/fullColour.xcf");
   const outputDir = path.resolve(__dirname, "../../../../output/fullColour");
 
   Logger.log(`Parsing ${xcfPath}...`);

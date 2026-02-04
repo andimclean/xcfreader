@@ -1,17 +1,28 @@
 {
   "name": "xcfreader-monorepo",
   "private": true,
+  "license": "MIT",
+  "description": "Monorepo for xcfreader and related packages",
   "workspaces": [
     "packages/*"
   ],
-  "license": "MIT",
-  "description": "Monorepo for xcfreader and related packages",
   "devDependencies": {
     "nx": "22.4.4"
   },
   "scripts": {
-    "test": "npm run --workspace=packages/xcfreader test",
-    "test:browser": "npm run --workspace=packages/xcfreader test:browser",
-    "coverage": "npm run --workspace=packages/xcfreader coverage"
+    "test": "nx run-many --target=test --all",
+    "test:xcfreader": "nx test xcfreader",
+    "test:ui": "nx test ui-xcfimage",
+    "test:browser": "nx test:browser xcfreader",
+    "coverage": "nx coverage xcfreader",
+    "coverage:all": "nx coverage xcfreader && nx test:coverage ui-xcfimage",
+    "coverage:combined": "nx coverage xcfreader && node calculate-total-coverage.mjs",
+    "build": "nx run-many --target=build --all",
+    "build:xcfreader": "nx build xcfreader",
+    "build:ui": "nx build ui-xcfimage",
+    "benchmark": "nx benchmark xcfreader",
+    "graph": "nx graph",
+    "affected:test": "nx affected --target=test",
+    "affected:build": "nx affected --target=build"
   }
 }

@@ -3,10 +3,15 @@
  */
 import { Logger } from "../lib/logger.js";
 import { XCFParser, XCFPNGImage, XCF_BaseType } from "../node.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function test15IndexedColorSupport(): Promise<void> {
   // Test 1: Verify colormap is null for RGB images
-  const rgbParser = await XCFParser.parseFileAsync("./examples/single.xcf");
+  const rgbParser = await XCFParser.parseFileAsync(path.resolve(__dirname, "../../../../example-xcf/single.xcf"));
   if (rgbParser.colormap !== null) {
     throw new Error("Expected colormap to be null for RGB image");
   }
@@ -15,7 +20,7 @@ export async function test15IndexedColorSupport(): Promise<void> {
   }
 
   // Test 2: Verify colormap is null for grayscale images
-  const greyParser = await XCFParser.parseFileAsync("./examples/grey.xcf");
+  const greyParser = await XCFParser.parseFileAsync(path.resolve(__dirname, "../../../../example-xcf/grey.xcf"));
   if (greyParser.colormap !== null) {
     throw new Error("Expected colormap to be null for grayscale image");
   }
@@ -24,7 +29,7 @@ export async function test15IndexedColorSupport(): Promise<void> {
   }
 
   // Test 3: Parse indexed.xcf and verify it's detected as indexed
-  const indexedParser = await XCFParser.parseFileAsync("./examples/indexed.xcf");
+  const indexedParser = await XCFParser.parseFileAsync(path.resolve(__dirname, "../../../../example-xcf/indexed.xcf"));
   if (indexedParser.baseType !== XCF_BaseType.INDEXED) {
     throw new Error(`Expected indexed.xcf baseType to be INDEXED (2), got ${indexedParser.baseType}`);
   }

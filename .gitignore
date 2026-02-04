@@ -29,3 +29,4 @@ docs/
 .nx/workspace-data
 coverage/
 packages/xcfreader/lastbenchmark.txt
+packages/ui-xcfimage/coverage-tmp/

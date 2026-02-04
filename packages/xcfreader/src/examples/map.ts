@@ -8,7 +8,7 @@ import { Logger } from "../lib/logger.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const xcfPath = path.resolve(__dirname, "../../examples/map1.xcf");
+const xcfPath = path.resolve(__dirname, "../../../../example-xcf/map1.xcf");
 const outDir = path.resolve(__dirname, '../../../../output/map');
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 

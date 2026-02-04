@@ -1,0 +1,25 @@
+{
+  "name": "ui-xcfimage",
+  "version": "0.1.0",
+  "description": "Web component <gpp-xcfimage> for rendering GIMP XCF files using xcfreader.",
+  "type": "module",
+  "main": "dist/gpp-xcfimage.js",
+  "module": "dist/gpp-xcfimage.js",
+  "types": "dist/gpp-xcfimage.d.ts",
+  "scripts": {
+    "build": "tsc && node esbuild.config.mjs",
+    "test": "playwright test",
+    "test:coverage": "npm test && node analyze-coverage.mjs",
+    "serve": "npx serve -l 3000 ../.."
+  },
+  "author": "xcfreader contributors",
+  "license": "MIT",
+  "dependencies": {
+    "xcfreader": "*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "esbuild": "^0.27.2",
+    "typescript": "^5.3.3"
+  }
+}

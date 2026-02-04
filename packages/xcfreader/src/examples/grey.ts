@@ -17,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main(): Promise<void> {
-  const xcfPath = path.resolve(__dirname, "../../examples/grey.xcf");
+  const xcfPath = path.resolve(__dirname, "../../../../example-xcf/grey.xcf");
 
   Logger.log(`Parsing ${xcfPath}...`);
   const parser = await XCFParser.parseFileAsync(xcfPath);

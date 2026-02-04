@@ -2,9 +2,15 @@
  * Test createImageFromLayers() method
  */
 import { XCFParser, XCFPNGImage } from "../node.js";
+import { Logger } from "../lib/logger.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function test13CreateImageFromLayers(): Promise<void> {
-  const xcfPath = "./examples/multi.xcf";
+  const xcfPath = path.resolve(__dirname, "../../../../example-xcf/multi.xcf");
   const parser = await XCFParser.parseFileAsync(xcfPath);
 
   // Test 1: Create image from specific layers
@@ -27,7 +33,7 @@ export async function test13CreateImageFromLayers(): Promise<void> {
   const image4 = new XCFPNGImage(parser.width, parser.height);
   parser.createImageFromLayers(image4, ["base"], { ignoreVisibility: true });
 
-  console.log(
+  Logger.log(
     "PASS: createImageFromLayers() works correctly with various inputs"
   );
 }

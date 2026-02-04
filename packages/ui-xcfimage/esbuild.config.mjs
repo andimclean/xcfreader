@@ -1,0 +1,39 @@
+import { build } from "esbuild";
+
+// Build IIFE bundle for browser <script> tag usage
+build({
+  entryPoints: ["./src/gpp-xcfimage.ts"],
+  bundle: true,
+  minify: false,
+  sourcemap: true,
+  format: "iife",
+  globalName: "GPpXCFImage",
+  outfile: "./dist/gpp-xcfimage.iife.js",
+  target: ["es2020"],
+  external: [],
+}).catch(() => process.exit(1));
+
+// Build minified IIFE bundle for production
+build({
+  entryPoints: ["./src/gpp-xcfimage.ts"],
+  bundle: true,
+  minify: true,
+  sourcemap: false,
+  format: "iife",
+  globalName: "GPpXCFImage",
+  outfile: "./dist/gpp-xcfimage.iife.min.js",
+  target: ["es2020"],
+  external: [],
+}).catch(() => process.exit(1));
+
+// Keep the ESM build for module usage
+build({
+  entryPoints: ["./src/gpp-xcfimage.ts"],
+  bundle: true,
+  minify: false,
+  sourcemap: true,
+  format: "esm",
+  outfile: "./dist/gpp-xcfimage.js",
+  target: ["es2020"],
+  external: [],
+}).catch(() => process.exit(1));

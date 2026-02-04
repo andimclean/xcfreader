@@ -23,7 +23,7 @@ export async function test07ErrorHandling(): Promise<void> {
   }
 
   // Test invalid file (not XCF format)
-  const invalidFile = path.resolve(__dirname, '../../examples/Background.png');
+  const invalidFile = path.resolve(__dirname, '../../../../example-xcf/Background.png');
   try {
     await XCFParser.parseFileAsync(invalidFile);
     throw new Error('Should have thrown UnsupportedFormatError for PNG file');

@@ -1,8 +1,13 @@
 import { XCFParser } from '../gimpparser.js';
 import { Logger } from '../lib/logger.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function test17Int32(): Promise<void> {
-  const xcfPath = './examples/int32.xcf';
+  const xcfPath = path.resolve(__dirname, '../../../../example-xcf/int32.xcf');
   const parser = await XCFParser.parseFileAsync(xcfPath);
 
   if (!parser) throw new Error('Parser failed');

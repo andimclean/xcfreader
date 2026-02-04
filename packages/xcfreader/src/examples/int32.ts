@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main() {
-  const xcfPath = path.resolve(__dirname, '../../examples/int32.xcf');
+  const xcfPath = path.resolve(__dirname, '../../../../example-xcf/int32.xcf');
   const outDir = path.resolve(__dirname, '../../../../output/int32');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 

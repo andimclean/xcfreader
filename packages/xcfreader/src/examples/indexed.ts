@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main(): Promise<void> {
-  const xcfPath = path.resolve(__dirname, "../../examples/indexed.xcf");
+  const xcfPath = path.resolve(__dirname, "../../../../example-xcf/indexed.xcf");
   const outputDir = path.resolve(__dirname, "../../../../output/indexed");
 
   Logger.log(`Parsing ${xcfPath}...`);

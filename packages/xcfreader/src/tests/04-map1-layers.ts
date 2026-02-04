@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function test04Map1Layers(): Promise<void> {
-  const xcfPath = path.resolve(__dirname, '../../examples/map1.xcf');
+  const xcfPath = path.resolve(__dirname, '../../../../example-xcf/map1.xcf');
   const parser = await XCFParser.parseFileAsync(xcfPath);
   const groupLayers = parser.groupLayers;
 

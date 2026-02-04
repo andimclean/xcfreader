@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(grep:*)",
+      "Bash(npx playwright --version)",
+      "Bash(powershell.exe -Command \"cd C:/Users/panda/dev/xcfreader/packages/ui-xcfimage; npm run test\")",
+      "Bash(where:*)",
+      "Bash(node -e \"console.log\\(new URL\\(''.'', ''file:///C:/Users/panda/dev/xcfreader/packages/ui-xcfimage/playwright.config.ts''\\).pathname\\)\")",
+      "Bash(npx playwright install:*)",
+      "Bash(node -e:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run test:node:*)",
+      "Bash(npm run:*)",
+      "Bash(node dist/examples/single.js:*)",
+      "Bash(node:*)",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(ls:*)",
+      "Bash(gh api:*)",
+      "Bash(gh browse:*)",
+      "Bash(npm audit:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(gh repo view:*)",
+      "Bash(cat:*)"
+    ]
+  }
+}
