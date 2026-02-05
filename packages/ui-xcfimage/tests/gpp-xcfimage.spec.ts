@@ -99,6 +99,26 @@ test.describe("<gpp-xcfimage> web component", () => {
         expectedLayer: "contents",
         description: "multi-layer",
       },
+      {
+        path: "/example-xcf/float32.xcf",
+        expectedLayer: "Layer",
+        description: "32-bit float",
+      },
+      {
+        path: "/example-xcf/icon.xcf",
+        expectedLayer: "Drawer",
+        description: "512x512 icon",
+      },
+      {
+        path: "/example-xcf/pipe.xcf",
+        expectedLayer: "hopper_plus.png",
+        description: "indexed pipe",
+      },
+      {
+        path: "/example-xcf/boardpieces.xcf",
+        expectedLayer: "Pasted Layer",
+        description: "game asset",
+      },
     ];
 
     for (const file of testFiles) {
@@ -862,5 +882,133 @@ test.describe("Visual regression tests", () => {
     const canvas = page.locator("gpp-xcfimage").locator("canvas");
 
     await expect(canvas).toHaveScreenshot("multi-xcf-layer-0.png");
+  });
+
+  test("should render float32.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select float32.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/float32.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("float32-xcf.png");
+  });
+
+  test("should render icon.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select icon.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/icon.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("icon-xcf.png");
+  });
+
+  test("should render pipe.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select pipe.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/pipe.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("pipe-xcf.png");
+  });
+
+  test("should render boardpieces.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select boardpieces.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/boardpieces.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("boardpieces-xcf.png");
   });
 });
