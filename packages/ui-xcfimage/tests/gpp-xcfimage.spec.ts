@@ -404,6 +404,291 @@ test.describe("<gpp-xcfimage> web component", () => {
       expect(hasForceVisible).toBe(true);
     }
   });
+
+  test("should emit custom events during load lifecycle", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Create new element without src to ensure fresh load
+    await page.evaluate(() => {
+      const el = document.createElement("gpp-xcfimage");
+      el.id = "event-test";
+      document.body.appendChild(el);
+
+      (window as any).eventLog = [];
+      el.addEventListener("xcf-loading", () => {
+        (window as any).eventLog.push("loading");
+      });
+      el.addEventListener("xcf-loaded", () => {
+        (window as any).eventLog.push("loaded");
+      });
+    });
+
+    // Trigger load
+    await page.evaluate(() => {
+      const el = document.getElementById("event-test");
+      el?.setAttribute("src", "/example-xcf/single.xcf");
+    });
+
+    // Wait for loaded event
+    await page.waitForFunction(
+      () => (window as any).eventLog?.includes("loaded"),
+      { timeout: 10000 },
+    );
+
+    const eventLog = await page.evaluate(() => (window as any).eventLog);
+    expect(eventLog).toContain("loading");
+    expect(eventLog).toContain("loaded");
+  });
+
+  test("should emit xcf-error event on failed load", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Listen for error event
+    await page.evaluate(() => {
+      const el = document.querySelector("gpp-xcfimage");
+      el?.addEventListener("xcf-error", () => {
+        (window as any).errorEventFired = true;
+      });
+    });
+
+    // Trigger load with invalid file
+    const elHandle = await page.$("gpp-xcfimage");
+    await page.evaluate(
+      (el) => {
+        el.setAttribute("retry-attempts", "0"); // No retries for fast test
+        el.setAttribute("src", "/nonexistent.xcf");
+      },
+      elHandle,
+    );
+
+    // Wait for error event
+    await page.waitForFunction(() => (window as any).errorEventFired === true, {
+      timeout: 3000,
+    });
+
+    const errorFired = await page.evaluate(
+      () => (window as any).errorEventFired,
+    );
+    expect(errorFired).toBe(true);
+  });
+
+  test("should emit xcf-retrying event on retry attempts", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Listen for retry event
+    await page.evaluate(() => {
+      (window as any).retryEvents = [];
+      const el = document.querySelector("gpp-xcfimage");
+      el?.addEventListener("xcf-retrying", (e: any) => {
+        (window as any).retryEvents.push({
+          attempt: e.detail.attempt,
+          maxAttempts: e.detail.maxAttempts,
+        });
+      });
+    });
+
+    // Trigger load with invalid file and retries enabled
+    const elHandle = await page.$("gpp-xcfimage");
+    await page.evaluate(
+      (el) => {
+        el.setAttribute("retry-attempts", "2"); // 2 retries
+        el.setAttribute("retry-delay", "100"); // Fast retries
+        el.setAttribute("src", "/nonexistent-for-retry-test.xcf");
+      },
+      elHandle,
+    );
+
+    // Wait for retries to complete
+    await page.waitForTimeout(1500); // Enough time for 2 retries
+
+    const retryEvents = await page.evaluate(() => (window as any).retryEvents);
+    expect(retryEvents.length).toBeGreaterThan(0);
+    expect(retryEvents[0].maxAttempts).toBe(2);
+  });
+
+  test("should support lazy loading with loading attribute", async ({
+    page,
+  }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Create element with lazy loading
+    await page.evaluate(() => {
+      const el = document.createElement("gpp-xcfimage");
+      el.setAttribute("src", "/example-xcf/grey.xcf");
+      el.setAttribute("loading", "lazy");
+      el.id = "lazy-test";
+      document.body.appendChild(el);
+    });
+
+    // Element should exist but not be loaded yet (if not in viewport)
+    const lazyEl = page.locator("#lazy-test");
+    await expect(lazyEl).toHaveCount(1);
+
+    // Scroll into view to trigger lazy load
+    await page.evaluate(() => {
+      document.getElementById("lazy-test")?.scrollIntoView();
+    });
+
+    // Wait for loading to complete
+    await page.waitForFunction(
+      () => {
+        const el = document.getElementById("lazy-test");
+        return el?.hasAttribute("layers");
+      },
+      { timeout: 5000 },
+    );
+
+    const layers = await page.evaluate(() => {
+      const el = document.getElementById("lazy-test");
+      return el?.getAttribute("layers");
+    });
+
+    expect(layers).toBeTruthy();
+  });
+
+  test("should handle empty XCF file gracefully", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    const elHandle = await page.$("gpp-xcfimage");
+
+    // Load empty.xcf
+    await page.evaluate(
+      (el) => el.setAttribute("src", "/example-xcf/empty.xcf"),
+      elHandle,
+    );
+
+    // Wait for load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        return el?.getAttribute("layers");
+      },
+      { timeout: 5000 },
+    );
+
+    // Should have layers attribute even if empty
+    const layers = await page.evaluate(
+      (el) => el.getAttribute("layers"),
+      elHandle,
+    );
+    expect(layers).toBeTruthy();
+
+    // Canvas should be rendered
+    const canvasHandle = await page.evaluateHandle(() => {
+      const el = document.querySelector("gpp-xcfimage");
+      return el && el.shadowRoot && el.shadowRoot.querySelector("canvas");
+    });
+
+    const width = await page.evaluate(
+      (canvas) => Number(canvas.getAttribute("width")),
+      canvasHandle,
+    );
+    expect(width).toBeGreaterThan(0);
+  });
+
+  test("should handle complex files with many layers", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    const elHandle = await page.$("gpp-xcfimage");
+
+    // Load map1.xcf which has many layers and groups
+    await page.evaluate(
+      (el) => el.setAttribute("src", "/example-xcf/map1.xcf"),
+      elHandle,
+    );
+
+    // Wait for load (this file is large, may take longer)
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        return el?.getAttribute("layers");
+      },
+      { timeout: 15000 },
+    );
+
+    const layers = await page.evaluate(
+      (el) => el.getAttribute("layers"),
+      elHandle,
+    );
+    const tree = JSON.parse(layers!);
+
+    // Verify file loaded with structure
+    expect(tree.children).toBeDefined();
+    expect(tree.children.length).toBeGreaterThan(0);
+
+    // Verify canvas rendered successfully
+    const canvasHandle = await page.evaluateHandle(() => {
+      const el = document.querySelector("gpp-xcfimage");
+      return el && el.shadowRoot && el.shadowRoot.querySelector("canvas");
+    });
+
+    const width = await page.evaluate(
+      (canvas) => Number(canvas.getAttribute("width")),
+      canvasHandle,
+    );
+    expect(width).toBeGreaterThan(0); // Should have rendered successfully
+  });
+
+  test("should support keyboard navigation and accessibility", async ({
+    page,
+  }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    const el = page.locator("gpp-xcfimage");
+
+    // Check ARIA attributes
+    const role = await el.getAttribute("role");
+    expect(role).toBe("img");
+
+    const tabindex = await el.getAttribute("tabindex");
+    expect(tabindex).toBe("0"); // Should be keyboard focusable
+
+    // Focus element
+    await el.focus();
+
+    // Verify aria-label is set
+    const ariaLabel = await el.getAttribute("aria-label");
+    expect(ariaLabel).toBeTruthy();
+
+    // Test keyboard activation (should emit xcf-activate event)
+    await page.evaluate(() => {
+      (window as any).activateEventFired = false;
+      const el = document.querySelector("gpp-xcfimage");
+      el?.addEventListener("xcf-activate", () => {
+        (window as any).activateEventFired = true;
+      });
+    });
+
+    await el.press("Enter");
+
+    await page.waitForTimeout(100);
+
+    const activateFired = await page.evaluate(
+      () => (window as any).activateEventFired,
+    );
+    expect(activateFired).toBe(true);
+  });
 });
 
 test.describe("Visual regression tests", () => {
