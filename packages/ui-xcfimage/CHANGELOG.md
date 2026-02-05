@@ -4,6 +4,18 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Expanded test coverage for new XCF file types**:
+  - Added 4 new file types to "should load different XCF file types correctly" test
+  - Added 4 new visual regression tests: `float32.xcf`, `icon.xcf`, `pipe.xcf`, `boardpieces.xcf`
+  - Test coverage expanded from 51 to 63 tests (+24%)
+  - All tests passing across Chromium, Firefox, and WebKit
+  - Created screenshot baselines for new visual regression tests
+- **Enhanced demo dropdown**:
+  - Added 8 new XCF file options to demo.html dropdown
+  - Now includes: icon.xcf, pipe.xcf, 192608-nhl-marlow.xcf, boardpieces.xcf, currentpieces.xcf, wallpieces.xcf, FirstFloor.xcf, maingradient.xcf
+
 ### Fixed
 
 - **Critical: Web Components violation in constructor** - Fixed bug where `setAttribute()` calls in the constructor violated Web Components specifications
