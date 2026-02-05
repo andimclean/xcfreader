@@ -1372,15 +1372,40 @@ export class XCFParser {
     // Validate layer pointers are within bounds
     this._validator.validatePointers(layerPointers, buffer, "layer pointer");
 
+    /**
+     * Layer Hierarchy Construction
+     *
+     * XCF files support layer groups (folders) which create a hierarchical structure.
+     * Each layer can have an optional ITEM_PATH property that indicates its position
+     * in the hierarchy.
+     *
+     * - Layers WITHOUT an ITEM_PATH are root-level layers (not in any group)
+     * - Layers WITH an ITEM_PATH have a path like [0], [0, 1], [0, 1, 2] indicating
+     *   their position in nested groups
+     *
+     * Example hierarchy:
+     *   Root (groupLayers)
+     *   ├─ children[0] = Layer Group A
+     *   │  ├─ children[0] = Layer 1 in Group A (path: [0, 0])
+     *   │  └─ children[1] = Layer 2 in Group A (path: [0, 1])
+     *   └─ children[1] = Layer Group B
+     *      └─ children[0] = Layer 1 in Group B (path: [1, 0])
+     *
+     * The path indices correspond to the order layers appear in the GIMP Layers panel,
+     * with each number indicating the child index at that nesting level.
+     */
     this._layers = layerPointers.map((layerPointer: number) => {
       const layer = new GimpLayer(this, this._buffer!.slice(layerPointer));
       const path = layer.pathInfo;
+
       if (!path) {
+        // No ITEM_PATH: this is a root-level layer (not in any group)
         this._groupLayers.children.push({
           layer: layer as unknown as import("./types/index.js").GimpLayerPublic,
           children: [],
         });
       } else {
+        // ITEM_PATH present: layer is in a group hierarchy
         const pathData = path.data as unknown as ParsedPropItemPath;
 
         // Validate hierarchy depth and path items
@@ -1389,22 +1414,48 @@ export class XCFParser {
           pathData.items,
         );
 
+        /**
+         * Recursive function to build layer hierarchy tree
+         *
+         * @param node - Current node in the tree
+         * @param index - Current depth in the path array
+         * @returns Updated node with layer placed at correct position
+         *
+         * How it works:
+         * 1. If we've reached the end of the path (index === pathData.items.length),
+         *    place the layer at this node
+         * 2. Otherwise, navigate to the child at pathData.items[index]
+         * 3. Create child node if it doesn't exist
+         * 4. Recursively continue to next depth level
+         *
+         * Example: For path [0, 1], this function:
+         * - First call (index=0): Navigate to children[0]
+         * - Second call (index=1): Navigate to children[0].children[1]
+         * - Third call (index=2): Place layer at children[0].children[1].layer
+         */
         const toCall = (
           node: GroupLayerNode,
           index: number,
         ): GroupLayerNode => {
           if (index === pathData.items.length) {
+            // Reached end of path: place layer here
             node.layer =
               layer as unknown as import("./types/index.js").GimpLayerPublic;
           } else {
-            if (isUnset(node.children[pathData.items[index]])) {
-              node.children[pathData.items[index]] = {
+            // Navigate deeper into hierarchy
+            const childIndex = pathData.items[index];
+
+            // Create child node if it doesn't exist
+            if (isUnset(node.children[childIndex])) {
+              node.children[childIndex] = {
                 layer: null,
                 children: [],
               };
             }
-            node.children[pathData.items[index]] = toCall(
-              node.children[pathData.items[index]],
+
+            // Recursively process next level
+            node.children[childIndex] = toCall(
+              node.children[childIndex],
               index + 1,
             );
           }
@@ -1412,6 +1463,7 @@ export class XCFParser {
           return node;
         };
 
+        // Start recursive hierarchy building from root
         this._groupLayers = toCall(this._groupLayers, 0);
       }
       return layer;
