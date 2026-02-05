@@ -6,23 +6,17 @@
   "workspaces": [
     "packages/*"
   ],
-  "devDependencies": {
-    "nx": "22.4.4"
-  },
   "scripts": {
     "test": "npm run test:xcfreader && npm run test:ui && npm run test:browser",
-    "test:xcfreader": "nx test xcfreader",
-    "test:ui": "nx test ui-xcfimage",
-    "test:browser": "nx test:browser xcfreader",
-    "coverage": "nx coverage xcfreader",
-    "coverage:all": "nx coverage xcfreader && nx test:coverage ui-xcfimage",
-    "coverage:combined": "nx coverage xcfreader && node calculate-total-coverage.mjs",
-    "build": "nx run-many --target=build --all",
-    "build:xcfreader": "nx build xcfreader",
-    "build:ui": "nx build ui-xcfimage",
-    "benchmark": "nx benchmark xcfreader",
-    "graph": "nx graph",
-    "affected:test": "nx affected --target=test",
-    "affected:build": "nx affected --target=build"
+    "test:xcfreader": "npm test -w @theprogrammingiantpanda/xcfreader",
+    "test:ui": "npm test -w @theprogrammingiantpanda/ui-xcfimage",
+    "test:browser": "npm run test:browser -w @theprogrammingiantpanda/xcfreader",
+    "coverage": "npm run coverage -w @theprogrammingiantpanda/xcfreader",
+    "coverage:all": "npm run coverage -w @theprogrammingiantpanda/xcfreader && npm run test:coverage -w @theprogrammingiantpanda/ui-xcfimage",
+    "coverage:combined": "npm run coverage -w @theprogrammingiantpanda/xcfreader && node calculate-total-coverage.mjs",
+    "build": "npm run build -w @theprogrammingiantpanda/xcfreader && npm run build -w @theprogrammingiantpanda/ui-xcfimage",
+    "build:xcfreader": "npm run build -w @theprogrammingiantpanda/xcfreader",
+    "build:ui": "npm run build -w @theprogrammingiantpanda/ui-xcfimage",
+    "benchmark": "npm run benchmark -w @theprogrammingiantpanda/xcfreader"
   }
 }
