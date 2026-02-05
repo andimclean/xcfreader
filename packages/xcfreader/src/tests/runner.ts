@@ -26,6 +26,7 @@ import { test24PropertyParsing } from "./unit/24-property-parsing.js";
 import { test25LayerHierarchy } from "./unit/25-layer-hierarchy.js";
 import { test26Validation } from "./26-validation.js";
 import { test27V012Format } from "./27-v012-format.js";
+import { test28LayerFiltering } from "./28-layer-filtering.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -56,6 +57,7 @@ const tests = [
   { name: "25-layer-hierarchy.ts (unit)", fn: test25LayerHierarchy },
   { name: "26-validation.ts", fn: test26Validation },
   { name: "27-v012-format.ts", fn: test27V012Format },
+  { name: "28-layer-filtering.ts", fn: test28LayerFiltering },
 ];
 
 async function runTests(): Promise<void> {

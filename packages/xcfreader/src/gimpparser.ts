@@ -1704,6 +1704,106 @@ export class XCFParser {
   }
 
   /**
+   * Find layers matching a regular expression pattern.
+   *
+   * Searches layer names using the provided regex pattern. Useful for finding
+   * multiple layers with similar names or filtering by naming conventions.
+   *
+   * @param pattern - Regular expression pattern to match against layer names
+   * @param flags - Optional regex flags (e.g., 'i' for case-insensitive)
+   * @returns Array of layers whose names match the pattern
+   *
+   * @example
+   * ```typescript
+   * // Find all layers starting with "bg"
+   * const bgLayers = parser.findLayersByPattern(/^bg/i);
+   *
+   * // Find layers with numbers in their names
+   * const numberedLayers = parser.findLayersByPattern(/\d+/);
+   *
+   * // Find layers containing "temp" or "draft"
+   * const tempLayers = parser.findLayersByPattern(/temp|draft/i);
+   * ```
+   */
+  findLayersByPattern(
+    pattern: RegExp | string,
+    flags?: string,
+  ): GimpLayer[] {
+    const regex = typeof pattern === "string" ? new RegExp(pattern, flags) : pattern;
+    return this.layers.filter((layer) => regex.test(layer.name));
+  }
+
+  /**
+   * Filter layers by a custom predicate function.
+   *
+   * Provides maximum flexibility for filtering layers based on any criteria:
+   * name, visibility, opacity, dimensions, group membership, etc.
+   *
+   * @param predicate - Function that returns true for layers to include
+   * @returns Array of layers matching the predicate
+   *
+   * @example
+   * ```typescript
+   * // Find all visible layers
+   * const visibleLayers = parser.filterLayers(layer => layer.isVisible);
+   *
+   * // Find large layers (>1000px width)
+   * const largeLayers = parser.filterLayers(layer => layer.width > 1000);
+   *
+   * // Find layers in specific group
+   * const groupLayers = parser.filterLayers(layer => layer.groupName === 'Effects');
+   *
+   * // Find semi-transparent layers
+   * const transparentLayers = parser.filterLayers(layer => layer.opacity < 255);
+   * ```
+   */
+  filterLayers(predicate: (layer: GimpLayer) => boolean): GimpLayer[] {
+    return this.layers.filter(predicate);
+  }
+
+  /**
+   * Find layers by group name (parent folder).
+   *
+   * Returns all layers that belong to a specific layer group.
+   *
+   * @param groupName - Name of the layer group to search
+   * @returns Array of layers in the specified group
+   *
+   * @example
+   * ```typescript
+   * // Find all layers in the "Background" group
+   * const bgGroupLayers = parser.getLayersByGroup('Background');
+   *
+   * // Find layers not in any group (root level)
+   * const rootLayers = parser.getLayersByGroup('');
+   * ```
+   */
+  getLayersByGroup(groupName: string): GimpLayer[] {
+    return this.layers.filter((layer) => layer.groupName === groupName);
+  }
+
+  /**
+   * Get all visible layers (respecting isVisible property).
+   *
+   * Filters layers to only those with their visibility flag enabled.
+   *
+   * @returns Array of visible layers
+   *
+   * @example
+   * ```typescript
+   * // Render only visible layers
+   * const visibleLayers = parser.getVisibleLayers();
+   * const image = new XCFImage(parser.width, parser.height);
+   * visibleLayers.reverse().forEach(layer => {
+   *   layer.composite(image);
+   * });
+   * ```
+   */
+  getVisibleLayers(): GimpLayer[] {
+    return this.layers.filter((layer) => layer.isVisible);
+  }
+
+  /**
    * Create a flattened image by compositing all visible layers.
    *
    * Iterates through layers in reverse order (bottom to top) and composites
