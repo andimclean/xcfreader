@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **ui-xcfimage: Critical Web Components violation** - Fixed bug where `setAttribute()` calls in constructor prevented custom element from initializing
+  - Element was appearing as `HTMLUnknownElement` with no shadow DOM
+  - Moved attribute setting to `connectedCallback()` per Web Components spec
+  - All 30 Playwright tests now passing (was 0/30 before fix)
+
 ### Changed
 
 - **Documentation restructure**: Split monorepo README structure for better organization
@@ -20,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Separate test suites for Node.js and browser tests
 
 ### Added
+
+- **ui-xcfimage: Accessibility and lazy loading**:
+  - ARIA labels, keyboard navigation, focus indicators
+  - Lazy loading with IntersectionObserver
+  - Custom events (xcf-loading, xcf-loaded, xcf-error, xcf-activate)
+  - Enhanced error messages with visual styling
 
 - **`ui-xcfimage` package**: `<gpp-xcfimage>` web component for rendering XCF files in the browser
   - `src`, `visible` (by layer index), and `forcevisible` attributes
