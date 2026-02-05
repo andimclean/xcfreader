@@ -1,68 +1,68 @@
 {
   "version": "1.0.1",
-  "date": "2026-02-04T00:00:00.000Z",
+  "date": "2026-02-05T17:07:39.513Z",
   "results": [
     {
       "name": "single.xcf",
-      "parseTime": 5.5,
-      "renderTime": 2.3,
-      "totalTime": 7.8,
+      "parseTime": 3.1137000000000015,
+      "renderTime": 18.612099999999998,
+      "totalTime": 21.7258,
       "fileSize": 44619
     },
     {
       "name": "multi.xcf",
-      "parseTime": 8.2,
-      "renderTime": 5.1,
-      "totalTime": 13.3,
+      "parseTime": 1.0750000000000028,
+      "renderTime": 28.775599999999997,
+      "totalTime": 29.8506,
       "fileSize": 91702
     },
     {
       "name": "text.xcf",
-      "parseTime": 12.4,
-      "renderTime": 3.8,
-      "totalTime": 16.2,
+      "parseTime": 0.7589000000000112,
+      "renderTime": 22.792500000000004,
+      "totalTime": 23.551400000000015,
       "fileSize": 115422
     },
     {
       "name": "empty.xcf",
-      "parseTime": 0.8,
-      "renderTime": 0.2,
-      "totalTime": 1.0,
+      "parseTime": 0.647500000000008,
+      "renderTime": 0.2627999999999986,
+      "totalTime": 0.9103000000000065,
       "fileSize": 661
     },
     {
       "name": "fullColour.xcf",
-      "parseTime": 450.0,
-      "renderTime": 180.0,
-      "totalTime": 630.0,
+      "parseTime": 3.5467000000000155,
+      "renderTime": 215.1469,
+      "totalTime": 218.6936,
       "fileSize": 6483246
     },
     {
       "name": "float32.xcf",
-      "parseTime": 8.5,
-      "renderTime": 4.2,
-      "totalTime": 12.7,
+      "parseTime": 0.8867999999999938,
+      "renderTime": 4.27759999999995,
+      "totalTime": 5.164399999999944,
       "fileSize": 70504
     },
     {
       "name": "int32.xcf",
-      "parseTime": 9.1,
-      "renderTime": 4.5,
-      "totalTime": 13.6,
+      "parseTime": 0.6270999999999844,
+      "renderTime": 3.6376999999999953,
+      "totalTime": 4.26479999999998,
       "fileSize": 71068
     },
     {
       "name": "grey.xcf",
-      "parseTime": 85.0,
-      "renderTime": 45.0,
-      "totalTime": 130.0,
+      "parseTime": 0.886600000000044,
+      "renderTime": 151.86220000000003,
+      "totalTime": 152.74880000000007,
       "fileSize": 1020098
     },
     {
       "name": "indexed.xcf",
-      "parseTime": 195.0,
-      "renderTime": 88.0,
-      "totalTime": 283.0,
+      "parseTime": 1.512200000000007,
+      "renderTime": 108.90549999999996,
+      "totalTime": 110.41769999999997,
       "fileSize": 2323872
     }
   ]

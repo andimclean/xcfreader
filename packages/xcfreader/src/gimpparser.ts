@@ -346,6 +346,53 @@ const isUnset = (value: unknown): boolean => {
 };
 
 /**
+ * Type guard to check if a property has a data field
+ */
+const hasDataField = <T>(
+  prop: unknown,
+): prop is { data: T } => {
+  return (
+    prop !== null &&
+    typeof prop === "object" &&
+    "data" in prop
+  );
+};
+
+/**
+ * Safely extract data from a property value
+ */
+const getPropertyData = <T>(
+  propValue: unknown,
+): T | null => {
+  if (hasDataField<T>(propValue)) {
+    return propValue.data;
+  }
+  return null;
+};
+
+/**
+ * Safely get a field from property data
+ */
+const getPropertyField = <T>(
+  propValue: unknown,
+  field: string,
+): T | null => {
+  const data = getPropertyData<Record<string, T>>(propValue);
+  return data?.[field] ?? null;
+};
+
+/**
+ * Convert internal GimpLayer to public API type.
+ * This is necessary because GimpLayer is an internal class but needs to be
+ * exposed through the public API as GimpLayerPublic interface.
+ */
+const toPublicLayer = (
+  layer: GimpLayer,
+): import("./types/index.js").GimpLayerPublic => {
+  return layer as unknown as import("./types/index.js").GimpLayerPublic;
+};
+
+/**
  * Represents a single layer in a GIMP XCF file.
  *
  * Provides access to layer properties like name, dimensions, visibility,
@@ -391,13 +438,11 @@ class GimpLayer {
     this._compiled = true;
 
     // Validate layer dimensions after compilation
-    const offsetX = this.getProps(XCF_PropType.OFFSETS, "dx") as number;
-    const offsetY = this.getProps(XCF_PropType.OFFSETS, "dy") as number;
     this._parent._validateLayerDimensions(
       this._details.width,
       this._details.height,
-      offsetX || 0,
-      offsetY || 0,
+      this.x,
+      this.y,
       this._details.name || "unknown",
     );
   }
@@ -427,9 +472,7 @@ class GimpLayer {
   }
 
   get pathInfo(): ParsedProperty | null {
-    const prop = this.getProps(XCF_PropType.ITEM_PATH);
-    // getProps without index always returns ParsedProperty | null, not number
-    return (prop as ParsedProperty | null) ?? null;
+    return this.getProps(XCF_PropType.ITEM_PATH) as ParsedProperty | null;
   }
 
   /**
@@ -445,15 +488,16 @@ class GimpLayer {
       return this.name;
     }
 
-    const pathItems = (pathInfo.data as unknown as ParsedPropItemPath).items;
+    const pathData = getPropertyData<ParsedPropItemPath>(pathInfo);
+    if (!pathData) {
+      return this.name;
+    }
+
+    const pathItems = pathData.items;
     let item: GroupLayerNode = this._parent._groupLayers;
     const name: string[] = [];
     for (let index = 0; index < pathItems.length; index += 1) {
-      if (item.children) {
-        item = item.children[pathItems[index]];
-      } else {
-        item = (item as unknown as GroupLayerNode[])[pathItems[index]];
-      }
+      item = item.children[pathItems[index]];
       name.push(item.layer!.name);
     }
 
@@ -484,14 +528,14 @@ class GimpLayer {
    * Get the X offset of this layer
    */
   get x(): number {
-    return this.getProps(XCF_PropType.OFFSETS, "dx") as number;
+    return (this.getProps(XCF_PropType.OFFSETS, "dx") as number) || 0;
   }
 
   /**
    * Get the Y offset of this layer
    */
   get y(): number {
-    return this.getProps(XCF_PropType.OFFSETS, "dy") as number;
+    return (this.getProps(XCF_PropType.OFFSETS, "dy") as number) || 0;
   }
 
   /**
@@ -539,30 +583,31 @@ class GimpLayer {
       ) as ParsedProperty | null;
       this._parasites = {};
       if (parasite) {
-        const parasiteData = (parasite.data as unknown as { parasite: Buffer })
-          .parasite;
-        const parsedParasite = fullParasiteParser.parse(
-          parasiteData,
-        ) as ParsedParasiteArray;
-        (parsedParasite.items || []).forEach(
-          (parasiteItem: ParsedParasiteItem) => {
-            const parasiteName = parasiteItem.name;
-            if (parasiteName === "gimp-text-layer") {
-              const text = (
-                stringParser.parse(parasiteItem.details) as { data: string }
-              ).data;
-              const fields: Record<string, string> = {};
-              const matches = text.match(/(\(.*\))+/g) || [];
-              matches.forEach((item: string) => {
-                const itemParts = item.substring(1, item.length - 1).split(" ");
-                const key = itemParts[0];
-                const value = itemParts.slice(1).join(" ");
-                fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
-              });
-              this._parasites![parasiteName] = fields;
-            }
-          },
-        );
+        const parasiteBuffer = getPropertyData<{ parasite: Buffer }>(parasite);
+        if (parasiteBuffer?.parasite) {
+          const parsedParasite = fullParasiteParser.parse(
+            parasiteBuffer.parasite,
+          ) as ParsedParasiteArray;
+          (parsedParasite.items || []).forEach(
+            (parasiteItem: ParsedParasiteItem) => {
+              const parasiteName = parasiteItem.name;
+              if (parasiteName === "gimp-text-layer") {
+                const text = (
+                  stringParser.parse(parasiteItem.details) as { data: string }
+                ).data;
+                const fields: Record<string, string> = {};
+                const matches = text.match(/(\(.*\))+/g) || [];
+                matches.forEach((item: string) => {
+                  const itemParts = item.substring(1, item.length - 1).split(" ");
+                  const key = itemParts[0];
+                  const value = itemParts.slice(1).join(" ");
+                  fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
+                });
+                this._parasites![parasiteName] = fields;
+              }
+            },
+          );
+        }
       }
     }
     return this._parasites;
@@ -604,16 +649,15 @@ class GimpLayer {
       this._props = {};
       (this._details!.propertyList || []).forEach(
         (property: ParsedProperty) => {
-          (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
-            property.type
-          ] = property;
+          // Type assertion needed: ParsedProperty is a union that gets narrowed by property.type
+          this._props![property.type as T] = property as unknown as XCF_PropTypeMap[T];
         },
       );
     }
 
     const propValue = this._props[prop];
-    if (index && propValue && typeof propValue === "object" && propValue !== null && "data" in (propValue as object)) {
-      return ((propValue as unknown as { data: Record<string, number> }).data)[index];
+    if (index) {
+      return getPropertyField<number>(propValue, index);
     }
     return propValue ?? null;
   }
@@ -1401,12 +1445,16 @@ export class XCFParser {
       if (!path) {
         // No ITEM_PATH: this is a root-level layer (not in any group)
         this._groupLayers.children.push({
-          layer: layer as unknown as import("./types/index.js").GimpLayerPublic,
+          layer: toPublicLayer(layer),
           children: [],
         });
       } else {
         // ITEM_PATH present: layer is in a group hierarchy
-        const pathData = path.data as unknown as ParsedPropItemPath;
+        const pathData = getPropertyData<ParsedPropItemPath>(path);
+
+        if (!pathData) {
+          return layer;
+        }
 
         // Validate hierarchy depth and path items
         this._validator.validateHierarchyDepth(
@@ -1439,8 +1487,7 @@ export class XCFParser {
         ): GroupLayerNode => {
           if (index === pathData.items.length) {
             // Reached end of path: place layer here
-            node.layer =
-              layer as unknown as import("./types/index.js").GimpLayerPublic;
+            node.layer = toPublicLayer(layer);
           } else {
             // Navigate deeper into hierarchy
             const childIndex = pathData.items[index];
@@ -1584,15 +1631,14 @@ export class XCFParser {
     if (!this._props) {
       this._props = {};
       (this._header!.propertyList || []).forEach((property: ParsedProperty) => {
-        (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
-          property.type
-        ] = property;
+        // Type assertion needed: ParsedProperty is a union that gets narrowed by property.type
+        this._props![property.type as T] = property as unknown as XCF_PropTypeMap[T];
       });
     }
 
     const propValue = this._props[prop];
-    if (index && propValue && typeof propValue === "object" && propValue !== null && "data" in (propValue as object)) {
-      return ((propValue as unknown as { data: Record<string, number> }).data)[index];
+    if (index) {
+      return getPropertyField<number>(propValue, index);
     }
     return propValue ?? null;
   }
@@ -1623,12 +1669,8 @@ export class XCFParser {
       return null;
     }
     const colormapProp = this.getProps(XCF_PropType.COLORMAP);
-    if (
-      colormapProp &&
-      typeof colormapProp === "object" &&
-      "data" in colormapProp
-    ) {
-      const data = colormapProp.data as { colours: ParsedRGB[] };
+    const data = getPropertyData<{ colours: ParsedRGB[] }>(colormapProp);
+    if (data?.colours) {
       return data.colours.map((c: ParsedRGB) => ({
         red: c.red,
         green: c.greed, // Note: typo in parser "greed" instead of "green"
@@ -1672,8 +1714,7 @@ export class XCFParser {
           layer: null,
           children: [],
         };
-        cursorChildren[lastSegment].layer =
-          layer as unknown as import("./types/index.js").GimpLayerPublic;
+        cursorChildren[lastSegment].layer = toPublicLayer(layer);
       });
     }
     return this._groupLayers;
