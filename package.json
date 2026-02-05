@@ -10,7 +10,7 @@
     "nx": "22.4.4"
   },
   "scripts": {
-    "test": "nx run-many --target=test --all",
+    "test": "npm run test:xcfreader && npm run test:ui && npm run test:browser",
     "test:xcfreader": "nx test xcfreader",
     "test:ui": "nx test ui-xcfimage",
     "test:browser": "nx test:browser xcfreader",
