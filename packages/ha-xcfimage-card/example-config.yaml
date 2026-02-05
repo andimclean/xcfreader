@@ -1,0 +1,133 @@
+# Example Home Assistant Lovelace Card Configuration
+
+# Basic example - Simple light control
+type: custom:ha-xcfimage-card
+xcf_url: /local/floorplan.xcf
+entity_layers:
+  - entity: light.living_room
+    layer: 0
+  - entity: light.kitchen
+    layer: 1
+  - entity: light.bedroom
+    layer: 2
+
+---
+
+# Advanced example - Floor plan with multiple device types
+type: custom:ha-xcfimage-card
+title: Home Floor Plan
+xcf_url: /local/home-floorplan.xcf
+entity_layers:
+  # Lights
+  - entity: light.living_room
+    layer: 0
+    state_on: "on"
+  - entity: light.kitchen
+    layer: 1
+    state_on: "on"
+  - entity: light.bedroom
+    layer: 2
+    state_on: "on"
+  # Door sensors
+  - entity: binary_sensor.front_door
+    layer: 3
+    state_on: "on"  # "on" means door is open
+  - entity: binary_sensor.back_door
+    layer: 4
+    state_on: "on"
+  # Motion sensors
+  - entity: binary_sensor.motion_living_room
+    layer: 5
+    state_on: "on"
+  # Climate
+  - entity: climate.thermostat
+    layer: 6
+    state_on: "heat"  # Show layer when heating
+default_visible: [10, 11]  # Background layers (walls, floor plan)
+
+---
+
+# Weather visualization example
+type: custom:ha-xcfimage-card
+title: Current Weather
+xcf_url: /local/weather-conditions.xcf
+entity_layers:
+  - entity: weather.home
+    layer: 0
+    state_on: "sunny"
+  - entity: weather.home
+    layer: 1
+    state_on: "cloudy"
+  - entity: weather.home
+    layer: 2
+    state_on: "rainy"
+  - entity: weather.home
+    layer: 3
+    state_on: "snowy"
+default_visible: [5]  # Background/landscape layer
+
+---
+
+# Security system status
+type: custom:ha-xcfimage-card
+title: Security Status
+xcf_url: /local/security-status.xcf
+entity_layers:
+  # Armed states
+  - entity: alarm_control_panel.home
+    layer: 0
+    state_on: "armed_home"
+  - entity: alarm_control_panel.home
+    layer: 1
+    state_on: "armed_away"
+  - entity: alarm_control_panel.home
+    layer: 2
+    state_on: "armed_night"
+  # Triggered state
+  - entity: alarm_control_panel.home
+    layer: 3
+    state_on: "triggered"
+default_visible: [4]  # Base icon/background
+
+---
+
+# Garage/parking status
+type: custom:ha-xcfimage-card
+title: Garage
+xcf_url: /local/garage.xcf
+entity_layers:
+  - entity: cover.garage_door
+    layer: 0
+    state_on: "open"
+  - entity: binary_sensor.car_present
+    layer: 1
+    state_on: "on"
+  - entity: light.garage
+    layer: 2
+    state_on: "on"
+default_visible: [3]  # Garage outline
+
+---
+
+# Room occupancy with multiple indicators
+type: custom:ha-xcfimage-card
+title: Room Status
+xcf_url: /local/room-status.xcf
+entity_layers:
+  # Lights on
+  - entity: light.room
+    layer: 0
+    state_on: "on"
+  # Motion detected
+  - entity: binary_sensor.room_motion
+    layer: 1
+    state_on: "on"
+  # Window open
+  - entity: binary_sensor.room_window
+    layer: 2
+    state_on: "on"
+  # Door open
+  - entity: binary_sensor.room_door
+    layer: 3
+    state_on: "on"
+default_visible: [4]  # Room outline

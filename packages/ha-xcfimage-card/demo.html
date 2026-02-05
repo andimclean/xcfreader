@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HA XCF Image Card Demo</title>
+  <script type="module" src="/packages/ha-xcfimage-card/dist/ha-xcfimage-card.js"></script>
+  <style>
+    :root {
+      --ha-card-background: #ffffff;
+      --card-background-color: #ffffff;
+      --ha-card-border-radius: 12px;
+      --ha-card-box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --primary-text-color: #212121;
+      --secondary-text-color: #727272;
+      --error-color: #ff5252;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .demo-container {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .controls h2 {
+      margin-top: 0;
+    }
+
+    .entity-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .entity-control:last-child {
+      border-bottom: none;
+    }
+
+    .entity-name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .entity-state {
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 0.9em;
+      font-weight: 500;
+    }
+
+    .entity-state.on {
+      background: #4caf50;
+      color: white;
+    }
+
+    .entity-state.off {
+      background: #9e9e9e;
+      color: white;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .toggle-btn {
+      background: #2196f3;
+      color: white;
+    }
+
+    .info {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      color: #1565c0;
+    }
+
+    .xcf-select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1>Home Assistant XCF Image Card Demo</h1>
+
+    <div class="controls">
+      <h2>Demo Controls</h2>
+      <div class="info">
+        Toggle the switches below to simulate Home Assistant entity states.
+        The XCF image layers will update in real-time.
+      </div>
+
+      <label>
+        <strong>XCF File:</strong>
+        <select class="xcf-select" id="xcfSelect">
+          <option value="/example-xcf/multi.xcf">multi.xcf (3 layers)</option>
+          <option value="/example-xcf/map1.xcf">map1.xcf</option>
+          <option value="/example-xcf/FirstFloor.xcf">FirstFloor.xcf</option>
+        </select>
+      </label>
+
+      <div id="entityControls"></div>
+    </div>
+
+    <ha-xcfimage-card id="card"></ha-xcfimage-card>
+  </div>
+
+  <script>
+    // Mock Home Assistant object
+    const mockHass = {
+      states: {
+        'light.layer_base': { state: 'on', attributes: {}, last_changed: '', last_updated: '' },
+        'light.layer_shaded': { state: 'off', attributes: {}, last_changed: '', last_updated: '' },
+        'light.layer_red1': { state: 'off', attributes: {}, last_changed: '', last_updated: '' },
+        'light.layer_red2': { state: 'off', attributes: {}, last_changed: '', last_updated: '' },
+      },
+      callService: async () => {},
+    };
+
+    const entities = [
+      { entity: 'light.layer_base', name: 'Base (grayscale)', layer: 7 },
+      { entity: 'light.layer_shaded', name: 'Shaded', layer: 6 },
+      { entity: 'light.layer_red1', name: 'Red Corner 1', layer: 1 },
+      { entity: 'light.layer_red2', name: 'Red Corner 2', layer: 2 },
+    ];
+
+    // Setup card
+    const card = document.getElementById('card');
+    const xcfSelect = document.getElementById('xcfSelect');
+
+    function updateCardConfig() {
+      console.log('Updating card config...');
+      card.setConfig({
+        type: 'custom:ha-xcfimage-card',
+        title: 'Demo XCF Image',
+        xcf_url: xcfSelect.value,
+        entity_layers: entities.map(e => ({
+          entity: e.entity,
+          layer: e.layer,
+          state_on: 'on'
+        })),
+        default_visible: [],
+      });
+      card.hass = mockHass;
+
+      // Debug: Check what's in the shadow DOM
+      setTimeout(() => {
+        const xcfElement = card.shadowRoot?.querySelector('gpp-xcfimage');
+        console.log('XCF Element:', xcfElement);
+        console.log('Visible attribute:', xcfElement?.getAttribute('visible'));
+        console.log('Current entity states:', mockHass.states);
+      }, 100);
+    }
+
+    xcfSelect.addEventListener('change', updateCardConfig);
+
+    // Create entity controls
+    const controlsDiv = document.getElementById('entityControls');
+    entities.forEach(entity => {
+      const div = document.createElement('div');
+      div.className = 'entity-control';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'entity-name';
+      nameSpan.textContent = entity.name;
+
+      const stateSpan = document.createElement('span');
+      stateSpan.className = 'entity-state ' + mockHass.states[entity.entity].state;
+      stateSpan.textContent = mockHass.states[entity.entity].state.toUpperCase();
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = 'toggle-btn';
+      toggleBtn.textContent = 'Toggle';
+      toggleBtn.onclick = () => {
+        const currentState = mockHass.states[entity.entity].state;
+        const newState = currentState === 'on' ? 'off' : 'on';
+        console.log(`Toggle ${entity.entity}: ${currentState} -> ${newState}`);
+        mockHass.states[entity.entity].state = newState;
+        stateSpan.textContent = newState.toUpperCase();
+        stateSpan.className = 'entity-state ' + newState;
+        card.hass = { ...mockHass }; // Trigger update
+
+        // Debug: Check visible attribute after update
+        setTimeout(() => {
+          const xcfElement = card.shadowRoot?.querySelector('gpp-xcfimage');
+          console.log('After toggle - Visible attribute:', xcfElement?.getAttribute('visible'));
+          console.log('XCF element src:', xcfElement?.getAttribute('src'));
+          console.log('XCF element canvas:', xcfElement?.shadowRoot?.querySelector('canvas'));
+
+          // Try to force re-render by checking if element exists
+          if (xcfElement) {
+            console.log('XCF element tag:', xcfElement.tagName);
+            console.log('XCF element constructor:', xcfElement.constructor.name);
+          }
+        }, 100);
+      };
+
+      div.appendChild(nameSpan);
+      div.appendChild(stateSpan);
+      div.appendChild(toggleBtn);
+      controlsDiv.appendChild(div);
+    });
+
+    // Initialize card after custom element is defined
+    customElements.whenDefined('ha-xcfimage-card').then(() => {
+      updateCardConfig();
+    });
+  </script>
+</body>
+</html>
