@@ -11,6 +11,11 @@ import FS from "fs";
 import { Buffer } from "buffer";
 import XCFCompositer from "./lib/xcfcompositer.js";
 import {
+  XCFValidator,
+  XCFValidationError,
+  ValidationOptions,
+} from "./lib/xcf-validator.js";
+import {
   XCF_PropType,
   XCF_PropTypeMap,
   XCF_BaseType,
@@ -33,6 +38,8 @@ import {
 
 // Re-export all types for consumers
 export * from "./types/index.js";
+export { XCFValidator, XCFValidationError } from "./lib/xcf-validator.js";
+export type { ValidationOptions } from "./lib/xcf-validator.js";
 
 // NOTE: XCFPNGImage and XCFDataImage are NOT exported from this base module.
 // Import from the appropriate entry point:
@@ -382,6 +389,17 @@ class GimpLayer {
     const parser = this._parent.isV11 ? layerParserV11 : layerParserV10;
     this._details = parser.parse(this._buffer) as ParsedLayer;
     this._compiled = true;
+
+    // Validate layer dimensions after compilation
+    const offsetX = this.getProps(XCF_PropType.OFFSETS, "dx") as number;
+    const offsetY = this.getProps(XCF_PropType.OFFSETS, "dy") as number;
+    this._parent._validateLayerDimensions(
+      this._details.width,
+      this._details.height,
+      offsetX || 0,
+      offsetY || 0,
+      this._details.name || "unknown",
+    );
   }
 
   /**
@@ -1119,12 +1137,41 @@ export class XCFParser {
   private _version: number = 0; // XCF version number (e.g., 10, 11)
   private _props: Partial<XCF_PropTypeMap> | null = null;
   _groupLayers: GroupLayerNode = { layer: null, children: [] };
+  private _validator: XCFValidator;
+
+  /**
+   * Create a new XCFParser instance
+   * @param validationOptions - Optional validation configuration
+   */
+  constructor(validationOptions?: ValidationOptions) {
+    this._validator = new XCFValidator(validationOptions);
+  }
 
   /**
    * Check if this is an XCF v011+ file (uses 64-bit pointers)
    */
   get isV11(): boolean {
     return this._version >= 11;
+  }
+
+  /**
+   * Validate layer dimensions (internal use by GimpLayer)
+   * @internal
+   */
+  _validateLayerDimensions(
+    width: number,
+    height: number,
+    offsetX: number,
+    offsetY: number,
+    layerName: string,
+  ): void {
+    this._validator.validateLayerDimensions(
+      width,
+      height,
+      offsetX,
+      offsetY,
+      layerName,
+    );
   }
 
   /**
@@ -1180,17 +1227,23 @@ export class XCFParser {
 
       const data = await FS.promises.readFile(file);
 
-      // Validate XCF magic bytes
-      if (data.length < 14 || data.toString("utf-8", 0, 4) !== "gimp") {
-        throw new UnsupportedFormatError(
-          `Invalid XCF file "${file}": missing GIMP magic bytes.\n` +
-            `This file does not appear to be a valid GIMP XCF file.\n` +
-            `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
-            `Please verify the file and try exporting from GIMP again.`,
-        );
+      const parser = new XCFParser();
+
+      // Validate XCF header and magic bytes
+      try {
+        parser._validator.validateHeader(data);
+      } catch (err) {
+        if (err instanceof XCFValidationError) {
+          throw new UnsupportedFormatError(
+            `Invalid XCF file "${file}": ${err.message}\n` +
+              `This file does not appear to be a valid GIMP XCF file.\n` +
+              `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
+              `Please verify the file and try exporting from GIMP again.`,
+          );
+        }
+        throw err;
       }
 
-      const parser = new XCFParser();
       parser.parse(data);
       return parser;
     } catch (err: unknown) {
@@ -1249,17 +1302,23 @@ export class XCFParser {
       );
     }
 
-    // Validate XCF magic bytes
-    if (buffer.length < 14 || buffer.toString("utf-8", 0, 4) !== "gimp") {
-      throw new UnsupportedFormatError(
-        "Invalid XCF data: missing GIMP magic bytes.\n" +
-          "This does not appear to be a valid GIMP XCF file.\n" +
-          "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
-          "Please verify the file and try exporting from GIMP again.",
-      );
+    const parser = new XCFParser();
+
+    // Validate XCF header and magic bytes
+    try {
+      parser._validator.validateHeader(buffer);
+    } catch (err) {
+      if (err instanceof XCFValidationError) {
+        throw new UnsupportedFormatError(
+          `Invalid XCF data: ${err.message}\n` +
+            "This does not appear to be a valid GIMP XCF file.\n" +
+            "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
+            "Please verify the file and try exporting from GIMP again.",
+        );
+      }
+      throw err;
     }
 
-    const parser = new XCFParser();
     parser.parse(buffer);
     return parser;
   }
@@ -1269,6 +1328,9 @@ export class XCFParser {
     this._layers = [];
     this._channels = [];
     this._groupLayers = { layer: null, children: [] };
+
+    // Reset validator state for new parse
+    this._validator.reset();
 
     // Detect XCF version to choose correct parser
     const version = buffer.toString("utf-8", 9, 13);
@@ -1285,6 +1347,10 @@ export class XCFParser {
       };
       this._header = header;
 
+      // Validate image dimensions and base type
+      this._validator.validateImageDimensions(header.width, header.height);
+      this._validator.validateBaseType(header.base_type);
+
       // Convert 64-bit pointers to numbers (JavaScript can handle up to 2^53)
       layerPointers = (header.layerList64 || [])
         .filter((p) => p.high !== 0 || p.low !== 0)
@@ -1292,8 +1358,19 @@ export class XCFParser {
     } else {
       // XCF v010 and earlier use 32-bit pointers
       this._header = gimpHeaderV10.parse(buffer) as ParsedGimpHeader;
+
+      // Validate image dimensions and base type
+      this._validator.validateImageDimensions(
+        this._header.width,
+        this._header.height,
+      );
+      this._validator.validateBaseType(this._header.base_type);
+
       layerPointers = (this._header.layerList || []).filter(remove_empty);
     }
+
+    // Validate layer pointers are within bounds
+    this._validator.validatePointers(layerPointers, buffer, "layer pointer");
 
     this._layers = layerPointers.map((layerPointer: number) => {
       const layer = new GimpLayer(this, this._buffer!.slice(layerPointer));
@@ -1305,6 +1382,13 @@ export class XCFParser {
         });
       } else {
         const pathData = path.data as unknown as ParsedPropItemPath;
+
+        // Validate hierarchy depth and path items
+        this._validator.validateHierarchyDepth(
+          pathData.items.length,
+          pathData.items,
+        );
+
         const toCall = (
           node: GroupLayerNode,
           index: number,
@@ -1335,11 +1419,20 @@ export class XCFParser {
 
     // Note: Channel parsing for v011 would need similar 64-bit handling
     // Currently only supporting layer parsing for v011
-    this._channels = (this._header.channelList || [])
-      .filter(remove_empty)
-      .map((channelPointer: number) => {
-        return new GimpChannel(this, this._buffer!.slice(channelPointer));
-      });
+    const channelPointers = (this._header.channelList || []).filter(
+      remove_empty,
+    );
+
+    // Validate channel pointers are within bounds
+    this._validator.validatePointers(
+      channelPointers,
+      buffer,
+      "channel pointer",
+    );
+
+    this._channels = channelPointers.map((channelPointer: number) => {
+      return new GimpChannel(this, this._buffer!.slice(channelPointer));
+    });
   }
 
   getBufferForPointer(offset: number): Buffer {

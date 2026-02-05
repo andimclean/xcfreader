@@ -4,16 +4,27 @@ import {
 } from "@theprogrammingiantpanda/xcfreader/browser";
 
 /**
- * <gpp-xcfimage src="..." visible="0,2,5" forcevisible loading="lazy" alt="...">
+ * <gpp-xcfimage src="..." visible="0,2,5" forcevisible loading="lazy" alt="..." retry-attempts="3" retry-delay="1000">
  *   Custom element for rendering GIMP XCF files using xcfreader.
- *   The `visible` attribute accepts comma-separated layer indices.
- *   When empty, all visible layers are rendered.
- *   The `loading` attribute can be "lazy" or "eager" (default: "eager").
- *   The `alt` attribute provides alternative text for accessibility.
+ *
+ *   Attributes:
+ *   - `src`: URL of the XCF file to load
+ *   - `visible`: Comma-separated layer indices to show (empty = all visible layers)
+ *   - `forcevisible`: Force all layers visible regardless of their visibility state
+ *   - `loading`: "lazy" or "eager" (default: "eager")
+ *   - `alt`: Alternative text for accessibility
+ *   - `retry-attempts`: Number of retry attempts for failed network requests (default: 3)
+ *   - `retry-delay`: Initial delay in ms for exponential backoff (default: 1000)
+ *
+ *   Events:
+ *   - `xcf-loading`: Fired when loading starts
+ *   - `xcf-loaded`: Fired when loading succeeds
+ *   - `xcf-error`: Fired when loading fails after all retries
+ *   - `xcf-retrying`: Fired when retrying after a failed attempt
  */
 export class GPpXCFImage extends HTMLElement {
   static get observedAttributes() {
-    return ["src", "visible", "forcevisible", "loading", "alt"];
+    return ["src", "visible", "forcevisible", "loading", "alt", "retry-attempts", "retry-delay"];
   }
 
   private canvas: HTMLCanvasElement;
@@ -25,6 +36,9 @@ export class GPpXCFImage extends HTMLElement {
   private alt: string = "";
   private intersectionObserver: IntersectionObserver | null = null;
   private isLoaded: boolean = false;
+  private retryAttempts: number = 3; // Default retry attempts
+  private retryDelay: number = 1000; // Default initial retry delay in ms
+  private currentAttempt: number = 0;
 
   constructor() {
     super();
@@ -175,6 +189,14 @@ export class GPpXCFImage extends HTMLElement {
     this.loading =
       (this.getAttribute("loading") as "lazy" | "eager") || "eager";
     this.alt = this.getAttribute("alt") || "";
+
+    // Parse retry configuration
+    const retryAttempts = parseInt(this.getAttribute("retry-attempts") || "3", 10);
+    this.retryAttempts = !isNaN(retryAttempts) && retryAttempts >= 0 ? retryAttempts : 3;
+
+    const retryDelay = parseInt(this.getAttribute("retry-delay") || "1000", 10);
+    this.retryDelay = !isNaN(retryDelay) && retryDelay >= 0 ? retryDelay : 1000;
+
     this.updateAriaLabel();
   }
 
@@ -183,6 +205,53 @@ export class GPpXCFImage extends HTMLElement {
       this.alt || (this.src ? `XCF Image: ${this.src}` : "XCF Image");
     this.setAttribute("aria-label", label);
     this.canvas.setAttribute("aria-label", label);
+  }
+
+  /**
+   * Fetch with exponential backoff retry logic
+   * @param url - URL to fetch
+   * @param attempt - Current attempt number (starts at 1)
+   * @returns Promise<ArrayBuffer>
+   */
+  private async fetchWithRetry(url: string, attempt: number = 1): Promise<ArrayBuffer> {
+    this.currentAttempt = attempt;
+
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+      }
+      return await resp.arrayBuffer();
+    } catch (error) {
+      // If we've exhausted all retry attempts, throw the error
+      if (attempt >= this.retryAttempts) {
+        throw error;
+      }
+
+      // Calculate exponential backoff delay: retryDelay * 2^(attempt-1)
+      const delay = this.retryDelay * Math.pow(2, attempt - 1);
+
+      // Dispatch retry event
+      this.dispatchEvent(
+        new CustomEvent("xcf-retrying", {
+          bubbles: true,
+          composed: true,
+          detail: {
+            src: url,
+            attempt,
+            maxAttempts: this.retryAttempts,
+            nextDelay: delay,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        }),
+      );
+
+      // Wait before retrying
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
+      // Retry with incremented attempt counter
+      return this.fetchWithRetry(url, attempt + 1);
+    }
   }
 
   private async loadAndRender() {
@@ -201,11 +270,8 @@ export class GPpXCFImage extends HTMLElement {
     this.setAttribute("aria-busy", "true");
 
     try {
-      const resp = await fetch(this.src);
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
-      }
-      const arrayBuffer = await resp.arrayBuffer();
+      // Use fetchWithRetry instead of direct fetch
+      const arrayBuffer = await this.fetchWithRetry(this.src);
       this.parser = XCFParser.parseBuffer(arrayBuffer);
       // Build a map from layer object to its flat index
       const layerIndexMap = new Map();
@@ -310,7 +376,8 @@ export class GPpXCFImage extends HTMLElement {
 
   private showError(msg: string) {
     this.canvas.width = 400;
-    this.canvas.height = 60;
+    this.canvas.height = 90; // Increased height to accommodate retry button
+    // eslint-disable-next-line no-console
     console.error(msg);
 
     // Set ARIA attributes for error state
@@ -333,7 +400,7 @@ export class GPpXCFImage extends HTMLElement {
       // Draw error icon (!)
       ctx.fillStyle = "#856404";
       ctx.font = "bold 24px sans-serif";
-      ctx.fillText("⚠", 10, 35);
+      ctx.fillText("⚠", 10, 30);
 
       // Draw error message
       ctx.fillStyle = "#856404";
@@ -341,9 +408,61 @@ export class GPpXCFImage extends HTMLElement {
       const maxWidth = this.canvas.width - 50;
       const lines = this.wrapText(ctx, msg, maxWidth);
       lines.forEach((line, i) => {
-        ctx.fillText(line, 45, 25 + i * 18);
+        ctx.fillText(line, 45, 20 + i * 18);
       });
+
+      // Draw retry button
+      const buttonX = 45;
+      const buttonY = 50;
+      const buttonWidth = 80;
+      const buttonHeight = 28;
+
+      // Button background
+      ctx.fillStyle = "#856404";
+      ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+
+      // Button text
+      ctx.fillStyle = "#fff";
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Retry", buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
+
+      // Reset text alignment
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
     }
+
+    // Add click handler for retry button
+    this.canvas.style.cursor = "pointer";
+    const retryHandler = (event: MouseEvent) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      // Check if click is within retry button bounds
+      const buttonX = 45;
+      const buttonY = 50;
+      const buttonWidth = 80;
+      const buttonHeight = 28;
+
+      if (
+        x >= buttonX &&
+        x <= buttonX + buttonWidth &&
+        y >= buttonY &&
+        y <= buttonY + buttonHeight
+      ) {
+        // Remove error state and retry loading
+        this.removeAttribute("aria-invalid");
+        this.canvas.style.cursor = "default";
+        this.canvas.removeEventListener("click", retryHandler);
+        this.isLoaded = false;
+        this.currentAttempt = 0; // Reset attempt counter
+        this.loadAndRender();
+      }
+    };
+
+    this.canvas.addEventListener("click", retryHandler);
   }
 
   private wrapText(

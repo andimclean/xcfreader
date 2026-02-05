@@ -1,7 +1,7 @@
 /**
- * Test 16: Full color RGB v011 support with high bit-depth
+ * Test 16: Full color RGB v012 support with high bit-depth
  *
- * Verifies that fullColour.xcf (RGB, v011 format, 32-bit precision) parses
+ * Verifies that fullColour.xcf (RGB, v012 format, 32-bit precision) parses
  * and renders correctly with proper high bit-depth conversion.
  */
 import { XCFParser, XCFPNGImage, XCF_BaseType, XCF_Precision } from "../node.js";

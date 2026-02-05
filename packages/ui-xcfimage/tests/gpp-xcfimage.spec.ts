@@ -231,14 +231,17 @@ test.describe("<gpp-xcfimage> web component", () => {
 
     const elHandle = await page.$("gpp-xcfimage");
 
-    // Try to load a non-existent file
+    // Disable retries for faster test execution
     await page.evaluate(
-      (el) => el.setAttribute("src", "/example-xcf/nonexistent.xcf"),
+      (el) => {
+        el.setAttribute("retry-attempts", "0");
+        el.setAttribute("src", "/example-xcf/nonexistent.xcf");
+      },
       elHandle,
     );
 
-    // Wait a moment for the fetch to fail
-    await page.waitForTimeout(2000);
+    // Wait a moment for the fetch to fail (shorter wait since no retries)
+    await page.waitForTimeout(1000);
 
     // Verify error is displayed in canvas
     const canvasHandle = await page.evaluateHandle(() => {
