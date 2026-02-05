@@ -1,0 +1,29 @@
+{
+  "$schema": "https://codesandbox.io/schemas/tasks.json",
+  "setupTasks": [
+    {
+      "name": "Install Dependencies",
+      "command": "npm install"
+    }
+  ],
+  "tasks": {
+    "build": {
+      "name": "Build All Packages",
+      "command": "npm run build",
+      "runAtStart": false
+    },
+    "test": {
+      "name": "Run Tests",
+      "command": "npm test",
+      "runAtStart": false
+    },
+    "dev": {
+      "name": "Start Demo Server",
+      "command": "cd packages/ui-xcfimage && npm run serve",
+      "runAtStart": true,
+      "preview": {
+        "port": 3000
+      }
+    }
+  }
+}

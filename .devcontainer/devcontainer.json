@@ -1,0 +1,74 @@
+{
+  "name": "xcfreader Development",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "ms-playwright.playwright",
+        "eamodio.gitlens",
+        "GitHub.copilot",
+        "GitHub.vscode-pull-request-github",
+        "streetsidesoftware.code-spell-checker",
+        "christian-kohler.npm-intellisense",
+        "formulahendry.auto-rename-tag",
+        "PKief.material-icon-theme"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "typescript.enablePromptUseWorkspaceTsdk": true,
+        "eslint.workingDirectories": [
+          "packages/xcfreader",
+          "packages/ui-xcfimage"
+        ],
+        "files.exclude": {
+          "**/node_modules": true,
+          "**/dist": true,
+          "**/.nx": true
+        },
+        "search.exclude": {
+          "**/node_modules": true,
+          "**/dist": true,
+          "**/.nx": true,
+          "**/package-lock.json": true
+        }
+      }
+    }
+  },
+
+  "postCreateCommand": "npm install && npx playwright install chromium firefox webkit",
+
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+
+  "forwardPorts": [3000, 3333],
+
+  "portsAttributes": {
+    "3000": {
+      "label": "Demo Server",
+      "onAutoForward": "notify"
+    },
+    "3333": {
+      "label": "Playwright Test Server",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "remoteUser": "node",
+
+  "mounts": [
+    "source=${localWorkspaceFolder}/.git,target=${containerWorkspaceFolder}/.git,type=bind,consistency=cached"
+  ]
+}

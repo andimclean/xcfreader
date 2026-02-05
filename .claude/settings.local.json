@@ -53,7 +53,10 @@
       "Bash(npm outdated:*)",
       "Bash(gh issue list:*)",
       "Bash(npx playwright test:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(tee:*)"
     ]
   }
 }
