@@ -1,0 +1,83 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - '@theprogrammingiantpanda/xcfreader@*'
+      - '@theprogrammingiantpanda/ui-xcfimage@*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Determine which package to publish
+        id: determine-package
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+          if [[ $TAG_NAME == *"xcfreader"* ]] && [[ $TAG_NAME != *"ui-xcfimage"* ]]; then
+            echo "package=xcfreader" >> $GITHUB_OUTPUT
+            echo "package_dir=packages/xcfreader" >> $GITHUB_OUTPUT
+          elif [[ $TAG_NAME == *"ui-xcfimage"* ]]; then
+            echo "package=ui-xcfimage" >> $GITHUB_OUTPUT
+            echo "package_dir=packages/ui-xcfimage" >> $GITHUB_OUTPUT
+          elif [[ $TAG_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "package=both" >> $GITHUB_OUTPUT
+            echo "package_dir=." >> $GITHUB_OUTPUT
+          else
+            echo "Unknown tag format: $TAG_NAME"
+            exit 1
+          fi
+
+      - name: Publish xcfreader to npm
+        if: steps.determine-package.outputs.package == 'xcfreader' || steps.determine-package.outputs.package == 'both'
+        run: |
+          cd packages/xcfreader
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish ui-xcfimage to npm
+        if: steps.determine-package.outputs.package == 'ui-xcfimage' || steps.determine-package.outputs.package == 'both'
+        run: |
+          cd packages/ui-xcfimage
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.determine-package.outputs.tag_name }}
+          release_name: Release ${{ steps.determine-package.outputs.tag_name }}
+          body: |
+            See [CHANGELOG.md](https://github.com/andimclean/xcfreader/blob/master/CHANGELOG.md) for details.
+
+            Published packages:
+            ${{ steps.determine-package.outputs.package == 'xcfreader' && '- [@theprogrammingiantpanda/xcfreader](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)' || '' }}
+            ${{ steps.determine-package.outputs.package == 'ui-xcfimage' && '- [@theprogrammingiantpanda/ui-xcfimage](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage)' || '' }}
+            ${{ steps.determine-package.outputs.package == 'both' && '- [@theprogrammingiantpanda/xcfreader](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)\n- [@theprogrammingiantpanda/ui-xcfimage](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage)' || '' }}
+          draft: false
+          prerelease: false

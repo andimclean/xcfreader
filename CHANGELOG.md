@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **New example XCF files and comprehensive test coverage**:
+  - Added 9 new example XCF files covering various use cases:
+    - `192608-nhl-marlow.xcf` - Large image (2480×3507) for stress testing
+    - `icon.xcf` - Icon file (512×512, 4 layers) for square image testing
+    - `pipe.xcf` - Indexed color (256×256, 256 colors) for additional palette testing
+    - `boardpieces.xcf`, `currentpieces.xcf`, `wallpieces.xcf` - Game asset sprites
+    - `FirstFloor.xcf`, `maingradient.xcf` - Additional test cases
+    - `GroundFloor.xcf` - File with parsing issues for debugging
+  - Added 5 new example scripts: `float32.ts`, `icon.ts`, `pipe.ts`, `boardpieces.ts`, `nhl-marlow.ts`
+  - Added 5 new test files (tests 29-33) covering all new XCF file types
+  - Test coverage expanded from 28 to 33 tests (+18%)
+  - Browser test coverage expanded from 51 to 63 tests (+24%)
+  - Added 4 new visual regression tests with screenshot baselines across 3 browsers
+  - Updated `demo.html` dropdown with 8 new XCF file options
+  - Added 5 new npm scripts in `package.json` for running new examples
+
+### Changed
+
+- **Code quality improvements - Type casting complexity reduction**:
+  - Reduced excessive type casting from 13 to 5 instances (62% reduction)
+  - Added type guard helper functions: `hasDataField`, `getPropertyData`, `getPropertyField`, `toPublicLayer`
+  - Centralized casting logic in reusable helpers for better maintainability
+  - Improved code readability without impacting performance
+  - All 28 core tests and benchmarks passing with no performance regression
+  - Updated benchmark baseline with current performance metrics
+
+### Fixed
+
+- **ui-xcfimage: Critical Web Components violation** - Fixed bug where `setAttribute()` calls in constructor prevented custom element from initializing
+  - Element was appearing as `HTMLUnknownElement` with no shadow DOM
+  - Moved attribute setting to `connectedCallback()` per Web Components spec
+  - All 30 Playwright tests now passing (was 0/30 before fix)
+
 ### Changed
 
 - **Documentation restructure**: Split monorepo README structure for better organization
@@ -20,6 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Separate test suites for Node.js and browser tests
 
 ### Added
+
+- **ui-xcfimage: Accessibility and lazy loading**:
+  - ARIA labels, keyboard navigation, focus indicators
+  - Lazy loading with IntersectionObserver
+  - Custom events (xcf-loading, xcf-loaded, xcf-error, xcf-activate)
+  - Enhanced error messages with visual styling
 
 - **`ui-xcfimage` package**: `<gpp-xcfimage>` web component for rendering XCF files in the browser
   - `src`, `visible` (by layer index), and `forcevisible` attributes

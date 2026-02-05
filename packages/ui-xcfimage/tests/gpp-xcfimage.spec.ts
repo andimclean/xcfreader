@@ -9,19 +9,23 @@ if (!fs.existsSync(coverageDir)) {
 }
 
 test.describe("<gpp-xcfimage> web component", () => {
-  test.beforeEach(async ({ page }) => {
-    // Start JS coverage
-    await page.coverage.startJSCoverage();
+  test.beforeEach(async ({ page, browserName }) => {
+    // Start JS coverage only for Chromium (V8)
+    if (browserName === "chromium") {
+      await page.coverage.startJSCoverage();
+    }
   });
 
-  test.afterEach(async ({ page }, testInfo) => {
-    // Stop coverage and save
-    const coverage = await page.coverage.stopJSCoverage();
-    const coverageFile = path.join(
-      coverageDir,
-      `coverage-${testInfo.testId}.json`,
-    );
-    fs.writeFileSync(coverageFile, JSON.stringify(coverage, null, 2));
+  test.afterEach(async ({ page, browserName }, testInfo) => {
+    // Stop coverage and save only for Chromium
+    if (browserName === "chromium") {
+      const coverage = await page.coverage.stopJSCoverage();
+      const coverageFile = path.join(
+        coverageDir,
+        `coverage-${testInfo.testId}.json`,
+      );
+      fs.writeFileSync(coverageFile, JSON.stringify(coverage, null, 2));
+    }
   });
   test("should render a canvas and respond to attributes", async ({ page }) => {
     // Use Playwright's web server baseURL for demo.html
@@ -94,6 +98,26 @@ test.describe("<gpp-xcfimage> web component", () => {
         path: "/example-xcf/multi.xcf",
         expectedLayer: "contents",
         description: "multi-layer",
+      },
+      {
+        path: "/example-xcf/float32.xcf",
+        expectedLayer: "Layer",
+        description: "32-bit float",
+      },
+      {
+        path: "/example-xcf/icon.xcf",
+        expectedLayer: "Drawer",
+        description: "512x512 icon",
+      },
+      {
+        path: "/example-xcf/pipe.xcf",
+        expectedLayer: "hopper_plus.png",
+        description: "indexed pipe",
+      },
+      {
+        path: "/example-xcf/boardpieces.xcf",
+        expectedLayer: "Pasted Layer",
+        description: "game asset",
       },
     ];
 
@@ -227,14 +251,17 @@ test.describe("<gpp-xcfimage> web component", () => {
 
     const elHandle = await page.$("gpp-xcfimage");
 
-    // Try to load a non-existent file
+    // Disable retries for faster test execution
     await page.evaluate(
-      (el) => el.setAttribute("src", "/example-xcf/nonexistent.xcf"),
+      (el) => {
+        el.setAttribute("retry-attempts", "0");
+        el.setAttribute("src", "/example-xcf/nonexistent.xcf");
+      },
       elHandle,
     );
 
-    // Wait a moment for the fetch to fail
-    await page.waitForTimeout(2000);
+    // Wait a moment for the fetch to fail (shorter wait since no retries)
+    await page.waitForTimeout(1000);
 
     // Verify error is displayed in canvas
     const canvasHandle = await page.evaluateHandle(() => {
@@ -396,5 +423,592 @@ test.describe("<gpp-xcfimage> web component", () => {
       });
       expect(hasForceVisible).toBe(true);
     }
+  });
+
+  test("should emit custom events during load lifecycle", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Create new element without src to ensure fresh load
+    await page.evaluate(() => {
+      const el = document.createElement("gpp-xcfimage");
+      el.id = "event-test";
+      document.body.appendChild(el);
+
+      (window as any).eventLog = [];
+      el.addEventListener("xcf-loading", () => {
+        (window as any).eventLog.push("loading");
+      });
+      el.addEventListener("xcf-loaded", () => {
+        (window as any).eventLog.push("loaded");
+      });
+    });
+
+    // Trigger load
+    await page.evaluate(() => {
+      const el = document.getElementById("event-test");
+      el?.setAttribute("src", "/example-xcf/single.xcf");
+    });
+
+    // Wait for loaded event
+    await page.waitForFunction(
+      () => (window as any).eventLog?.includes("loaded"),
+      { timeout: 10000 },
+    );
+
+    const eventLog = await page.evaluate(() => (window as any).eventLog);
+    expect(eventLog).toContain("loading");
+    expect(eventLog).toContain("loaded");
+  });
+
+  test("should emit xcf-error event on failed load", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Listen for error event
+    await page.evaluate(() => {
+      const el = document.querySelector("gpp-xcfimage");
+      el?.addEventListener("xcf-error", () => {
+        (window as any).errorEventFired = true;
+      });
+    });
+
+    // Trigger load with invalid file
+    const elHandle = await page.$("gpp-xcfimage");
+    await page.evaluate(
+      (el) => {
+        el.setAttribute("retry-attempts", "0"); // No retries for fast test
+        el.setAttribute("src", "/nonexistent.xcf");
+      },
+      elHandle,
+    );
+
+    // Wait for error event
+    await page.waitForFunction(() => (window as any).errorEventFired === true, {
+      timeout: 3000,
+    });
+
+    const errorFired = await page.evaluate(
+      () => (window as any).errorEventFired,
+    );
+    expect(errorFired).toBe(true);
+  });
+
+  test("should emit xcf-retrying event on retry attempts", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Listen for retry event
+    await page.evaluate(() => {
+      (window as any).retryEvents = [];
+      const el = document.querySelector("gpp-xcfimage");
+      el?.addEventListener("xcf-retrying", (e: any) => {
+        (window as any).retryEvents.push({
+          attempt: e.detail.attempt,
+          maxAttempts: e.detail.maxAttempts,
+        });
+      });
+    });
+
+    // Trigger load with invalid file and retries enabled
+    const elHandle = await page.$("gpp-xcfimage");
+    await page.evaluate(
+      (el) => {
+        el.setAttribute("retry-attempts", "2"); // 2 retries
+        el.setAttribute("retry-delay", "100"); // Fast retries
+        el.setAttribute("src", "/nonexistent-for-retry-test.xcf");
+      },
+      elHandle,
+    );
+
+    // Wait for retries to complete
+    await page.waitForTimeout(1500); // Enough time for 2 retries
+
+    const retryEvents = await page.evaluate(() => (window as any).retryEvents);
+    expect(retryEvents.length).toBeGreaterThan(0);
+    expect(retryEvents[0].maxAttempts).toBe(2);
+  });
+
+  test("should support lazy loading with loading attribute", async ({
+    page,
+  }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Create element with lazy loading
+    await page.evaluate(() => {
+      const el = document.createElement("gpp-xcfimage");
+      el.setAttribute("src", "/example-xcf/grey.xcf");
+      el.setAttribute("loading", "lazy");
+      el.id = "lazy-test";
+      document.body.appendChild(el);
+    });
+
+    // Element should exist but not be loaded yet (if not in viewport)
+    const lazyEl = page.locator("#lazy-test");
+    await expect(lazyEl).toHaveCount(1);
+
+    // Scroll into view to trigger lazy load
+    await page.evaluate(() => {
+      document.getElementById("lazy-test")?.scrollIntoView();
+    });
+
+    // Wait for loading to complete
+    await page.waitForFunction(
+      () => {
+        const el = document.getElementById("lazy-test");
+        return el?.hasAttribute("layers");
+      },
+      { timeout: 5000 },
+    );
+
+    const layers = await page.evaluate(() => {
+      const el = document.getElementById("lazy-test");
+      return el?.getAttribute("layers");
+    });
+
+    expect(layers).toBeTruthy();
+  });
+
+  test("should handle empty XCF file gracefully", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    const elHandle = await page.$("gpp-xcfimage");
+
+    // Load empty.xcf
+    await page.evaluate(
+      (el) => el.setAttribute("src", "/example-xcf/empty.xcf"),
+      elHandle,
+    );
+
+    // Wait for load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        return el?.getAttribute("layers");
+      },
+      { timeout: 5000 },
+    );
+
+    // Should have layers attribute even if empty
+    const layers = await page.evaluate(
+      (el) => el.getAttribute("layers"),
+      elHandle,
+    );
+    expect(layers).toBeTruthy();
+
+    // Canvas should be rendered
+    const canvasHandle = await page.evaluateHandle(() => {
+      const el = document.querySelector("gpp-xcfimage");
+      return el && el.shadowRoot && el.shadowRoot.querySelector("canvas");
+    });
+
+    const width = await page.evaluate(
+      (canvas) => Number(canvas.getAttribute("width")),
+      canvasHandle,
+    );
+    expect(width).toBeGreaterThan(0);
+  });
+
+  test("should handle complex files with many layers", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    const elHandle = await page.$("gpp-xcfimage");
+
+    // Load map1.xcf which has many layers and groups
+    await page.evaluate(
+      (el) => el.setAttribute("src", "/example-xcf/map1.xcf"),
+      elHandle,
+    );
+
+    // Wait for load (this file is large, may take longer)
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        return el?.getAttribute("layers");
+      },
+      { timeout: 15000 },
+    );
+
+    const layers = await page.evaluate(
+      (el) => el.getAttribute("layers"),
+      elHandle,
+    );
+    const tree = JSON.parse(layers!);
+
+    // Verify file loaded with structure
+    expect(tree.children).toBeDefined();
+    expect(tree.children.length).toBeGreaterThan(0);
+
+    // Verify canvas rendered successfully
+    const canvasHandle = await page.evaluateHandle(() => {
+      const el = document.querySelector("gpp-xcfimage");
+      return el && el.shadowRoot && el.shadowRoot.querySelector("canvas");
+    });
+
+    const width = await page.evaluate(
+      (canvas) => Number(canvas.getAttribute("width")),
+      canvasHandle,
+    );
+    expect(width).toBeGreaterThan(0); // Should have rendered successfully
+  });
+
+  test("should support keyboard navigation and accessibility", async ({
+    page,
+  }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    const el = page.locator("gpp-xcfimage");
+
+    // Check ARIA attributes
+    const role = await el.getAttribute("role");
+    expect(role).toBe("img");
+
+    const tabindex = await el.getAttribute("tabindex");
+    expect(tabindex).toBe("0"); // Should be keyboard focusable
+
+    // Focus element
+    await el.focus();
+
+    // Verify aria-label is set
+    const ariaLabel = await el.getAttribute("aria-label");
+    expect(ariaLabel).toBeTruthy();
+
+    // Test keyboard activation (should emit xcf-activate event)
+    await page.evaluate(() => {
+      (window as any).activateEventFired = false;
+      const el = document.querySelector("gpp-xcfimage");
+      el?.addEventListener("xcf-activate", () => {
+        (window as any).activateEventFired = true;
+      });
+    });
+
+    await el.press("Enter");
+
+    await page.waitForTimeout(100);
+
+    const activateFired = await page.evaluate(
+      () => (window as any).activateEventFired,
+    );
+    expect(activateFired).toBe(true);
+  });
+});
+
+test.describe("Visual regression tests", () => {
+  test("should render single.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Wait for canvas to be rendered
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const canvas =
+          el && el.shadowRoot && el.shadowRoot.querySelector("canvas");
+        return canvas && Number(canvas.getAttribute("width")) > 0;
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas element using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("single-xcf.png");
+  });
+
+  test("should render grey.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select grey.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/grey.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("grey-xcf.png");
+  });
+
+  test("should render indexed.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select indexed.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/indexed.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("indexed-xcf.png");
+  });
+
+  test("should render multi.xcf with all layers consistently", async ({
+    page,
+  }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select multi.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/multi.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return (
+            tree.children &&
+            tree.children.length > 0 &&
+            tree.children[0].name === "contents"
+          );
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("multi-xcf-all-layers.png");
+  });
+
+  test("should render multi.xcf with specific layer consistently", async ({
+    page,
+  }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select multi.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/multi.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return (
+            tree.children &&
+            tree.children.length > 0 &&
+            tree.children[0].name === "contents"
+          );
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Set visible to only first layer
+    await page.evaluate(() => {
+      const el = document.querySelector("gpp-xcfimage");
+      el?.setAttribute("visible", "0");
+    });
+
+    // Wait for render
+    await page.waitForTimeout(500);
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("multi-xcf-layer-0.png");
+  });
+
+  test("should render float32.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select float32.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/float32.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("float32-xcf.png");
+  });
+
+  test("should render icon.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select icon.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/icon.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("icon-xcf.png");
+  });
+
+  test("should render pipe.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select pipe.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/pipe.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("pipe-xcf.png");
+  });
+
+  test("should render boardpieces.xcf consistently", async ({ page }) => {
+    await page.goto("/packages/ui-xcfimage/demo.html");
+    await page.waitForFunction(() => !!customElements.get("gpp-xcfimage"), {
+      timeout: 10000,
+    });
+
+    // Select boardpieces.xcf
+    const select = page.locator("#srcInput");
+    await select.selectOption("/example-xcf/boardpieces.xcf");
+
+    // Wait for file to load
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector("gpp-xcfimage");
+        const layers = el?.getAttribute("layers");
+        if (!layers) return false;
+        try {
+          const tree = JSON.parse(layers);
+          return tree.children && tree.children.length > 0;
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 10000 },
+    );
+
+    // Take screenshot of the canvas using locator
+    const canvas = page.locator("gpp-xcfimage").locator("canvas");
+
+    await expect(canvas).toHaveScreenshot("boardpieces-xcf.png");
   });
 });

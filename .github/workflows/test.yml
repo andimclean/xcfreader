@@ -1,10 +1,10 @@
-name: TypeScript Tests
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [master, develop]
 
 jobs:
   test:
@@ -12,13 +12,13 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [18.x, 20.x, 22.x]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
@@ -35,6 +35,9 @@ jobs:
 
       - name: Run xcfreader tests
         run: npm run test:xcfreader
+
+      - name: Run xcfreader browser tests
+        run: npm run test:browser
 
       - name: Run ui-xcfimage tests
         run: npm run test:ui
@@ -56,6 +59,15 @@ jobs:
           npm run benchmark > benchmark-output.txt
           echo "Benchmark results:" && cat benchmark-output.txt
           echo "::notice ::Benchmark results are for information only and do not affect CI status."
+
+      - name: Check performance regression
+        run: |
+          cd packages/xcfreader
+          if [ -f benchmark-baseline.json ]; then
+            npm run benchmark:check || echo "::warning ::Performance regression detected. Review benchmark results."
+          else
+            echo "::notice ::No baseline found. Run 'npm run benchmark:baseline' to create one."
+          fi
 
       - name: Enforce minimum coverage
         run: |
