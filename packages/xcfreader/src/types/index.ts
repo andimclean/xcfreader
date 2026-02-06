@@ -416,9 +416,42 @@ export interface ParsedGimpHeader {
 
 /**
  * Group layer node structure for layer hierarchy
+ *
+ * Represents a node in the XCF layer hierarchy tree. GIMP supports layer groups
+ * (folders) which create a nested structure of layers.
+ *
+ * Each node can have:
+ * - A `layer`: The actual layer data (null for group containers)
+ * - `children`: Array of child nodes (empty for leaf layers)
+ *
+ * Example structure for a file with layer groups:
+ * ```typescript
+ * {
+ *   layer: null,  // Root has no layer
+ *   children: [
+ *     {
+ *       layer: { name: "Background", ... },  // Leaf layer
+ *       children: []
+ *     },
+ *     {
+ *       layer: null,  // Group folder has no layer data
+ *       children: [
+ *         { layer: { name: "Layer 1", ... }, children: [] },
+ *         { layer: { name: "Layer 2", ... }, children: [] }
+ *       ]
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * Nodes with `layer === null` and non-empty `children` represent layer groups.
+ * Nodes with `layer !== null` represent actual layers (may still have children
+ * if the layer itself is a group).
  */
 export interface GroupLayerNode {
+  /** The layer data, or null for group containers */
   layer: GimpLayerPublic | null;
+  /** Child nodes in the hierarchy (empty array for leaf layers) */
   children: GroupLayerNode[];
 }
 

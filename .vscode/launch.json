@@ -1,0 +1,113 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run All Tests (xcfreader)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/xcfreader",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["test"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Tests (xcfreader)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/xcfreader",
+      "program": "${workspaceFolder}/packages/xcfreader/dist/tests/runner.js",
+      "preLaunchTask": "npm: build - packages/xcfreader",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Run Benchmark",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/xcfreader",
+      "program": "${workspaceFolder}/packages/xcfreader/dist/benchmarks/benchmark.js",
+      "preLaunchTask": "npm: build - packages/xcfreader",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Run Benchmark Comparison",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/xcfreader",
+      "program": "${workspaceFolder}/packages/xcfreader/dist/benchmarks/benchmark-compare.js",
+      "preLaunchTask": "npm: build - packages/xcfreader",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Run Example: Single",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/xcfreader",
+      "program": "${workspaceFolder}/packages/xcfreader/dist/examples/single.js",
+      "preLaunchTask": "npm: build - packages/xcfreader",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Run Example: Multi",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/xcfreader",
+      "program": "${workspaceFolder}/packages/xcfreader/dist/examples/multi.js",
+      "preLaunchTask": "npm: build - packages/xcfreader",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Run Playwright Tests",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/ui-xcfimage",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["playwright", "test"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Run Playwright Tests (headed)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/ui-xcfimage",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["playwright", "test", "--headed"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Run Playwright Tests (debug)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/ui-xcfimage",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["playwright", "test", "--debug"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Attach to Node Process",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run All Tests (Both Packages)",
+      "configurations": [
+        "Run All Tests (xcfreader)",
+        "Run Playwright Tests"
+      ],
+      "stopAll": true
+    }
+  ]
+}

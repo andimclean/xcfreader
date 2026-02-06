@@ -11,6 +11,11 @@ import FS from "fs";
 import { Buffer } from "buffer";
 import XCFCompositer from "./lib/xcfcompositer.js";
 import {
+  XCFValidator,
+  XCFValidationError,
+  ValidationOptions,
+} from "./lib/xcf-validator.js";
+import {
   XCF_PropType,
   XCF_PropTypeMap,
   XCF_BaseType,
@@ -33,6 +38,8 @@ import {
 
 // Re-export all types for consumers
 export * from "./types/index.js";
+export { XCFValidator, XCFValidationError } from "./lib/xcf-validator.js";
+export type { ValidationOptions } from "./lib/xcf-validator.js";
 
 // NOTE: XCFPNGImage and XCFDataImage are NOT exported from this base module.
 // Import from the appropriate entry point:
@@ -366,6 +373,53 @@ const isUnset = (value: unknown): boolean => {
 };
 
 /**
+ * Type guard to check if a property has a data field
+ */
+const hasDataField = <T>(
+  prop: unknown,
+): prop is { data: T } => {
+  return (
+    prop !== null &&
+    typeof prop === "object" &&
+    "data" in prop
+  );
+};
+
+/**
+ * Safely extract data from a property value
+ */
+const getPropertyData = <T>(
+  propValue: unknown,
+): T | null => {
+  if (hasDataField<T>(propValue)) {
+    return propValue.data;
+  }
+  return null;
+};
+
+/**
+ * Safely get a field from property data
+ */
+const getPropertyField = <T>(
+  propValue: unknown,
+  field: string,
+): T | null => {
+  const data = getPropertyData<Record<string, T>>(propValue);
+  return data?.[field] ?? null;
+};
+
+/**
+ * Convert internal GimpLayer to public API type.
+ * This is necessary because GimpLayer is an internal class but needs to be
+ * exposed through the public API as GimpLayerPublic interface.
+ */
+const toPublicLayer = (
+  layer: GimpLayer,
+): import("./types/index.js").GimpLayerPublic => {
+  return layer as unknown as import("./types/index.js").GimpLayerPublic;
+};
+
+/**
  * Represents a single layer in a GIMP XCF file.
  *
  * Provides access to layer properties like name, dimensions, visibility,
@@ -409,6 +463,15 @@ class GimpLayer {
     const parser = this._parent.isV11 ? layerParserV11 : layerParserV10;
     this._details = parser.parse(this._buffer) as ParsedLayer;
     this._compiled = true;
+
+    // Validate layer dimensions after compilation
+    this._parent._validateLayerDimensions(
+      this._details.width,
+      this._details.height,
+      this.x,
+      this.y,
+      this._details.name || "unknown",
+    );
   }
 
   /**
@@ -436,9 +499,7 @@ class GimpLayer {
   }
 
   get pathInfo(): ParsedProperty | null {
-    const prop = this.getProps(XCF_PropType.ITEM_PATH);
-    // getProps without index always returns ParsedProperty | null, not number
-    return (prop as ParsedProperty | null) ?? null;
+    return this.getProps(XCF_PropType.ITEM_PATH) as ParsedProperty | null;
   }
 
   /**
@@ -454,15 +515,16 @@ class GimpLayer {
       return this.name;
     }
 
-    const pathItems = (pathInfo.data as unknown as ParsedPropItemPath).items;
+    const pathData = getPropertyData<ParsedPropItemPath>(pathInfo);
+    if (!pathData) {
+      return this.name;
+    }
+
+    const pathItems = pathData.items;
     let item: GroupLayerNode = this._parent._groupLayers;
     const name: string[] = [];
     for (let index = 0; index < pathItems.length; index += 1) {
-      if (item.children) {
-        item = item.children[pathItems[index]];
-      } else {
-        item = (item as unknown as GroupLayerNode[])[pathItems[index]];
-      }
+      item = item.children[pathItems[index]];
       name.push(item.layer!.name);
     }
 
@@ -493,14 +555,14 @@ class GimpLayer {
    * Get the X offset of this layer
    */
   get x(): number {
-    return this.getProps(XCF_PropType.OFFSETS, "dx") as number;
+    return (this.getProps(XCF_PropType.OFFSETS, "dx") as number) || 0;
   }
 
   /**
    * Get the Y offset of this layer
    */
   get y(): number {
-    return this.getProps(XCF_PropType.OFFSETS, "dy") as number;
+    return (this.getProps(XCF_PropType.OFFSETS, "dy") as number) || 0;
   }
 
   /**
@@ -548,30 +610,31 @@ class GimpLayer {
       ) as ParsedProperty | null;
       this._parasites = {};
       if (parasite) {
-        const parasiteData = (parasite.data as unknown as { parasite: Buffer })
-          .parasite;
-        const parsedParasite = fullParasiteParser.parse(
-          parasiteData,
-        ) as ParsedParasiteArray;
-        (parsedParasite.items || []).forEach(
-          (parasiteItem: ParsedParasiteItem) => {
-            const parasiteName = parasiteItem.name;
-            if (parasiteName === "gimp-text-layer") {
-              const text = (
-                stringParser.parse(parasiteItem.details) as { data: string }
-              ).data;
-              const fields: Record<string, string> = {};
-              const matches = text.match(/(\(.*\))+/g) || [];
-              matches.forEach((item: string) => {
-                const itemParts = item.substring(1, item.length - 1).split(" ");
-                const key = itemParts[0];
-                const value = itemParts.slice(1).join(" ");
-                fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
-              });
-              this._parasites![parasiteName] = fields;
-            }
-          },
-        );
+        const parasiteBuffer = getPropertyData<{ parasite: Buffer }>(parasite);
+        if (parasiteBuffer?.parasite) {
+          const parsedParasite = fullParasiteParser.parse(
+            parasiteBuffer.parasite,
+          ) as ParsedParasiteArray;
+          (parsedParasite.items || []).forEach(
+            (parasiteItem: ParsedParasiteItem) => {
+              const parasiteName = parasiteItem.name;
+              if (parasiteName === "gimp-text-layer") {
+                const text = (
+                  stringParser.parse(parasiteItem.details) as { data: string }
+                ).data;
+                const fields: Record<string, string> = {};
+                const matches = text.match(/(\(.*\))+/g) || [];
+                matches.forEach((item: string) => {
+                  const itemParts = item.substring(1, item.length - 1).split(" ");
+                  const key = itemParts[0];
+                  const value = itemParts.slice(1).join(" ");
+                  fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
+                });
+                this._parasites![parasiteName] = fields;
+              }
+            },
+          );
+        }
       }
     }
     return this._parasites;
@@ -613,16 +676,15 @@ class GimpLayer {
       this._props = {};
       (this._details!.propertyList || []).forEach(
         (property: ParsedProperty) => {
-          (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
-            property.type
-          ] = property;
+          // Type assertion needed: ParsedProperty is a union that gets narrowed by property.type
+          this._props![property.type as T] = property as unknown as XCF_PropTypeMap[T];
         },
       );
     }
 
     const propValue = this._props[prop];
-    if (index && propValue && "data" in propValue) {
-      return (propValue.data as Record<string, number>)[index];
+    if (index) {
+      return getPropertyField<number>(propValue, index);
     }
     return propValue ?? null;
   }
@@ -1146,12 +1208,41 @@ export class XCFParser {
   private _version: number = 0; // XCF version number (e.g., 10, 11)
   private _props: Partial<XCF_PropTypeMap> | null = null;
   _groupLayers: GroupLayerNode = { layer: null, children: [] };
+  private _validator: XCFValidator;
+
+  /**
+   * Create a new XCFParser instance
+   * @param validationOptions - Optional validation configuration
+   */
+  constructor(validationOptions?: ValidationOptions) {
+    this._validator = new XCFValidator(validationOptions);
+  }
 
   /**
    * Check if this is an XCF v011+ file (uses 64-bit pointers)
    */
   get isV11(): boolean {
     return this._version >= 11;
+  }
+
+  /**
+   * Validate layer dimensions (internal use by GimpLayer)
+   * @internal
+   */
+  _validateLayerDimensions(
+    width: number,
+    height: number,
+    offsetX: number,
+    offsetY: number,
+    layerName: string,
+  ): void {
+    this._validator.validateLayerDimensions(
+      width,
+      height,
+      offsetX,
+      offsetY,
+      layerName,
+    );
   }
 
   /**
@@ -1207,17 +1298,23 @@ export class XCFParser {
 
       const data = await FS.promises.readFile(file);
 
-      // Validate XCF magic bytes
-      if (data.length < 14 || data.toString("utf-8", 0, 4) !== "gimp") {
-        throw new UnsupportedFormatError(
-          `Invalid XCF file "${file}": missing GIMP magic bytes.\n` +
-            `This file does not appear to be a valid GIMP XCF file.\n` +
-            `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
-            `Please verify the file and try exporting from GIMP again.`,
-        );
+      const parser = new XCFParser();
+
+      // Validate XCF header and magic bytes
+      try {
+        parser._validator.validateHeader(data);
+      } catch (err) {
+        if (err instanceof XCFValidationError) {
+          throw new UnsupportedFormatError(
+            `Invalid XCF file "${file}": ${err.message}\n` +
+              `This file does not appear to be a valid GIMP XCF file.\n` +
+              `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
+              `Please verify the file and try exporting from GIMP again.`,
+          );
+        }
+        throw err;
       }
 
-      const parser = new XCFParser();
       parser.parse(data);
       return parser;
     } catch (err: unknown) {
@@ -1276,17 +1373,23 @@ export class XCFParser {
       );
     }
 
-    // Validate XCF magic bytes
-    if (buffer.length < 14 || buffer.toString("utf-8", 0, 4) !== "gimp") {
-      throw new UnsupportedFormatError(
-        "Invalid XCF data: missing GIMP magic bytes.\n" +
-          "This does not appear to be a valid GIMP XCF file.\n" +
-          "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
-          "Please verify the file and try exporting from GIMP again.",
-      );
+    const parser = new XCFParser();
+
+    // Validate XCF header and magic bytes
+    try {
+      parser._validator.validateHeader(buffer);
+    } catch (err) {
+      if (err instanceof XCFValidationError) {
+        throw new UnsupportedFormatError(
+          `Invalid XCF data: ${err.message}\n` +
+            "This does not appear to be a valid GIMP XCF file.\n" +
+            "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
+            "Please verify the file and try exporting from GIMP again.",
+        );
+      }
+      throw err;
     }
 
-    const parser = new XCFParser();
     parser.parse(buffer);
     return parser;
   }
@@ -1296,6 +1399,9 @@ export class XCFParser {
     this._layers = [];
     this._channels = [];
     this._groupLayers = { layer: null, children: [] };
+
+    // Reset validator state for new parse
+    this._validator.reset();
 
     // Detect XCF version to choose correct parser
     const version = buffer.toString("utf-8", 9, 13);
@@ -1312,6 +1418,10 @@ export class XCFParser {
       };
       this._header = header;
 
+      // Validate image dimensions and base type
+      this._validator.validateImageDimensions(header.width, header.height);
+      this._validator.validateBaseType(header.base_type);
+
       // Convert 64-bit pointers to numbers (JavaScript can handle up to 2^53)
       layerPointers = (header.layerList64 || [])
         .filter((p) => p.high !== 0 || p.low !== 0)
@@ -1319,35 +1429,107 @@ export class XCFParser {
     } else {
       // XCF v010 and earlier use 32-bit pointers
       this._header = gimpHeaderV10.parse(buffer) as ParsedGimpHeader;
+
+      // Validate image dimensions and base type
+      this._validator.validateImageDimensions(
+        this._header.width,
+        this._header.height,
+      );
+      this._validator.validateBaseType(this._header.base_type);
+
       layerPointers = (this._header.layerList || []).filter(remove_empty);
     }
 
+    // Validate layer pointers are within bounds
+    this._validator.validatePointers(layerPointers, buffer, "layer pointer");
+
+    /**
+     * Layer Hierarchy Construction
+     *
+     * XCF files support layer groups (folders) which create a hierarchical structure.
+     * Each layer can have an optional ITEM_PATH property that indicates its position
+     * in the hierarchy.
+     *
+     * - Layers WITHOUT an ITEM_PATH are root-level layers (not in any group)
+     * - Layers WITH an ITEM_PATH have a path like [0], [0, 1], [0, 1, 2] indicating
+     *   their position in nested groups
+     *
+     * Example hierarchy:
+     *   Root (groupLayers)
+     *   ├─ children[0] = Layer Group A
+     *   │  ├─ children[0] = Layer 1 in Group A (path: [0, 0])
+     *   │  └─ children[1] = Layer 2 in Group A (path: [0, 1])
+     *   └─ children[1] = Layer Group B
+     *      └─ children[0] = Layer 1 in Group B (path: [1, 0])
+     *
+     * The path indices correspond to the order layers appear in the GIMP Layers panel,
+     * with each number indicating the child index at that nesting level.
+     */
     this._layers = layerPointers.map((layerPointer: number) => {
       const layer = new GimpLayer(this, this._buffer!.slice(layerPointer));
       const path = layer.pathInfo;
+
       if (!path) {
+        // No ITEM_PATH: this is a root-level layer (not in any group)
         this._groupLayers.children.push({
-          layer: layer as unknown as import("./types/index.js").GimpLayerPublic,
+          layer: toPublicLayer(layer),
           children: [],
         });
       } else {
-        const pathData = path.data as unknown as ParsedPropItemPath;
+        // ITEM_PATH present: layer is in a group hierarchy
+        const pathData = getPropertyData<ParsedPropItemPath>(path);
+
+        if (!pathData) {
+          return layer;
+        }
+
+        // Validate hierarchy depth and path items
+        this._validator.validateHierarchyDepth(
+          pathData.items.length,
+          pathData.items,
+        );
+
+        /**
+         * Recursive function to build layer hierarchy tree
+         *
+         * @param node - Current node in the tree
+         * @param index - Current depth in the path array
+         * @returns Updated node with layer placed at correct position
+         *
+         * How it works:
+         * 1. If we've reached the end of the path (index === pathData.items.length),
+         *    place the layer at this node
+         * 2. Otherwise, navigate to the child at pathData.items[index]
+         * 3. Create child node if it doesn't exist
+         * 4. Recursively continue to next depth level
+         *
+         * Example: For path [0, 1], this function:
+         * - First call (index=0): Navigate to children[0]
+         * - Second call (index=1): Navigate to children[0].children[1]
+         * - Third call (index=2): Place layer at children[0].children[1].layer
+         */
         const toCall = (
           node: GroupLayerNode,
           index: number,
         ): GroupLayerNode => {
           if (index === pathData.items.length) {
-            node.layer =
-              layer as unknown as import("./types/index.js").GimpLayerPublic;
+            // Reached end of path: place layer here
+            node.layer = toPublicLayer(layer);
           } else {
-            if (isUnset(node.children[pathData.items[index]])) {
-              node.children[pathData.items[index]] = {
+            // Navigate deeper into hierarchy
+            const childIndex = pathData.items[index];
+
+            // Create child node if it doesn't exist
+            if (isUnset(node.children[childIndex])) {
+              node.children[childIndex] = {
                 layer: null,
                 children: [],
               };
             }
-            node.children[pathData.items[index]] = toCall(
-              node.children[pathData.items[index]],
+
+            // Recursively process next level
+            node.children[childIndex] = toCall(
+              node.children[childIndex],
               index + 1,
             );
           }
@@ -1355,6 +1537,7 @@ export class XCFParser {
           return node;
         };
 
+        // Start recursive hierarchy building from root
         this._groupLayers = toCall(this._groupLayers, 0);
       }
       return layer;
@@ -1362,11 +1545,20 @@ export class XCFParser {
 
     // Note: Channel parsing for v011 would need similar 64-bit handling
     // Currently only supporting layer parsing for v011
-    this._channels = (this._header.channelList || [])
-      .filter(remove_empty)
-      .map((channelPointer: number) => {
-        return new GimpChannel(this, this._buffer!.slice(channelPointer));
-      });
+    const channelPointers = (this._header.channelList || []).filter(
+      remove_empty,
+    );
+
+    // Validate channel pointers are within bounds
+    this._validator.validatePointers(
+      channelPointers,
+      buffer,
+      "channel pointer",
+    );
+
+    this._channels = channelPointers.map((channelPointer: number) => {
+      return new GimpChannel(this, this._buffer!.slice(channelPointer));
+    });
   }
 
   getBufferForPointer(offset: number): Buffer {
@@ -1466,15 +1658,14 @@ export class XCFParser {
     if (!this._props) {
       this._props = {};
       (this._header!.propertyList || []).forEach((property: ParsedProperty) => {
-        (this._props as unknown as Record<XCF_PropType, ParsedProperty>)[
-          property.type
-        ] = property;
+        // Type assertion needed: ParsedProperty is a union that gets narrowed by property.type
+        this._props![property.type as T] = property as unknown as XCF_PropTypeMap[T];
       });
     }
 
     const propValue = this._props[prop];
-    if (index && propValue && "data" in propValue) {
-      return (propValue.data as Record<string, number>)[index];
+    if (index) {
+      return getPropertyField<number>(propValue, index);
     }
     return propValue ?? null;
   }
@@ -1505,12 +1696,8 @@ export class XCFParser {
       return null;
     }
     const colormapProp = this.getProps(XCF_PropType.COLORMAP);
-    if (
-      colormapProp &&
-      typeof colormapProp === "object" &&
-      "data" in colormapProp
-    ) {
-      const data = colormapProp.data as { colours: ParsedRGB[] };
+    const data = getPropertyData<{ colours: ParsedRGB[] }>(colormapProp);
+    if (data?.colours) {
       return data.colours.map((c: ParsedRGB) => ({
         red: c.red,
         green: c.greed, // Note: typo in parser "greed" instead of "green"
@@ -1554,8 +1741,7 @@ export class XCFParser {
           layer: null,
           children: [],
         };
-        cursorChildren[lastSegment].layer =
-          layer as unknown as import("./types/index.js").GimpLayerPublic;
+        cursorChildren[lastSegment].layer = toPublicLayer(layer);
       });
     }
     return this._groupLayers;
@@ -1583,6 +1769,106 @@ export class XCFParser {
    */
   getLayerByName(name: string): GimpLayer | undefined {
     return this.layers.find((layer) => layer.name === name);
+  }
+
+  /**
+   * Find layers matching a regular expression pattern.
+   *
+   * Searches layer names using the provided regex pattern. Useful for finding
+   * multiple layers with similar names or filtering by naming conventions.
+   *
+   * @param pattern - Regular expression pattern to match against layer names
+   * @param flags - Optional regex flags (e.g., 'i' for case-insensitive)
+   * @returns Array of layers whose names match the pattern
+   *
+   * @example
+   * ```typescript
+   * // Find all layers starting with "bg"
+   * const bgLayers = parser.findLayersByPattern(/^bg/i);
+   *
+   * // Find layers with numbers in their names
+   * const numberedLayers = parser.findLayersByPattern(/\d+/);
+   *
+   * // Find layers containing "temp" or "draft"
+   * const tempLayers = parser.findLayersByPattern(/temp|draft/i);
+   * ```
+   */
+  findLayersByPattern(
+    pattern: RegExp | string,
+    flags?: string,
+  ): GimpLayer[] {
+    const regex = typeof pattern === "string" ? new RegExp(pattern, flags) : pattern;
+    return this.layers.filter((layer) => regex.test(layer.name));
+  }
+
+  /**
+   * Filter layers by a custom predicate function.
+   *
+   * Provides maximum flexibility for filtering layers based on any criteria:
+   * name, visibility, opacity, dimensions, group membership, etc.
+   *
+   * @param predicate - Function that returns true for layers to include
+   * @returns Array of layers matching the predicate
+   *
+   * @example
+   * ```typescript
+   * // Find all visible layers
+   * const visibleLayers = parser.filterLayers(layer => layer.isVisible);
+   *
+   * // Find large layers (>1000px width)
+   * const largeLayers = parser.filterLayers(layer => layer.width > 1000);
+   *
+   * // Find layers in specific group
+   * const groupLayers = parser.filterLayers(layer => layer.groupName === 'Effects');
+   *
+   * // Find semi-transparent layers
+   * const transparentLayers = parser.filterLayers(layer => layer.opacity < 255);
+   * ```
+   */
+  filterLayers(predicate: (layer: GimpLayer) => boolean): GimpLayer[] {
+    return this.layers.filter(predicate);
+  }
+
+  /**
+   * Find layers by group name (parent folder).
+   *
+   * Returns all layers that belong to a specific layer group.
+   *
+   * @param groupName - Name of the layer group to search
+   * @returns Array of layers in the specified group
+   *
+   * @example
+   * ```typescript
+   * // Find all layers in the "Background" group
+   * const bgGroupLayers = parser.getLayersByGroup('Background');
+   *
+   * // Find layers not in any group (root level)
+   * const rootLayers = parser.getLayersByGroup('');
+   * ```
+   */
+  getLayersByGroup(groupName: string): GimpLayer[] {
+    return this.layers.filter((layer) => layer.groupName === groupName);
+  }
+
+  /**
+   * Get all visible layers (respecting isVisible property).
+   *
+   * Filters layers to only those with their visibility flag enabled.
+   *
+   * @returns Array of visible layers
+   *
+   * @example
+   * ```typescript
+   * // Render only visible layers
+   * const visibleLayers = parser.getVisibleLayers();
+   * const image = new XCFImage(parser.width, parser.height);
+   * visibleLayers.reverse().forEach(layer => {
+   *   layer.composite(image);
+   * });
+   * ```
+   */
+  getVisibleLayers(): GimpLayer[] {
+    return this.layers.filter((layer) => layer.isVisible);
   }
 
   /**

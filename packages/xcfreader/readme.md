@@ -243,6 +243,12 @@ npm run text
 npm run grey # grayscale v011 example
 npm run indexed # indexed color example
 npm run fullColour # full color RGB v011 example
+npm run int32 # 32-bit integer precision example
+npm run float32 # 32-bit float precision example
+npm run icon # 512x512 icon example
+npm run pipe # indexed color pipe example
+npm run boardpieces # game asset sprites example
+npm run nhl-marlow # large image (2480×3507) example
 ```
 
 ## Troubleshooting

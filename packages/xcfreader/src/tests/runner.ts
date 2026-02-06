@@ -26,6 +26,18 @@ import { test18CompositerModes } from "./18-compositer-modes.js";
 import { test19Logger } from "./19-logger.js";
 import { test20CompositerBranches } from "./20-compositer-branches.js";
 import { test21CompositerEdgeCases } from "./21-compositer-edge-cases.js";
+import { test22ParserEdgeCases } from "./unit/22-parser-edge-cases.js";
+import { test23PrecisionConversion } from "./unit/23-precision-conversion.js";
+import { test24PropertyParsing } from "./unit/24-property-parsing.js";
+import { test25LayerHierarchy } from "./unit/25-layer-hierarchy.js";
+import { test26Validation } from "./26-validation.js";
+import { test27V012Format } from "./27-v012-format.js";
+import { test28LayerFiltering } from "./28-layer-filtering.js";
+import { test29Float32Support } from "./29-float32-support.js";
+import { test30IconParsing } from "./30-icon-parsing.js";
+import { test31PipeIndexed } from "./31-pipe-indexed.js";
+import { test32GameAssets } from "./32-game-assets.js";
+import { test33LargeImage } from "./33-large-image.js";
 import { Logger } from "../lib/logger.js";
 
 const tests = [
@@ -56,6 +68,18 @@ const tests = [
   { name: "19-logger.ts", fn: test19Logger },
   { name: "20-compositer-branches.ts", fn: test20CompositerBranches },
   { name: "21-compositer-edge-cases.ts", fn: test21CompositerEdgeCases },
+  { name: "22-parser-edge-cases.ts (unit)", fn: test22ParserEdgeCases },
+  { name: "23-precision-conversion.ts (unit)", fn: test23PrecisionConversion },
+  { name: "24-property-parsing.ts (unit)", fn: test24PropertyParsing },
+  { name: "25-layer-hierarchy.ts (unit)", fn: test25LayerHierarchy },
+  { name: "26-validation.ts", fn: test26Validation },
+  { name: "27-v012-format.ts", fn: test27V012Format },
+  { name: "28-layer-filtering.ts", fn: test28LayerFiltering },
+  { name: "29-float32-support.ts", fn: test29Float32Support },
+  { name: "30-icon-parsing.ts", fn: test30IconParsing },
+  { name: "31-pipe-indexed.ts", fn: test31PipeIndexed },
+  { name: "32-game-assets.ts", fn: test32GameAssets },
+  { name: "33-large-image.ts", fn: test33LargeImage },
 ];
 
 async function runTests(): Promise<void> {
