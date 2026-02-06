@@ -25,8 +25,17 @@
     "type": "git",
     "url": "git+ssh://git@github.com:andimclean/xcfreader.git"
   },
+  "keywords": [
+    "gimp",
+    "xcf",
+    "web-component",
+    "custom-element",
+    "browser",
+    "image-viewer"
+  ],
+  "homepage": "https://github.com/andimclean/xcfreader#readme",
   "dependencies": {
-    "@theprogrammingiantpanda/xcfreader": "file:../xcfreader"
+    "@theprogrammingiantpanda/xcfreader": "^1.0.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

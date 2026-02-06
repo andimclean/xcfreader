@@ -25,6 +25,16 @@
     "type": "git",
     "url": "git+ssh://git@github.com/andimclean/xcfreader.git"
   },
+  "keywords": [
+    "home-assistant",
+    "custom-card",
+    "lovelace",
+    "gimp",
+    "xcf",
+    "smart-home",
+    "home-automation"
+  ],
+  "homepage": "https://github.com/andimclean/xcfreader#readme",
   "dependencies": {
     "@theprogrammingiantpanda/ui-xcfimage": "^0.1.1"
   },

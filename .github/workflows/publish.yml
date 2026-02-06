@@ -6,6 +6,7 @@ on:
       - 'v*.*.*'
       - '@theprogrammingiantpanda/xcfreader@*'
       - '@theprogrammingiantpanda/ui-xcfimage@*'
+      - '@theprogrammingiantpanda/ha-xcfimage-card@*'
 
 jobs:
   publish:
@@ -35,14 +36,17 @@ jobs:
           TAG_NAME=${GITHUB_REF#refs/tags/}
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
-          if [[ $TAG_NAME == *"xcfreader"* ]] && [[ $TAG_NAME != *"ui-xcfimage"* ]]; then
-            echo "package=xcfreader" >> $GITHUB_OUTPUT
-            echo "package_dir=packages/xcfreader" >> $GITHUB_OUTPUT
+          if [[ $TAG_NAME == *"ha-xcfimage-card"* ]]; then
+            echo "package=ha-xcfimage-card" >> $GITHUB_OUTPUT
+            echo "package_dir=packages/ha-xcfimage-card" >> $GITHUB_OUTPUT
           elif [[ $TAG_NAME == *"ui-xcfimage"* ]]; then
             echo "package=ui-xcfimage" >> $GITHUB_OUTPUT
             echo "package_dir=packages/ui-xcfimage" >> $GITHUB_OUTPUT
+          elif [[ $TAG_NAME == *"xcfreader"* ]]; then
+            echo "package=xcfreader" >> $GITHUB_OUTPUT
+            echo "package_dir=packages/xcfreader" >> $GITHUB_OUTPUT
           elif [[ $TAG_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "package=both" >> $GITHUB_OUTPUT
+            echo "package=all" >> $GITHUB_OUTPUT
             echo "package_dir=." >> $GITHUB_OUTPUT
           else
             echo "Unknown tag format: $TAG_NAME"
@@ -50,7 +54,7 @@ jobs:
           fi
 
       - name: Publish xcfreader to npm
-        if: steps.determine-package.outputs.package == 'xcfreader' || steps.determine-package.outputs.package == 'both'
+        if: steps.determine-package.outputs.package == 'xcfreader' || steps.determine-package.outputs.package == 'all'
         run: |
           cd packages/xcfreader
           npm publish --provenance --access public
@@ -58,9 +62,17 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish ui-xcfimage to npm
-        if: steps.determine-package.outputs.package == 'ui-xcfimage' || steps.determine-package.outputs.package == 'both'
+        if: steps.determine-package.outputs.package == 'ui-xcfimage' || steps.determine-package.outputs.package == 'all'
         run: |
           cd packages/ui-xcfimage
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish ha-xcfimage-card to npm
+        if: steps.determine-package.outputs.package == 'ha-xcfimage-card' || steps.determine-package.outputs.package == 'all'
+        run: |
+          cd packages/ha-xcfimage-card
           npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -78,6 +90,7 @@ jobs:
             Published packages:
             ${{ steps.determine-package.outputs.package == 'xcfreader' && '- [@theprogrammingiantpanda/xcfreader](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)' || '' }}
             ${{ steps.determine-package.outputs.package == 'ui-xcfimage' && '- [@theprogrammingiantpanda/ui-xcfimage](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage)' || '' }}
-            ${{ steps.determine-package.outputs.package == 'both' && '- [@theprogrammingiantpanda/xcfreader](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)\n- [@theprogrammingiantpanda/ui-xcfimage](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage)' || '' }}
+            ${{ steps.determine-package.outputs.package == 'ha-xcfimage-card' && '- [@theprogrammingiantpanda/ha-xcfimage-card](https://www.npmjs.com/package/@theprogrammingiantpanda/ha-xcfimage-card)' || '' }}
+            ${{ steps.determine-package.outputs.package == 'all' && '- [@theprogrammingiantpanda/xcfreader](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)\n- [@theprogrammingiantpanda/ui-xcfimage](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage)\n- [@theprogrammingiantpanda/ha-xcfimage-card](https://www.npmjs.com/package/@theprogrammingiantpanda/ha-xcfimage-card)' || '' }}
           draft: false
           prerelease: false

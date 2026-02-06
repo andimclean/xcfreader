@@ -14,9 +14,10 @@
     "coverage": "npm run coverage -w @theprogrammingiantpanda/xcfreader",
     "coverage:all": "npm run coverage -w @theprogrammingiantpanda/xcfreader && npm run test:coverage -w @theprogrammingiantpanda/ui-xcfimage",
     "coverage:combined": "npm run coverage -w @theprogrammingiantpanda/xcfreader && node calculate-total-coverage.mjs",
-    "build": "npm run build -w @theprogrammingiantpanda/xcfreader && npm run build -w @theprogrammingiantpanda/ui-xcfimage",
+    "build": "npm run build -w @theprogrammingiantpanda/xcfreader && npm run build -w @theprogrammingiantpanda/ui-xcfimage && npm run build -w @theprogrammingiantpanda/ha-xcfimage-card",
     "build:xcfreader": "npm run build -w @theprogrammingiantpanda/xcfreader",
     "build:ui": "npm run build -w @theprogrammingiantpanda/ui-xcfimage",
+    "build:ha": "npm run build -w @theprogrammingiantpanda/ha-xcfimage-card",
     "benchmark": "npm run benchmark -w @theprogrammingiantpanda/xcfreader"
   }
 }
