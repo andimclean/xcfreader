@@ -345,7 +345,9 @@ export class GPpXCFImage extends HTMLElement {
     const ctx = this.canvas.getContext("2d");
     if (ctx) {
       // Always construct a real ImageData object for browser compatibility
-      const imageData = new ImageData(image.getDataBuffer(), width, height);
+      const buffer = image.getDataBuffer();
+      // Create a new Uint8ClampedArray to ensure TypeScript infers ArrayBuffer (not ArrayBufferLike)
+      const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height);
       ctx.putImageData(imageData, 0, 0);
     }
   }
