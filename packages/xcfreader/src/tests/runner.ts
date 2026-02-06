@@ -15,6 +15,12 @@ import { test14GrayscaleSupport } from "./14-grayscale-support.js";
 import { test15IndexedColorSupport } from "./15-indexed-color-support.js";
 import { test16FullColorSupport } from "./16-fullcolour-support.js";
 import { test17Int32 } from "./17-int32-support.js";
+import { test22Float32 } from "./22-float32-support.js";
+import { test23GameSprites } from "./23-game-sprites.js";
+import { test24V011Features } from "./24-v011-features.js";
+import { test25DuplicateLayerNames } from "./25-duplicate-layer-names.js";
+import { test26PipeFile } from "./26-pipe-file.js";
+import { test27FloatingSelectionV011 } from "./27-floating-selection-v011.js";
 
 import { test18CompositerModes } from "./18-compositer-modes.js";
 import { test19Logger } from "./19-logger.js";
@@ -52,6 +58,12 @@ const tests = [
   { name: "15-indexed-color-support.ts", fn: test15IndexedColorSupport },
   { name: "16-fullcolour-support.ts", fn: test16FullColorSupport },
   { name: "17-int32-support.ts", fn: test17Int32 },
+  { name: "22-float32-support.ts", fn: test22Float32 },
+  { name: "23-game-sprites.ts", fn: test23GameSprites },
+  { name: "24-v011-features.ts", fn: test24V011Features },
+  { name: "25-duplicate-layer-names.ts", fn: test25DuplicateLayerNames },
+  { name: "26-pipe-file.ts", fn: test26PipeFile },
+  { name: "27-floating-selection-v011.ts", fn: test27FloatingSelectionV011 },
   { name: "18-compositer-modes.ts", fn: test18CompositerModes },
   { name: "19-logger.ts", fn: test19Logger },
   { name: "20-compositer-branches.ts", fn: test20CompositerBranches },

@@ -128,8 +128,8 @@ const propertyListParser = new Parser()
       }),
       [XCF_PropType.SELECTION]: new Parser().uint32("length", { assert: 0 }),
       [XCF_PropType.FLOATING_SELECTION]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("layerPtr"),
+        .uint32("length")
+        .buffer("layerPtrBuf", { length: "length" }),
       [XCF_PropType.OPACITY]: new Parser().uint32("length").uint32("opacity"),
       [XCF_PropType.MODE]: prop_modeParser,
       [XCF_PropType.VISIBLE]: new Parser()
@@ -188,6 +188,33 @@ const propertyListParser = new Parser()
       [XCF_PropType.GROUP_ITEM_FLAGS]: new Parser()
         .uint32("length")
         .uint32("flags"),
+      [XCF_PropType.FLOAT_OPACITY]: new Parser()
+        .uint32("length", { assert: 4 })
+        .floatbe("opacity"),
+      [XCF_PropType.COLOR_TAG]: new Parser()
+        .uint32("length", { assert: 4 })
+        .uint32("colorTag"),
+      [XCF_PropType.COMPOSITE_MODE]: new Parser()
+        .uint32("length", { assert: 4 })
+        .uint32("compositeMode"),
+      [XCF_PropType.COMPOSITE_SPACE]: new Parser()
+        .uint32("length", { assert: 4 })
+        .uint32("compositeSpace"),
+      [XCF_PropType.BLEND_SPACE]: new Parser()
+        .uint32("length", { assert: 4 })
+        .uint32("blendSpace"),
+      [XCF_PropType.FLOAT_COLOR]: new Parser()
+        .uint32("length", { assert: 12 })
+        .floatbe("r")
+        .floatbe("g")
+        .floatbe("b"),
+      [XCF_PropType.SAMPLE_POINTS_V2]: new Parser()
+        .uint32("length")
+        .buffer("samplePoints", {
+          length: function (this: { length: number }) {
+            return this.length;
+          },
+        }),
     },
     defaultChoice: new Parser().uint32("length").buffer("buffer", {
       length: function (this: { length: number }) {

@@ -70,12 +70,9 @@ export class GPpXCFImage extends HTMLElement {
 
   connectedCallback() {
     // Set attributes on host element (cannot be done in constructor)
-    if (!this.hasAttribute("role")) {
-      this.setAttribute("role", "img");
-    }
-    if (!this.hasAttribute("tabindex")) {
-      this.setAttribute("tabindex", "0");
-    }
+    // Always set these to ensure accessibility compliance
+    this.setAttribute("role", "img");
+    this.setAttribute("tabindex", "0");
 
     // Add keyboard navigation support
     this.addEventListener("keydown", this.handleKeyDown.bind(this));
@@ -224,7 +221,8 @@ export class GPpXCFImage extends HTMLElement {
       return await resp.arrayBuffer();
     } catch (error) {
       // If we've exhausted all retry attempts, throw the error
-      if (attempt >= this.retryAttempts) {
+      // Note: attempt starts at 1, so we retry while attempt < this.retryAttempts
+      if (attempt > this.retryAttempts) {
         throw error;
       }
 
@@ -287,7 +285,7 @@ export class GPpXCFImage extends HTMLElement {
       this.isLoaded = true;
       this.renderImage();
 
-      // Dispatch loaded event
+      // Dispatch loaded event with layer data
       this.dispatchEvent(
         new CustomEvent("xcf-loaded", {
           bubbles: true,
@@ -297,6 +295,7 @@ export class GPpXCFImage extends HTMLElement {
             width: this.parser.width,
             height: this.parser.height,
             layerCount: this.parser.layers.length,
+            layers: JSON.parse(this.getAttribute("layers") || "{}"),
           },
         }),
       );
@@ -346,7 +345,9 @@ export class GPpXCFImage extends HTMLElement {
     const ctx = this.canvas.getContext("2d");
     if (ctx) {
       // Always construct a real ImageData object for browser compatibility
-      const imageData = new ImageData(image.getDataBuffer(), width, height);
+      const buffer = image.getDataBuffer();
+      // Create a new Uint8ClampedArray to ensure TypeScript infers ArrayBuffer (not ArrayBufferLike)
+      const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height);
       ctx.putImageData(imageData, 0, 0);
     }
   }

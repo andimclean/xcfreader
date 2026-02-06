@@ -1,0 +1,38 @@
+{
+  "name": "@theprogrammingiantpanda/ha-xcfimage-card",
+  "version": "0.1.0",
+  "description": "Home Assistant custom card for rendering GIMP XCF files with entity-based layer control",
+  "type": "module",
+  "main": "dist/ha-xcfimage-card.js",
+  "module": "dist/ha-xcfimage-card.js",
+  "types": "dist/ha-xcfimage-card.d.ts",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node esbuild.config.mjs",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
+  "author": "xcfreader contributors",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:andimclean/xcfreader.git"
+  },
+  "dependencies": {
+    "@theprogrammingiantpanda/ui-xcfimage": "^0.1.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "esbuild": "^0.27.2",
+    "eslint": "^8.0.0",
+    "typescript": "^5.3.3"
+  }
+}

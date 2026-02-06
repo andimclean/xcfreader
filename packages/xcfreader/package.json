@@ -70,9 +70,9 @@
     "typescript": "^5.3.3"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node esbuild.config.mjs",
     "build:browser": "node esbuild.config.mjs",
-    "build:all": "npm run build && npm run build:browser",
+    "build:all": "npm run build",
     "watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
