@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>XCF Reader Browser Demo</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; max-width: 800px; }
+    canvas { border: 1px solid #ccc; margin: 1em 0; display: block; }
+    #file-info { white-space: pre-wrap; background: #f5f5f5; padding: 1em; border-radius: 4px; margin: 1em 0; }
+    .error { color: #d32f2f; background: #ffebee; padding: 1em; border-radius: 4px; margin: 1em 0; }
+    button { padding: 0.5em 1em; margin: 0.5em 0; }
+  </style>
+  <script src="../dist/xcfreader.browser.js"></script>
+</head>
+<body>
+  <h1>XCF Reader Browser Demo</h1>
+  <p>Select an XCF file to parse and display information about it.</p>
+
+  <input type="file" id="fileInput" accept=".xcf">
+  <div id="file-info">No file loaded</div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('file-info');
+    const canvas = document.getElementById('canvas');
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+
+        // Parse the XCF file using static parseBuffer method
+        const parser = XCFReader.XCFParser.parseBuffer(arrayBuffer);
+
+        // Display file information
+        let infoText = `File: ${file.name}\n`;
+        infoText += `Width: ${parser.width}px\n`;
+        infoText += `Height: ${parser.height}px\n`;
+        infoText += `Base Type: ${parser.baseType}\n`;
+        infoText += `Layers: ${parser.layers.length}\n`;
+
+        if (parser.layers && parser.layers.length > 0) {
+          infoText += `\nLayer Details:\n`;
+          parser.layers.forEach((layer, i) => {
+            infoText += `  ${i + 1}. ${layer.name} (${layer.width}x${layer.height})`;
+            infoText += ` - ${layer.visible ? 'visible' : 'hidden'}\n`;
+          });
+        }
+
+        fileInfo.textContent = infoText;
+
+        // Render to canvas
+        const image = new XCFReader.XCFDataImage(parser.width, parser.height);
+        parser.createImage(image);
+
+        canvas.width = parser.width;
+        canvas.height = parser.height;
+        const ctx = canvas.getContext('2d');
+        const imageData = new ImageData(image.getDataBuffer(), parser.width, parser.height);
+        ctx.putImageData(imageData, 0, 0);
+
+      } catch (err) {
+        fileInfo.innerHTML = `<div class="error">Error parsing file: ${err.message}</div>`;
+        console.error('Parse error:', err);
+      }
+    });
+
+    // Check if debug mode is enabled (for automated tests)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === '1') {
+      console.log('Debug mode enabled');
+    }
+  </script>
+</body>
+</html>

@@ -24,7 +24,7 @@ test.describe('Browser Demo XCF Parsing', () => {
       const demoPath = path.resolve(__dirname, '../examples/browser-demo.html');
       await page.goto('file://' + demoPath + '?debug=1');
       // Upload file using setInputFiles (works for hidden inputs)
-      const filePath = path.resolve(__dirname, `../examples/${file}`);
+      const filePath = path.resolve(__dirname, `../../../example-xcf/${file}`);
       await page.setInputFiles('input[type=file]', filePath);
       // Wait for file info output
       await page.waitForSelector('#file-info', { timeout: 5000 });
