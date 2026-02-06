@@ -45,3 +45,4 @@ packages/ui-xcfimage/coverage-tmp/
 
 # Output directories
 output/
+*.local.json
