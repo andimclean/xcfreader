@@ -70,12 +70,9 @@ export class GPpXCFImage extends HTMLElement {
 
   connectedCallback() {
     // Set attributes on host element (cannot be done in constructor)
-    if (!this.hasAttribute("role")) {
-      this.setAttribute("role", "img");
-    }
-    if (!this.hasAttribute("tabindex")) {
-      this.setAttribute("tabindex", "0");
-    }
+    // Always set these to ensure accessibility compliance
+    this.setAttribute("role", "img");
+    this.setAttribute("tabindex", "0");
 
     // Add keyboard navigation support
     this.addEventListener("keydown", this.handleKeyDown.bind(this));
@@ -224,7 +221,8 @@ export class GPpXCFImage extends HTMLElement {
       return await resp.arrayBuffer();
     } catch (error) {
       // If we've exhausted all retry attempts, throw the error
-      if (attempt >= this.retryAttempts) {
+      // Note: attempt starts at 1, so we retry while attempt < this.retryAttempts
+      if (attempt > this.retryAttempts) {
         throw error;
       }
 
