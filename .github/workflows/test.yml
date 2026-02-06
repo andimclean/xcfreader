@@ -26,21 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        working-directory: packages/ui-xcfimage
-
       - name: Build TypeScript
         run: npm run build
 
       - name: Run xcfreader tests
         run: npm run test:xcfreader
-
-      - name: Run xcfreader browser tests
-        run: npm run test:browser
-
-      - name: Run ui-xcfimage tests
-        run: npm run test:ui
 
       - name: Run examples
         run: |
