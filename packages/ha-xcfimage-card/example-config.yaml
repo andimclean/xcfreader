@@ -131,3 +131,105 @@ entity_layers:
     layer: 3
     state_on: "on"
 default_visible: [4]  # Room outline
+
+---
+
+# === ENTITY OVERLAYS EXAMPLES ===
+# Display entity badges/icons at layer positions instead of layer content
+
+# Basic entity overlay example
+type: custom:ha-xcfimage-card
+title: Home Overview
+xcf_url: /local/floorplan.xcf
+entity_overlays:
+  - entity: light.living_room
+    layer: 0               # Position from layer 0
+    display_type: badge    # Show icon + state
+  - entity: sensor.temperature
+    layer: 1               # Position from layer 1
+    display_type: state-badge  # Show icon above state
+  - entity: switch.fan
+    layer: 2               # Position from layer 2
+    display_type: icon     # Show icon only
+default_visible: [10]      # Show background layer
+
+---
+
+# Advanced overlay example with custom display options
+type: custom:ha-xcfimage-card
+title: Smart Home Control
+xcf_url: /local/home-control.xcf
+entity_overlays:
+  # Kitchen area
+  - entity: light.kitchen
+    layer: 0
+    display_type: badge
+    show_icon: true
+    show_state: true
+    show_name: false
+  - entity: sensor.kitchen_temperature
+    layer: 1
+    display_type: state
+    show_state: true
+    show_icon: false
+  # Living room area
+  - entity: media_player.living_room
+    layer: 2
+    display_type: icon
+  - entity: climate.thermostat
+    layer: 3
+    display_type: state-badge
+    show_name: true
+  # Bedroom area
+  - entity: light.bedroom
+    layer: 4
+    display_type: badge
+default_visible: [20, 21]  # Background layers
+
+---
+
+# Mixed mode - both entity_layers and entity_overlays
+type: custom:ha-xcfimage-card
+title: Mixed Mode Demo
+xcf_url: /local/mixed-demo.xcf
+# Toggle some layers based on entity states
+entity_layers:
+  - entity: binary_sensor.motion
+    layer: 5
+    state_on: "on"
+  - entity: binary_sensor.door
+    layer: 6
+    state_on: "on"
+# Show entity overlays at other positions
+entity_overlays:
+  - entity: light.main
+    layer: 0
+    display_type: badge
+  - entity: sensor.humidity
+    layer: 1
+    display_type: state-badge
+default_visible: [10]
+
+---
+
+# Display types comparison
+type: custom:ha-xcfimage-card
+title: Display Types Demo
+xcf_url: /local/display-types.xcf
+entity_overlays:
+  # badge: icon + state in a row
+  - entity: light.example_1
+    layer: 0
+    display_type: badge
+  # state-badge: icon above state in a column
+  - entity: sensor.example_2
+    layer: 1
+    display_type: state-badge
+  # icon: just the icon
+  - entity: switch.example_3
+    layer: 2
+    display_type: icon
+  # state: just the state text
+  - entity: sensor.example_4
+    layer: 3
+    display_type: state

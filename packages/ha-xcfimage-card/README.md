@@ -7,8 +7,10 @@ A custom Home Assistant card that displays GIMP XCF files with layer visibility 
 - 🎨 Display GIMP XCF files directly in Home Assistant
 - 🔌 Map Home Assistant entities to XCF layers
 - 👁️ Control layer visibility based on entity states
+- 📍 Display entity badges/icons at layer positions (new!)
 - 🏠 Native Home Assistant card styling
 - ⚡ Real-time updates when entity states change
+- 🖱️ Click overlays to toggle entities
 
 ## Installation
 
@@ -69,16 +71,29 @@ default_visible: [5, 6]  # Background layers always visible
 forcevisible: false
 ```
 
+## Two Modes of Operation
+
+This card supports two modes that can be used separately or together:
+
+### 1. Layer Visibility Mode (`entity_layers`)
+Toggle XCF layer visibility based on entity states. When an entity is "on", its corresponding layer is shown.
+
+### 2. Entity Overlay Mode (`entity_overlays`)
+Display entity badges, icons, or states at layer positions. The layer's position (x, y, width, height) is used to place the entity display, but the layer's actual image content is not shown.
+
 ## Configuration Options
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | `type` | string | Yes | - | Must be `custom:ha-xcfimage-card` |
 | `xcf_url` | string | Yes | - | URL to the XCF file (e.g., `/local/image.xcf`) |
-| `entity_layers` | list | Yes | - | List of entity-to-layer mappings |
+| `entity_layers` | list | No* | - | List of entity-to-layer mappings for visibility control |
+| `entity_overlays` | list | No* | - | List of entity overlays to display at layer positions |
 | `title` | string | No | - | Card title |
 | `default_visible` | list | No | `[]` | Layer indices that are always visible |
 | `forcevisible` | boolean | No | `false` | Force all configured layers visible |
+
+*At least one of `entity_layers` or `entity_overlays` is required
 
 ### Entity Layer Configuration
 
@@ -90,9 +105,78 @@ Each item in `entity_layers` has the following options:
 | `layer` | number | Yes | - | XCF layer index (0-based) |
 | `state_on` | string | No | `"on"` | Entity state value that makes the layer visible |
 
+### Entity Overlay Configuration
+
+Each item in `entity_overlays` has the following options:
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `entity` | string | Yes | - | Home Assistant entity ID |
+| `layer` | number | Yes | - | XCF layer index for positioning (0-based) |
+| `display_type` | string | No | `"badge"` | Display type: `badge`, `icon`, `state`, or `state-badge` |
+| `show_icon` | boolean | No | Auto* | Show entity icon |
+| `show_state` | boolean | No | Auto* | Show entity state |
+| `show_name` | boolean | No | `false` | Show entity name |
+
+*Auto-determined based on `display_type`:
+- `badge`: icon + state in a row
+- `state-badge`: icon above state in a column
+- `icon`: icon only
+- `state`: state text only
+
 ## Use Cases
 
-### Floor Plan
+### Entity Overlays - Interactive Floor Plan
+
+Display entity controls at specific locations on your floor plan:
+
+```yaml
+type: custom:ha-xcfimage-card
+title: Home Control
+xcf_url: /local/floorplan.xcf
+entity_overlays:
+  - entity: light.kitchen
+    layer: 0              # Kitchen position
+    display_type: badge
+  - entity: sensor.living_room_temp
+    layer: 1              # Living room position
+    display_type: state-badge
+  - entity: climate.thermostat
+    layer: 2              # Hallway position
+    display_type: badge
+  - entity: switch.garage_door
+    layer: 3              # Garage position
+    display_type: icon
+default_visible: [10]     # Background floor plan
+```
+
+Create your XCF file with invisible layers positioned at each control point. The overlay will use the layer's position but won't display the layer itself.
+
+### Mixed Mode - Visibility + Overlays
+
+Combine both modes for advanced visualizations:
+
+```yaml
+type: custom:ha-xcfimage-card
+title: Smart Home
+xcf_url: /local/home.xcf
+# Show/hide layers based on state
+entity_layers:
+  - entity: binary_sensor.motion_detected
+    layer: 5
+    state_on: "on"
+# Display controls at specific positions
+entity_overlays:
+  - entity: light.main
+    layer: 0
+    display_type: badge
+  - entity: sensor.temperature
+    layer: 1
+    display_type: state
+default_visible: [10]
+```
+
+### Floor Plan (Layer Visibility)
 
 Display a home floor plan where rooms light up based on which lights are on:
 
@@ -153,6 +237,8 @@ entity_layers:
 
 ## Creating XCF Files for Home Assistant
 
+### For Layer Visibility Mode
+
 1. Open GIMP and create your design
 2. Use separate layers for each controllable element:
    - Layer 0: Kitchen light indicator
@@ -162,6 +248,21 @@ entity_layers:
 4. Save as `.xcf` file
 5. Copy to Home Assistant's `www` folder (accessible as `/local/`)
 6. Note the layer indices (0-based, bottom to top)
+
+### For Entity Overlay Mode
+
+1. Open GIMP with your background image
+2. Create invisible placeholder layers at each position where you want an entity overlay:
+   - Add a small rectangle or shape at the desired position
+   - Make the layer invisible (or use low opacity during design)
+   - Size the shape to set maximum bounds for the overlay
+3. The layer's position (x, y) and size (width, height) will be used for overlay placement
+4. The layer content itself won't be displayed - only its position matters
+5. Example layer setup:
+   - Layer 0: Small rectangle in kitchen area (for light control)
+   - Layer 1: Small rectangle in living room (for temperature sensor)
+   - Layer 10: Background floor plan (always visible)
+6. Save as `.xcf` and copy to `www` folder
 
 ## Layer Index Reference
 

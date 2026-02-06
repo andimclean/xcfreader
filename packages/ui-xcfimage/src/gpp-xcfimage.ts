@@ -359,6 +359,10 @@ export class GPpXCFImage extends HTMLElement {
       index?: number;
       isGroup?: boolean;
       isVisible?: boolean;
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
       children?: unknown[];
     } = {};
     if (node.layer) {
@@ -366,6 +370,10 @@ export class GPpXCFImage extends HTMLElement {
       result.index = indexMap.get(node.layer);
       result.isGroup = node.layer.isGroup;
       result.isVisible = node.layer.isVisible;
+      result.x = node.layer.x;
+      result.y = node.layer.y;
+      result.width = node.layer.width;
+      result.height = node.layer.height;
     }
     if (node.children && node.children.length > 0) {
       result.children = node.children

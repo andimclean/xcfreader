@@ -177,6 +177,18 @@
     </div>
 
     <ha-xcfimage-card id="card"></ha-xcfimage-card>
+
+    <div class="controls">
+      <h2>Entity Overlays Demo</h2>
+      <div class="info">
+        This demo shows entity overlays positioned at layer locations.
+        The overlays are placed at layer positions (top-left, center, top-right) but the layers themselves are NOT shown.
+        Click the overlays to toggle the entities.
+      </div>
+      <div id="overlayEntityControls"></div>
+    </div>
+
+    <ha-xcfimage-card id="overlayCard"></ha-xcfimage-card>
   </div>
 
   <script>
@@ -375,6 +387,121 @@
     // Initialize card after custom element is defined
     customElements.whenDefined('ha-xcfimage-card').then(() => {
       updateCardConfig();
+    });
+
+    // === Entity Overlays Demo ===
+    const overlayCard = document.getElementById('overlayCard');
+
+    // Mock entities for overlay demo
+    const overlayMockHass = {
+      states: {
+        'light.kitchen': {
+          entity_id: 'light.kitchen',
+          state: 'on',
+          attributes: {
+            friendly_name: 'Kitchen Light',
+            icon: 'mdi:lightbulb'
+          },
+          last_changed: '',
+          last_updated: ''
+        },
+        'sensor.temperature': {
+          entity_id: 'sensor.temperature',
+          state: '22.5',
+          attributes: {
+            friendly_name: 'Temperature',
+            unit_of_measurement: '°C',
+            icon: 'mdi:thermometer'
+          },
+          last_changed: '',
+          last_updated: ''
+        },
+        'switch.fan': {
+          entity_id: 'switch.fan',
+          state: 'off',
+          attributes: {
+            friendly_name: 'Fan',
+            icon: 'mdi:fan'
+          },
+          last_changed: '',
+          last_updated: ''
+        },
+      },
+      callService: async (domain, service, data) => {
+        console.log(`Service called: ${domain}.${service}`, data);
+        const entityId = data.entity_id;
+        if (overlayMockHass.states[entityId]) {
+          if (service === 'turn_on') {
+            overlayMockHass.states[entityId].state = 'on';
+          } else if (service === 'turn_off') {
+            overlayMockHass.states[entityId].state = 'off';
+          }
+          overlayCard.hass = { ...overlayMockHass };
+          updateOverlayControls();
+        }
+      },
+    };
+
+    function updateOverlayControls() {
+      const controlsDiv = document.getElementById('overlayEntityControls');
+      controlsDiv.innerHTML = '';
+
+      Object.entries(overlayMockHass.states).forEach(([entityId, state]) => {
+        const div = document.createElement('div');
+        div.className = 'entity-control';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'entity-name';
+        nameSpan.textContent = state.attributes.friendly_name || entityId;
+
+        const stateSpan = document.createElement('span');
+        stateSpan.className = 'entity-state ' + (state.state === 'on' ? 'on' : 'off');
+        stateSpan.textContent = state.state.toUpperCase();
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'toggle-btn';
+        toggleBtn.textContent = 'Toggle';
+        toggleBtn.onclick = () => {
+          const domain = entityId.split('.')[0];
+          const newState = state.state === 'on' ? 'off' : 'on';
+          const service = newState === 'on' ? 'turn_on' : 'turn_off';
+          overlayMockHass.callService(domain, service, { entity_id: entityId });
+        };
+
+        div.appendChild(nameSpan);
+        div.appendChild(stateSpan);
+        div.appendChild(toggleBtn);
+        controlsDiv.appendChild(div);
+      });
+    }
+
+    // Initialize overlay card
+    customElements.whenDefined('ha-xcfimage-card').then(() => {
+      overlayCard.setConfig({
+        type: 'custom:ha-xcfimage-card',
+        title: 'Overlay Demo',
+        xcf_url: '/example-xcf/multi.xcf',
+        entity_overlays: [
+          {
+            entity: 'light.kitchen',
+            layer: 4,  // tl_red - top-left corner
+            display_type: 'badge',
+          },
+          {
+            entity: 'sensor.temperature',
+            layer: 8,  // shaded - center
+            display_type: 'state-badge',
+          },
+          {
+            entity: 'switch.fan',
+            layer: 7,  // tr_red - top-right corner
+            display_type: 'icon',
+          },
+        ],
+        default_visible: [9], // Show base layer as background
+      });
+      overlayCard.hass = overlayMockHass;
+      updateOverlayControls();
     });
   </script>
 </body>
