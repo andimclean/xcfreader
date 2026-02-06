@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com:andimclean/xcfreader.git"
+    "url": "git+ssh://git@github.com/andimclean/xcfreader.git"
   },
   "dependencies": {
     "@theprogrammingiantpanda/ui-xcfimage": "^0.1.1"
