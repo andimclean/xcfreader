@@ -1,4 +1,4 @@
-import { XCFParser, XCFDataImage } from 'xcfreader/browser';
+import { XCFParser, XCFDataImage } from '@theprogrammingiantpanda/xcfreader/browser';
 
 /**
  * <gpp-xcfimage src="..." visible="0,2,5" forcevisible>
@@ -57,6 +57,13 @@ export class GPpXCFImage extends HTMLElement {
 
   private async loadAndRender() {
     if (!this.src) return;
+
+    // Dispatch loading event
+    this.dispatchEvent(new CustomEvent("xcf-loading", {
+      bubbles: true,
+      composed: true
+    }));
+
     try {
       const resp = await fetch(this.src);
       const arrayBuffer = await resp.arrayBuffer();
@@ -66,11 +73,28 @@ export class GPpXCFImage extends HTMLElement {
       this.parser.layers.forEach((l: unknown, i: number) => layerIndexMap.set(l, i));
       this.setAttribute("layers", JSON.stringify(this.serializeTree(this.parser.groupLayers, layerIndexMap)));
       this.renderImage();
+
+      // Dispatch loaded event with layer data
+      this.dispatchEvent(new CustomEvent("xcf-loaded", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          layers: JSON.parse(this.getAttribute("layers") || "{}"),
+          width: this.parser.width,
+          height: this.parser.height
+        }
+      }));
     } catch (err) {
-      this.showError(
-        "Failed to load XCF: " +
-          (err instanceof Error ? err.message : String(err)),
-      );
+      const errorMessage = "Failed to load XCF: " +
+        (err instanceof Error ? err.message : String(err));
+      this.showError(errorMessage);
+
+      // Dispatch error event
+      this.dispatchEvent(new CustomEvent("xcf-error", {
+        bubbles: true,
+        composed: true,
+        detail: { error: errorMessage }
+      }));
     }
   }
 

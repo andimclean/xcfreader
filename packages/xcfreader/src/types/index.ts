@@ -88,6 +88,12 @@ export enum XCF_PropType {
   GROUP_ITEM_FLAGS = 31,
   LOCK_POSITION = 32,
   FLOAT_OPACITY = 33,
+  COLOR_TAG = 34,
+  COMPOSITE_MODE = 35,
+  COMPOSITE_SPACE = 36,
+  BLEND_SPACE = 37,
+  FLOAT_COLOR = 38,
+  SAMPLE_POINTS_V2 = 39,
 }
 
 // ============================================
@@ -208,9 +214,10 @@ export interface ParsedPropLength extends ParsedPropBase {}
 
 /**
  * Property with length and layer pointer
+ * Note: layerPtrBuf is a buffer containing the pointer (4 or 8 bytes depending on XCF version)
  */
 export interface ParsedPropFloatingSelection extends ParsedPropBase {
-  layerPtr: number;
+  layerPtrBuf: Buffer;
 }
 
 /**
@@ -478,6 +485,12 @@ export interface XCF_PropTypeMap {
   [XCF_PropType.GROUP_ITEM_FLAGS]: ParsedPropGroupItemFlags;
   [XCF_PropType.LOCK_POSITION]: ParsedPropDefault;
   [XCF_PropType.FLOAT_OPACITY]: ParsedPropDefault;
+  [XCF_PropType.COLOR_TAG]: ParsedPropDefault;
+  [XCF_PropType.COMPOSITE_MODE]: ParsedPropDefault;
+  [XCF_PropType.COMPOSITE_SPACE]: ParsedPropDefault;
+  [XCF_PropType.BLEND_SPACE]: ParsedPropDefault;
+  [XCF_PropType.FLOAT_COLOR]: ParsedPropDefault;
+  [XCF_PropType.SAMPLE_POINTS_V2]: ParsedPropDefault;
 }
 
 /**
