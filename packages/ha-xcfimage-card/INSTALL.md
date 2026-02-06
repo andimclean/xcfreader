@@ -10,14 +10,14 @@
 
 ## Step 2: Install the Card
 
-### Option A: HACS (Recommended)
+### Option A: CDN (Recommended)
 
-1. Open HACS in Home Assistant
-2. Go to "Frontend"
-3. Click the menu in the top right and select "Custom repositories"
-4. Add this repository URL
-5. Click "Download"
-6. Restart Home Assistant
+1. Go to Settings → Dashboards → Resources in Home Assistant
+2. Click "Add Resource"
+3. URL: `https://cdn.jsdelivr.net/npm/@theprogrammingiantpanda/ha-xcfimage-card@latest/dist/ha-xcfimage-card.js`
+4. Resource type: JavaScript Module
+5. Click "Create"
+6. Restart Home Assistant (or clear browser cache)
 
 ### Option B: Manual Installation
 

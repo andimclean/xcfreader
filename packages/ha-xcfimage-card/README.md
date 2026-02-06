@@ -14,11 +14,24 @@ A custom Home Assistant card that displays GIMP XCF files with layer visibility 
 
 ## Installation
 
-### HACS (Recommended)
+### CDN (Recommended)
 
-1. Add this repository to HACS as a custom repository
-2. Install "XCF Image Card" through HACS
-3. Add the resource to your Lovelace configuration
+Use the card directly from a CDN without downloading:
+
+```yaml
+resources:
+  # Latest version from jsDelivr
+  - url: https://cdn.jsdelivr.net/npm/@theprogrammingiantpanda/ha-xcfimage-card@latest/dist/ha-xcfimage-card.js
+    type: module
+
+  # Or from unpkg
+  - url: https://unpkg.com/@theprogrammingiantpanda/ha-xcfimage-card@latest/dist/ha-xcfimage-card.js
+    type: module
+
+  # Pin to a specific version (recommended for production)
+  - url: https://cdn.jsdelivr.net/npm/@theprogrammingiantpanda/ha-xcfimage-card@0.1.0/dist/ha-xcfimage-card.js
+    type: module
+```
 
 ### Manual Installation
 
