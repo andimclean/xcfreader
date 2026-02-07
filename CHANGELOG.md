@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ha-xcfimage-card: Visual Configuration Editor** - Complete UI editor for card configuration in Home Assistant
+  - Smart layer dropdowns that automatically load and display layer names from XCF files
+  - Dual configuration modes: Entity Layers (visibility control) and Entity Overlays (status badges)
+  - Live XCF file parsing to populate layer selection dropdowns
+  - No need to manually look up layer indices
+  - Full support for all card features including click actions and positioning
+
+- **ha-xcfimage-card: Entity Overlay Positioning** - Display entity status badges/icons at layer positions
+  - Position badges at specific x/y coordinates on the card
+  - Support for standard Home Assistant badge click actions (toggle, more-info, navigate, etc.)
+  - Can be used alongside or instead of entity layers
+  - Flexible configuration for complex visualizations
+
+- **ha-xcfimage-card: CDN Installation Support** - Use the card directly from jsDelivr or unpkg without downloads
+  - Latest version: `@latest` tag for easy updates
+  - Version pinning for production stability
+  - Simplified installation workflow
+
 - **New example XCF files and comprehensive test coverage**:
   - Added 9 new example XCF files covering various use cases:
     - `192608-nhl-marlow.xcf` - Large image (2480×3507) for stress testing
