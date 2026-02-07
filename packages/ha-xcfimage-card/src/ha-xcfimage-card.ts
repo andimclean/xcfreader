@@ -1,4 +1,5 @@
 import "@theprogrammingiantpanda/ui-xcfimage";
+import "./ha-xcfimage-card-editor.js";
 
 /**
  * Home Assistant XCF Image Card
@@ -127,12 +128,16 @@ export class HAXCFImageCard extends HTMLElement {
     };
   }
 
+  static getConfigElement(): HTMLElement {
+    return document.createElement("ha-xcfimage-card-editor");
+  }
+
   setConfig(config: HAXCFImageCardConfig) {
     if (!config.xcf_url) {
       throw new Error("You must specify xcf_url");
     }
     if (!config.entity_layers && !config.entity_overlays) {
-      throw new Error("You must specify either entity_layers or entity_overlays");
+      throw new Error("You must specify at least one of: entity_layers or entity_overlays");
     }
     if (config.entity_layers && !Array.isArray(config.entity_layers)) {
       throw new Error("entity_layers must be an array");
@@ -607,7 +612,7 @@ window.customCards.push({
 
 // eslint-disable-next-line no-console
 console.info(
-  "%c HA-XCFIMAGE-CARD %c v0.1.0 ",
+  "%c HA-XCFIMAGE-CARD %c v0.2.0 ",
   "color: white; background: #1976d2; font-weight: 700;",
   "color: white; background: #424242; font-weight: 700;",
 );

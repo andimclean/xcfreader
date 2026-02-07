@@ -47,7 +47,29 @@ resources:
 
 ## Configuration
 
-### Basic Example
+### Visual Configuration Editor ✨ NEW
+
+The card now includes a visual configuration editor in Home Assistant's UI! When you add or edit the card:
+
+1. Click "+ ADD CARD" in Lovelace
+2. Search for "XCF Image Card"
+3. Use the visual editor to configure:
+   - XCF file URL
+   - Entity layers and/or entity overlays with **smart layer dropdowns**
+   - Display options
+   - Default visible layers
+
+**Smart Layer Selection**: Once you enter your XCF file URL, the editor automatically loads the file and populates dropdowns with all available layers and their names - no need to manually look up layer indices!
+
+**Flexible Configuration**: Use Entity Layers (for visibility toggling), Entity Overlays (for status badges), or both together for powerful combined visualizations!
+
+See [VISUAL_CONFIG.md](./VISUAL_CONFIG.md) for detailed instructions.
+
+### YAML Configuration
+
+You can still configure the card manually with YAML:
+
+#### Basic Example
 
 ```yaml
 type: custom:ha-xcfimage-card
