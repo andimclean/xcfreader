@@ -4,6 +4,8 @@ All notable changes to the ha-xcfimage-card package will be documented in this f
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-07
+
 ### Added
 
 - **Visual Configuration Editor** - Complete UI editor for card configuration in Home Assistant
@@ -26,9 +28,9 @@ All notable changes to the ha-xcfimage-card package will be documented in this f
 
 ### Changed
 
-- Updated to version 0.2.0
 - Improved README with visual configuration editor documentation
 - Enhanced YAML configuration examples
+- Updated package dependencies
 
 ## [0.1.0] - 2024-01-XX
 
