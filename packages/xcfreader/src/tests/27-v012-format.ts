@@ -134,15 +134,15 @@ export async function test27V012Format(): Promise<void> {
 
   // Test 4: Verify v012 files have correct version number internally
   // The version is stored in the _version property after parsing
-  if ((int32Parser as any)._version < 11) {
+  if (!int32Parser.isV11) {
     throw new Error("int32.xcf: Version should be >= 11 for v012 format");
   }
 
-  if ((float32Parser as any)._version < 11) {
+  if (!float32Parser.isV11) {
     throw new Error("float32.xcf: Version should be >= 11 for v012 format");
   }
 
-  if ((fullColourParser as any)._version < 11) {
+  if (!fullColourParser.isV11) {
     throw new Error("fullColour.xcf: Version should be >= 11 for v012 format");
   }
 

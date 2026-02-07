@@ -300,7 +300,7 @@ export class HAXCFImageCard extends HTMLElement {
     overlay.className = "entity-overlay";
 
     // Debug: Log layer positioning data
-    // eslint-disable-next-line no-console
+     
     console.log(`Entity overlay for ${config.entity}:`, {
       layer: config.layer,
       position: { x: layerInfo.x, y: layerInfo.y },
@@ -610,7 +610,7 @@ window.customCards.push({
   preview: false,
 });
 
-// eslint-disable-next-line no-console
+ 
 console.info(
   "%c HA-XCFIMAGE-CARD %c v0.2.0 ",
   "color: white; background: #1976d2; font-weight: 700;",

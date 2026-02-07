@@ -7,7 +7,7 @@ export async function test19Logger(): Promise<void> {
     Logger.warn("warn test");
     Logger.error("error test");
     Logger.log("log test");
-  } catch (e) {
+  } catch (_e) {
     throw new Error("Logger methods should not throw");
   }
   Logger.log("PASS: Logger methods called without error");

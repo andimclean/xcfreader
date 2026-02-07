@@ -210,7 +210,7 @@ export interface ParsedParasiteArray {
 /**
  * Property with just length field (used for END, ACTIVE_LAYER, etc.)
  */
-export interface ParsedPropLength extends ParsedPropBase {}
+export type ParsedPropLength = ParsedPropBase;
 
 /**
  * Property with length and layer pointer

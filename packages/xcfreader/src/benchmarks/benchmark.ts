@@ -46,7 +46,7 @@ async function benchmark(): Promise<void> {
 
     // Measure render time
     const renderStart = performance.now();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const image = new XCFPNGImage(parser.width, parser.height);
     parser.createImage(image);
     const renderEnd = performance.now();
@@ -60,7 +60,7 @@ async function benchmark(): Promise<void> {
       const fs = await import("fs");
       const stat = fs.statSync(filePath);
       fileSize = stat.size;
-    } catch (e) {
+    } catch (_e) {
       fileSize = parser.width * parser.height * 4;
     }
 

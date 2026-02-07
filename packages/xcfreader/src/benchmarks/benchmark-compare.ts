@@ -75,7 +75,7 @@ async function runBenchmark(): Promise<BenchmarkResult[]> {
     try {
       const stat = fs.statSync(filePath);
       fileSize = stat.size;
-    } catch (e) {
+    } catch (_e) {
       fileSize = parser.width * parser.height * 4;
     }
 

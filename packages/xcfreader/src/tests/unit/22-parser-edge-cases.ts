@@ -52,7 +52,7 @@ export async function test22ParserEdgeCases(): Promise<void> {
   try {
     await XCFParser.parseFileAsync("/nonexistent/path/to/file.xcf");
     throw new Error("Should have thrown error for non-existent file");
-  } catch (error) {
+  } catch (_error) {
     // Should throw ENOENT or similar error
     Logger.log("PASS: Non-existent file correctly throws error");
   }

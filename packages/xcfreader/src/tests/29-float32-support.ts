@@ -22,6 +22,7 @@ export async function test29Float32Support(): Promise<void> {
   }
 
   Logger.log(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     `PASS: Float32 support (float32.xcf v0${(parser as any)._version} parsed, ${parser.width}x${parser.height}, ${parser.layers.length} layers, floating point: ${parser.isFloatingPoint})`
   );
 }
