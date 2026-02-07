@@ -6,15 +6,31 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
     reviewers:
       - "andimclean"
     labels:
       - "dependencies"
-      - "automerge"
+      - "automated"
     commit-message:
-      prefix: "chore"
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
       include: "scope"
+    groups:
+      # Group development dependencies for fewer PRs
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group production dependencies
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Enable version updates for npm (xcfreader package)
   - package-ecosystem: "npm"
@@ -22,14 +38,18 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "UTC"
     open-pull-requests-limit: 5
     reviewers:
       - "andimclean"
     labels:
       - "dependencies"
-      - "automerge"
+      - "xcfreader"
+      - "automated"
     commit-message:
-      prefix: "chore"
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
       include: "scope"
 
   # Enable version updates for npm (ui-xcfimage package)
@@ -38,14 +58,18 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "UTC"
     open-pull-requests-limit: 5
     reviewers:
       - "andimclean"
     labels:
       - "dependencies"
-      - "automerge"
+      - "ui-xcfimage"
+      - "automated"
     commit-message:
-      prefix: "chore"
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
       include: "scope"
 
   # Enable version updates for npm (ha-xcfimage-card package)
@@ -54,14 +78,18 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "UTC"
     open-pull-requests-limit: 5
     reviewers:
       - "andimclean"
     labels:
       - "dependencies"
-      - "automerge"
+      - "ha-xcfimage-card"
+      - "automated"
     commit-message:
-      prefix: "chore"
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
       include: "scope"
 
   # Enable version updates for GitHub Actions
@@ -70,11 +98,15 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "UTC"
     open-pull-requests-limit: 5
     reviewers:
       - "andimclean"
     labels:
       - "dependencies"
       - "github-actions"
+      - "automated"
     commit-message:
-      prefix: "ci"
+      prefix: "chore(ci)"
+      include: "scope"

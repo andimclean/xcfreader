@@ -24,9 +24,14 @@
     "build:ha": "npm run build -w @theprogrammingiantpanda/ha-xcfimage-card",
     "benchmark": "npm run benchmark -w @theprogrammingiantpanda/xcfreader",
     "format": "prettier --write \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
-    "format:check": "prettier --check \"**/*.{ts,js,mjs,json,md,yml,yaml}\""
+    "format:check": "prettier --check \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "npm run build && changeset publish",
+    "release": "npm run build && changeset version && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "eslint": "^8.57.1",
