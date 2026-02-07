@@ -49,6 +49,7 @@
 ## Packages
 - `packages/xcfreader` - Core XCF parser (Node + browser)
 - `packages/ui-xcfimage` - Web component `<gpp-xcfimage>` using Playwright for tests
+- `packages/ha-xcfimage-card` - Home Assistant custom card with entity-based layer control
 
 ## Commands
 ### packages/xcfreader
@@ -61,3 +62,10 @@
 - `npm run build` - Build web component (tsc + esbuild)
 - `npm run test` - Run Playwright browser tests
 - `npm run serve` - Serve demo locally
+
+### packages/ha-xcfimage-card
+- `npm run build` - Build Home Assistant card (tsc + esbuild)
+- `npm run dev` - Watch mode for development
+- `npm run serve` - Serve dist folder with CORS
+- `npm run lint` - Run linter
+- `npm run lint:fix` - Run linter with auto-fix

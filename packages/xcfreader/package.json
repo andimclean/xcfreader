@@ -3,6 +3,10 @@
   "version": "1.0.1",
   "description": "Reads in GIMP xcf files",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "main": "dist/gimpparser.js",
   "types": "dist/gimpparser.d.ts",
   "browser": "dist/xcfreader.browser.mjs",
@@ -57,7 +61,7 @@
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@types/node": "^25.2.1",
     "@types/pngjs": "^6.0.5",
-    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "badge-maker": "^5.0.2",
     "c8": "^10.1.3",

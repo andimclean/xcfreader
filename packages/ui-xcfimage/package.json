@@ -3,6 +3,10 @@
   "version": "0.1.2",
   "description": "Web component <gpp-xcfimage> for rendering GIMP XCF files using xcfreader.",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "main": "dist/gpp-xcfimage.js",
   "module": "dist/gpp-xcfimage.js",
   "types": "dist/gpp-xcfimage.d.ts",

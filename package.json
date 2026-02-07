@@ -3,6 +3,10 @@
   "private": true,
   "license": "MIT",
   "description": "Monorepo for xcfreader and related packages",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "workspaces": [
     "packages/*"
   ],
