@@ -1322,7 +1322,7 @@ export class XCFParser {
     if (data?.colours) {
       return data.colours.map((c: ParsedRGB) => ({
         red: c.red,
-        green: c.greed, // Note: typo in parser "greed" instead of "green"
+        green: c.green,
         blue: c.blue,
       }));
     }

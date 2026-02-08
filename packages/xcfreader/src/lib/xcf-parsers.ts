@@ -18,7 +18,7 @@ import { XCFParseError } from "../gimpparser.js";
 export function parseRGB(reader: BinaryReader): ParsedRGB {
   return {
     red: reader.readUInt8(),
-    greed: reader.readUInt8(), // Note: XCF format has typo "greed" instead of "green"
+    green: reader.readUInt8(),
     blue: reader.readUInt8(),
   };
 }

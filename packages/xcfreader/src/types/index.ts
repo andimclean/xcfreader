@@ -145,11 +145,11 @@ export interface ParsedString {
 }
 
 /**
- * Result of parsing RGB color data (note: GIMP typo preserved)
+ * Result of parsing RGB color data
  */
 export interface ParsedRGB {
   red: number;
-  greed: number; // Note: typo in original parser, kept for compatibility
+  green: number;
   blue: number;
 }
 
