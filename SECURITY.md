@@ -17,13 +17,13 @@ We take security vulnerabilities seriously. If you discover a security issue in 
 
 **DO NOT** open a public GitHub issue for security vulnerabilities.
 
-Instead, please report security vulnerabilities by emailing:
-
-**[Your email here]** or use GitHub's private vulnerability reporting:
+Instead, please use GitHub's private vulnerability reporting:
 
 1. Go to the [Security tab](https://github.com/andimclean/xcfreader/security)
 2. Click "Report a vulnerability"
 3. Fill out the form with details about the vulnerability
+
+This ensures security issues are handled privately and responsibly.
 
 ### What to Include
 
