@@ -53,6 +53,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Replaced binary-parser with custom BinaryReader** - Reduced bundle size by 18% and improved type safety
+  - Created lightweight `BinaryReader` class (~1.5 KB minified) with only XCF-specific operations
+  - Implemented functional parsers in `xcf-parsers.ts` (~4 KB minified) for all XCF structures
+  - **Bundle size improvements**:
+    - ui-xcfimage: 104 KB → 85 KB minified (-19 KB, -18.3%)
+    - ui-xcfimage: 146 KB → 123 KB unminified (-23 KB, -15.8%)
+    - ha-xcfimage-card: ~208 KB → ~189 KB estimated (-19 KB, -9%)
+  - **Better developer experience**:
+    - Perfect TypeScript types for all XCF structures (no more `any`)
+    - Descriptive error messages (e.g., "COMPRESSION property: expected length 1, got 4")
+    - Tree-shakeable parser functions
+  - Removed binary-parser dependency (~46 KB source code)
+  - All 34 tests passing with no breaking changes
+  - Slightly faster parsing with fewer object allocations
+
 - **Upgraded Husky from v8 to v9** - Simplified Git hook format with better performance
 - **Self-contained bundles** - ui-xcfimage and ha-xcfimage-card now have zero runtime dependencies (all bundled at build time)
 

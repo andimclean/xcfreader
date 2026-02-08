@@ -45,9 +45,7 @@
     "dist/lib/",
     "dist/types/"
   ],
-  "dependencies": {
-    "binary-parser": "^2.3.0"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "pngjs": "^7.0.0"
   },
