@@ -22,7 +22,7 @@ export async function test24PropertyParsing(): Promise<void> {
     throw new Error("Expected layers in multi.xcf");
   }
 
-  const firstLayer = parser.layers[0];
+  const firstLayer = parser.layers[0]!; // Safe: length checked above
 
   // Check for opacity property (common in layers)
   const opacityProp = firstLayer.getProps(XCF_PropType.OPACITY);

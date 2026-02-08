@@ -213,7 +213,7 @@ export class XCFValidator {
     // Check for duplicate pointers (potential circular references)
     const seen = new Set<number>();
     for (let i = 0; i < pointers.length; i++) {
-      const ptr = pointers[i];
+      const ptr = pointers[i]!; // Safe: i < length
 
       // Skip zero pointers (valid empty markers)
       if (ptr === 0) continue;
@@ -241,16 +241,17 @@ export class XCFValidator {
 
     // Validate path items are non-negative
     for (let i = 0; i < pathItems.length; i++) {
-      if (pathItems[i] < 0) {
+      const item = pathItems[i]!; // Safe: i < length
+      if (item < 0) {
         throw new XCFValidationError(
-          `Invalid negative path index at depth ${i}: ${pathItems[i]}`,
+          `Invalid negative path index at depth ${i}: ${item}`,
         );
       }
 
       // Check for unreasonably large indices (potential corruption)
-      if (pathItems[i] > 10000) {
+      if (item > 10000) {
         throw new XCFValidationError(
-          `Unreasonably large path index at depth ${i}: ${pathItems[i]} (max 10000)`,
+          `Unreasonably large path index at depth ${i}: ${item} (max 10000)`,
         );
       }
     }

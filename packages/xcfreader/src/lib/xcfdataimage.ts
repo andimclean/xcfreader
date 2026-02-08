@@ -78,10 +78,10 @@ export class XCFDataImage implements IXCFImage {
   getAt(x: number, y: number): ColorRGBA {
     const idx = (y * this._width + x) * 4;
     return {
-      red: this._data[idx],
-      green: this._data[idx + 1],
-      blue: this._data[idx + 2],
-      alpha: this._data[idx + 3],
+      red: this._data[idx]!,
+      green: this._data[idx + 1]!,
+      blue: this._data[idx + 2]!,
+      alpha: this._data[idx + 3]!,
     };
   }
 
@@ -195,14 +195,14 @@ export class XCFDataImage implements IXCFImage {
       // Check if we're in a browser environment with Canvas support
       // Use globalThis to access browser globals without TypeScript DOM lib
       const g = globalThis as Record<string, unknown>;
-      if (typeof g.document === "undefined" || typeof g.HTMLCanvasElement === "undefined") {
+      if (typeof g['document'] === "undefined" || typeof g['HTMLCanvasElement'] === "undefined") {
         reject(new Error("toBlob() requires a browser environment with Canvas support"));
         return;
       }
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const doc = g.document as any;
+        const doc = g['document'] as any;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const canvas = doc.createElement("canvas") as any;
         canvas.width = this._width;
@@ -216,7 +216,7 @@ export class XCFDataImage implements IXCFImage {
 
         // Create ImageData and put it on the canvas
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ImageDataCtor = g.ImageData as any;
+        const ImageDataCtor = g['ImageData'] as any;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const imageData = new ImageDataCtor(this._data, this._width, this._height) as any;
         ctx.putImageData(imageData, 0, 0);
@@ -261,12 +261,12 @@ export class XCFDataImage implements IXCFImage {
     // Check if we're in a browser environment with Canvas support
     // Use globalThis to access browser globals without TypeScript DOM lib
     const g = globalThis as Record<string, unknown>;
-    if (typeof g.document === "undefined" || typeof g.HTMLCanvasElement === "undefined") {
+    if (typeof g['document'] === "undefined" || typeof g['HTMLCanvasElement'] === "undefined") {
       throw new Error("toDataURL() requires a browser environment with Canvas support");
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const doc = g.document as any;
+    const doc = g['document'] as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const canvas = doc.createElement("canvas") as any;
     canvas.width = this._width;
@@ -279,7 +279,7 @@ export class XCFDataImage implements IXCFImage {
 
     // Create ImageData and put it on the canvas
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ImageDataCtor = g.ImageData as any;
+    const ImageDataCtor = g['ImageData'] as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const imageData = new ImageDataCtor(this._data, this._width, this._height) as any;
     ctx.putImageData(imageData, 0, 0);

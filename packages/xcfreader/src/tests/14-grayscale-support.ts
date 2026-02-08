@@ -50,7 +50,7 @@ export async function test14GrayscaleSupport(): Promise<void> {
   const pixelData = image.getPixelData();
   let hasNonBlackPixels = false;
   for (let i = 0; i < pixelData.length; i += 4) {
-    if (pixelData[i] > 0 || pixelData[i + 1] > 0 || pixelData[i + 2] > 0) {
+    if (pixelData[i]! > 0 || pixelData[i + 1]! > 0 || pixelData[i + 2]! > 0) {
       hasNonBlackPixels = true;
       break;
     }

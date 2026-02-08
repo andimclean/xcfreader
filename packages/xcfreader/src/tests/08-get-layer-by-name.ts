@@ -16,7 +16,7 @@ export async function test08GetLayerByName(): Promise<void> {
     throw new Error('No layers found in multi.xcf');
   }
 
-  const firstLayerName = layers[0].name;
+  const firstLayerName = layers[0]!.name; // Safe: length checked above
   const foundLayer = parser.getLayerByName(firstLayerName);
 
   if (!foundLayer || foundLayer.name !== firstLayerName) {

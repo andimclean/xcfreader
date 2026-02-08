@@ -67,10 +67,10 @@ export class XCFPNGImage implements IXCFImage {
     const idx = (y * this._width + x) * 4;
     const buf: Buffer = this._image.data;
     return {
-      red: buf[idx],
-      green: buf[idx + 1],
-      blue: buf[idx + 2],
-      alpha: buf[idx + 3],
+      red: buf[idx]!,
+      green: buf[idx + 1]!,
+      blue: buf[idx + 2]!,
+      alpha: buf[idx + 3]!,
     };
   }
 

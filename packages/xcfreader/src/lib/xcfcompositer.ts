@@ -418,7 +418,7 @@ class XCFCompositer {
 }
 
 class DissolveCompositer extends XCFCompositer {
-  compose(backColour: Color, layerColour: Color): Color {
+  override compose(backColour: Color, layerColour: Color): Color {
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
     const random = Math.random();
     return {
@@ -431,7 +431,7 @@ class DissolveCompositer extends XCFCompositer {
 }
 
 class GeneralCompositer extends XCFCompositer {
-  compose(backColour: Color, layerColour: Color): Color {
+  override compose(backColour: Color, layerColour: Color): Color {
     const a1 = xcfToFloat(backColour.alpha ?? 255);
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
 
@@ -532,7 +532,7 @@ class HsvCompositor extends XCFCompositer {
     super(mode, opacity);
   }
 
-  compose(backColour: Color, layerColour: Color): Color {
+  override compose(backColour: Color, layerColour: Color): Color {
     const inA = xcfToFloat(backColour.alpha ?? 255);
     const laA = xcfToFloat(layerColour.alpha ?? 255);
 

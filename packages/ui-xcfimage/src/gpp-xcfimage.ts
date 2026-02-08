@@ -330,7 +330,7 @@ export class GPpXCFImage extends HTMLElement {
     // Build index-aware list then reverse for correct compositing (bottom-to-top)
     const indexed: { layer: (typeof layers)[0]; index: number }[] = [];
     for (let i = 0; i < layers.length; i++) {
-      indexed.push({ layer: layers[i], index: i });
+      indexed.push({ layer: layers[i]!, index: i }); // Safe: i < length
     }
     indexed.reverse();
     for (const { layer, index } of indexed) {

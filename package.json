@@ -25,6 +25,7 @@
     "benchmark": "npm run benchmark -w @theprogrammingiantpanda/xcfreader",
     "format": "prettier --write \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
+    "validate:packages": "node scripts/validate-packages.mjs",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "npm run build && changeset publish",

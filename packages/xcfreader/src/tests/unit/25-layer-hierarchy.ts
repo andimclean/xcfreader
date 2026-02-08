@@ -31,7 +31,7 @@ export async function test25LayerHierarchy(): Promise<void> {
   Logger.log(`Group layer tree has ${Object.keys(groupLayerTree).length} root nodes`);
 
   // Test first group layer properties
-  const firstGroup = groupLayers[0];
+  const firstGroup = groupLayers[0]!; // Safe: length checked above
   Logger.log(`Group name: ${firstGroup.name}`);
   Logger.log(`Group is marked as group: ${firstGroup.isGroup}`);
 
@@ -39,7 +39,7 @@ export async function test25LayerHierarchy(): Promise<void> {
   const layersWithGroupNames = parser.layers.filter((layer) => layer.groupName && layer.groupName.length > 0);
   if (layersWithGroupNames.length > 0) {
     Logger.log(`Found ${layersWithGroupNames.length} layer(s) with group names`);
-    Logger.log(`Example: "${layersWithGroupNames[0].name}" in group "${layersWithGroupNames[0].groupName}"`);
+    Logger.log(`Example: "${layersWithGroupNames[0]!.name}" in group "${layersWithGroupNames[0]!.groupName}"`); // Safe: length checked
   }
 
   // Verify all layers have valid dimensions

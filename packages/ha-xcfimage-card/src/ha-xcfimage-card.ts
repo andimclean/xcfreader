@@ -348,7 +348,7 @@ export class HAXCFImageCard extends HTMLElement {
     if (showName) {
       const nameText = document.createElement("span");
       nameText.className = "entity-name";
-      const friendlyName = entityState.attributes.friendly_name as string | undefined;
+      const friendlyName = entityState.attributes['friendly_name'] as string | undefined;
       nameText.textContent = friendlyName || config.entity;
       content.appendChild(nameText);
     }
@@ -365,12 +365,12 @@ export class HAXCFImageCard extends HTMLElement {
 
   private createEntityIcon(entityId: string, entityState: HomeAssistant["states"][string]): HTMLElement {
     const icon = document.createElement("ha-icon");
-    const iconAttr = entityState.attributes.icon as string | undefined;
+    const iconAttr = entityState.attributes['icon'] as string | undefined;
     const iconName = iconAttr || this.getDefaultIcon(entityId);
     icon.setAttribute("icon", iconName);
 
     // Add state-based coloring
-    const domain = entityId.split(".")[0];
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
     if ((domain === "light" || domain === "switch") && entityState.state === "on") {
       icon.style.color = "var(--state-icon-active-color, #ffc107)";
     } else {
@@ -381,7 +381,7 @@ export class HAXCFImageCard extends HTMLElement {
   }
 
   private getDefaultIcon(entityId: string): string {
-    const domain = entityId.split(".")[0];
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
     const iconMap: Record<string, string> = {
       light: "mdi:lightbulb",
       switch: "mdi:toggle-switch",
@@ -397,10 +397,10 @@ export class HAXCFImageCard extends HTMLElement {
   }
 
   private formatEntityState(entityId: string, entityState: HomeAssistant["states"][string]): string {
-    const domain = entityId.split(".")[0];
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
 
     // Special formatting for certain domains
-    const unitOfMeasurement = entityState.attributes.unit_of_measurement as string | undefined;
+    const unitOfMeasurement = entityState.attributes['unit_of_measurement'] as string | undefined;
     if (domain === "sensor" && unitOfMeasurement) {
       return `${entityState.state}${unitOfMeasurement}`;
     }
@@ -416,7 +416,7 @@ export class HAXCFImageCard extends HTMLElement {
   private toggleEntity(entityId: string) {
     if (!this._hass) return;
 
-    const domain = entityId.split(".")[0];
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
     const service = this._hass.states[entityId]?.state === "on" ? "turn_off" : "turn_on";
 
     this._hass.callService(domain, service, { entity_id: entityId });

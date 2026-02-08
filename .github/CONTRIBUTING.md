@@ -109,6 +109,21 @@ This will prompt you to:
 
 Changesets are used to automatically generate changelogs and version bumps.
 
+### Publishing Packages
+
+When publishing packages to npm, the project uses **package provenance** for transparency and security:
+
+- **CI Publishing**: GitHub Actions automatically publishes with provenance (`--provenance` flag)
+- **Local Publishing**: Use `npm run changeset:publish` which includes provenance automatically
+- **Manual Publishing**: If publishing manually, always use `npm publish --provenance --access public`
+
+Provenance provides cryptographic proof that packages were built in a specific CI environment, improving supply chain security.
+
+**Requirements:**
+- npm >= 9.5.0
+- Publishing from GitHub Actions (for provenance attestation)
+- OIDC token permissions (`id-token: write` in CI)
+
 ## Code Style & Review Process
 
 - All code must pass ESLint and TypeScript strict mode

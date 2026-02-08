@@ -61,7 +61,7 @@ export class HAXCFImageCardEditor extends LitElement {
   @state() private _loadingLayers = false;
   @state() private _layersError?: string;
 
-  static get styles(): CSSResultGroup {
+  static override get styles(): CSSResultGroup {
     return css`
       .card-config {
         display: flex;
@@ -262,7 +262,7 @@ export class HAXCFImageCardEditor extends LitElement {
     return result;
   }
 
-  protected render(): TemplateResult {
+  protected override render(): TemplateResult {
     if (!this._config) {
       return html``;
     }
@@ -554,7 +554,9 @@ export class HAXCFImageCardEditor extends LitElement {
   private _entityLayerChanged(index: number, field: string, value: string | number): void {
     if (!this._config?.entity_layers) return;
     const layers = [...this._config.entity_layers];
-    layers[index] = { ...layers[index], [field]: value };
+    const existing = layers[index];
+    if (!existing) return;
+    layers[index] = { ...existing, [field]: value };
     this._config = { ...this._config, entity_layers: layers };
     this._configChanged();
   }
@@ -562,7 +564,7 @@ export class HAXCFImageCardEditor extends LitElement {
   private _addEntityLayer(): void {
     if (!this._config) return;
     const layers = this._config.entity_layers || [];
-    const nextLayerIndex = this._layers.length > 0 ? this._layers[0].index : layers.length;
+    const nextLayerIndex = this._layers.length > 0 ? this._layers[0]!.index : layers.length; // Safe: length checked
     this._config = {
       ...this._config,
       entity_layers: [...layers, { entity: "", layer: nextLayerIndex, state_on: "on" }],
@@ -584,7 +586,9 @@ export class HAXCFImageCardEditor extends LitElement {
   private _entityOverlayChanged(index: number, field: string, value: string | number): void {
     if (!this._config?.entity_overlays) return;
     const overlays = [...this._config.entity_overlays];
-    overlays[index] = { ...overlays[index], [field]: value };
+    const existing = overlays[index];
+    if (!existing) return;
+    overlays[index] = { ...existing, [field]: value };
     this._config = { ...this._config, entity_overlays: overlays };
     this._configChanged();
   }
@@ -592,7 +596,7 @@ export class HAXCFImageCardEditor extends LitElement {
   private _addEntityOverlay(): void {
     if (!this._config) return;
     const overlays = this._config.entity_overlays || [];
-    const nextLayerIndex = this._layers.length > 0 ? this._layers[0].index : overlays.length;
+    const nextLayerIndex = this._layers.length > 0 ? this._layers[0]!.index : overlays.length; // Safe: length checked
     this._config = {
       ...this._config,
       entity_overlays: [...overlays, { entity: "", layer: nextLayerIndex, display_type: "badge" }],

@@ -524,7 +524,7 @@ class GimpLayer {
     let item: GroupLayerNode = this._parent._groupLayers;
     const name: string[] = [];
     for (let index = 0; index < pathItems.length; index += 1) {
-      item = item.children[pathItems[index]];
+      item = item.children[pathItems[index]!]!; // Safe: index < length, children exist
       name.push(item.layer!.name);
     }
 
@@ -626,7 +626,7 @@ class GimpLayer {
                 const matches = text.match(/(\(.*\))+/g) || [];
                 matches.forEach((item: string) => {
                   const itemParts = item.substring(1, item.length - 1).split(" ");
-                  const key = itemParts[0];
+                  const key = itemParts[0]!; // Safe: split always returns at least one element
                   const value = itemParts.slice(1).join(" ");
                   fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
                 });
@@ -819,12 +819,12 @@ class GimpLayer {
         let offset = bppLoop;
 
         while (currentSize > 0) {
-          const length = compressedData[compressOffset];
+          const length = compressedData[compressOffset]!;
 
           compressOffset += 1;
           if (length < 127) {
             let newLength = length;
-            const byte = compressedData[compressOffset];
+            const byte = compressedData[compressOffset]!;
             compressOffset += 1;
             while (newLength >= 0) {
               tileBuffer[offset] = byte;
@@ -834,10 +834,10 @@ class GimpLayer {
             }
           } else if (length === 127) {
             let newLength =
-              compressedData[compressOffset] * 256 +
-              compressedData[compressOffset + 1];
+              compressedData[compressOffset]! * 256 +
+              compressedData[compressOffset + 1]!;
             compressOffset += 2;
-            const byte = compressedData[compressOffset];
+            const byte = compressedData[compressOffset]!;
             compressOffset += 1;
             while (newLength > 0) {
               tileBuffer[offset] = byte;
@@ -847,12 +847,12 @@ class GimpLayer {
             }
           } else if (length === 128) {
             let newLength =
-              compressedData[compressOffset] * 256 +
-              compressedData[compressOffset + 1];
+              compressedData[compressOffset]! * 256 +
+              compressedData[compressOffset + 1]!;
             compressOffset += 2;
 
             while (newLength > 0) {
-              tileBuffer[offset] = compressedData[compressOffset];
+              tileBuffer[offset] = compressedData[compressOffset]!;
               compressOffset += 1;
               offset += bpp;
               currentSize -= 1;
@@ -861,7 +861,7 @@ class GimpLayer {
           } else {
             let newLength = 256 - length;
             while (newLength > 0) {
-              tileBuffer[offset] = compressedData[compressOffset];
+              tileBuffer[offset] = compressedData[compressOffset]!;
               compressOffset += 1;
               offset += bpp;
               currentSize -= 1;
@@ -894,7 +894,7 @@ class GimpLayer {
   ): number {
     if (bytesPerChannel === 1) {
       // 8-bit integer: direct read
-      return buffer[offset];
+      return buffer[offset]!;
     } else if (bytesPerChannel === 2) {
       if (isFloat) {
         // 16-bit float: scale from 0.0-1.0 to 0-255
@@ -980,16 +980,16 @@ class GimpLayer {
           const bufIdx = pixelIdx + xloop * 4;
           if (numChannels === 4) {
             // RGBA
-            dataBuffer[bufIdx] = tileBuffer[tileOffset];
-            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1];
-            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2];
-            dataBuffer[bufIdx + 3] = tileBuffer[tileOffset + 3];
+            dataBuffer[bufIdx] = tileBuffer[tileOffset]!;
+            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1]!;
+            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2]!;
+            dataBuffer[bufIdx + 3] = tileBuffer[tileOffset + 3]!;
             tileOffset += 4;
           } else {
             // RGB
-            dataBuffer[bufIdx] = tileBuffer[tileOffset];
-            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1];
-            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2];
+            dataBuffer[bufIdx] = tileBuffer[tileOffset]!;
+            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1]!;
+            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2]!;
             dataBuffer[bufIdx + 3] = 255;
             tileOffset += 3;
           }
@@ -1083,13 +1083,13 @@ class GimpLayer {
 
         if (baseType === XCF_BaseType.INDEXED && colormap) {
           // Indexed: look up color from palette (always 8-bit index)
-          const index = tileBuffer[bufferOffset];
+          const index = tileBuffer[bufferOffset]!;
           const paletteColor = colormap[index] || { red: 0, green: 0, blue: 0 };
           colour = {
             red: paletteColor.red,
             green: paletteColor.green,
             blue: paletteColor.blue,
-            alpha: numChannels === 2 ? tileBuffer[bufferOffset + 1] : 255,
+            alpha: numChannels === 2 ? tileBuffer[bufferOffset + 1]! : 255,
           };
         } else if (numChannels === 1 || numChannels === 2) {
           // Grayscale: convert gray value to RGB
@@ -1517,7 +1517,7 @@ export class XCFParser {
             node.layer = toPublicLayer(layer);
           } else {
             // Navigate deeper into hierarchy
-            const childIndex = pathData.items[index];
+            const childIndex = pathData.items[index]!; // Safe: index < length
 
             // Create child node if it doesn't exist
             if (isUnset(node.children[childIndex])) {
@@ -1529,7 +1529,7 @@ export class XCFParser {
 
             // Recursively process next level
             node.children[childIndex] = toCall(
-              node.children[childIndex],
+              node.children[childIndex]!,
               index + 1,
             );
           }
@@ -1719,7 +1719,7 @@ export class XCFParser {
         let cursor = this._groupLayers;
 
         for (let i = 0; i < segments.length - 1; ++i) {
-          const segmentKey = segments[i];
+          const segmentKey = segments[i]!; // Safe: i < length
           const cursorChildren = cursor.children as unknown as Record<
             string,
             GroupLayerNode
@@ -1728,11 +1728,11 @@ export class XCFParser {
             layer: null,
             children: [],
           };
-          cursorChildren[segmentKey].children =
-            cursorChildren[segmentKey].children || [];
-          cursor = cursorChildren[segmentKey];
+          cursorChildren[segmentKey]!.children =
+            cursorChildren[segmentKey]!.children || [];
+          cursor = cursorChildren[segmentKey]!;
         }
-        const lastSegment = segments[segments.length - 1];
+        const lastSegment = segments[segments.length - 1]!; // Safe: length > 0
         const cursorChildren = cursor.children as unknown as Record<
           string,
           GroupLayerNode
@@ -1741,7 +1741,7 @@ export class XCFParser {
           layer: null,
           children: [],
         };
-        cursorChildren[lastSegment].layer = toPublicLayer(layer);
+        cursorChildren[lastSegment]!.layer = toPublicLayer(layer);
       });
     }
     return this._groupLayers;
