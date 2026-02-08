@@ -219,17 +219,19 @@ export class HAXCFImageCardEditor extends LitElement {
           reject(new Error("Timeout loading XCF file"));
         }, 10000);
 
-        xcfElement.addEventListener("xcf-loaded", ((event: CustomEvent<XCFLoadedEventDetail>) => {
+        xcfElement.addEventListener("xcf-loaded", (event: Event) => {
+          const customEvent = event as CustomEvent<XCFLoadedEventDetail>;
           clearTimeout(timeout);
-          const layerData = event.detail.layers;
+          const layerData = customEvent.detail.layers;
           this._layers = this._flattenLayers(layerData);
           resolve();
-        }) as EventListener);
+        });
 
-        xcfElement.addEventListener("xcf-error", ((event: CustomEvent) => {
+        xcfElement.addEventListener("xcf-error", (event: Event) => {
+          const customEvent = event as CustomEvent;
           clearTimeout(timeout);
-          reject(new Error(event.detail.error || "Failed to load XCF"));
-        }) as EventListener);
+          reject(new Error(customEvent.detail.error || "Failed to load XCF"));
+        });
       });
 
       // Clean up
@@ -246,14 +248,18 @@ export class HAXCFImageCardEditor extends LitElement {
     const result: Array<{ name: string; index: number }> = [];
 
     if (node.index !== undefined) {
-      const displayName = prefix ? `${prefix}${node.name || "Unnamed"}` : (node.name || "Unnamed");
+      const displayName = prefix ? `${prefix}${node.name || "Unnamed"}` : node.name || "Unnamed";
       result.push({ name: displayName, index: node.index });
     }
 
     if (node.children) {
       // Only add to prefix if node has a name
       const nodeName = node.name || "";
-      const childPrefix = nodeName ? (prefix ? `${prefix}${nodeName} > ` : `${nodeName} > `) : prefix;
+      const childPrefix = nodeName
+        ? prefix
+          ? `${prefix}${nodeName} > `
+          : `${nodeName} > `
+        : prefix;
       node.children.forEach((child) => {
         result.push(...this._flattenLayers(child, childPrefix));
       });
@@ -342,18 +348,16 @@ export class HAXCFImageCardEditor extends LitElement {
     return html`
       <div class="config-row">
         <label class="config-label">Entity Layers (Optional)</label>
-        <div class="config-description">
-          Toggle layer visibility based on entity states
-        </div>
+        <div class="config-description">Toggle layer visibility based on entity states</div>
         ${this._loadingLayers
           ? html`<div class="config-description">Loading layers from XCF file...</div>`
           : this._layersError
-          ? html`<div class="config-description error">Error: ${this._layersError}</div>`
-          : this._layers.length === 0
-          ? html`<div class="config-description">
-              Enter an XCF URL above to load available layers
-            </div>`
-          : ""}
+            ? html`<div class="config-description error">Error: ${this._layersError}</div>`
+            : this._layers.length === 0
+              ? html`<div class="config-description">
+                  Enter an XCF URL above to load available layers
+                </div>`
+              : ""}
         <div class="entity-list">
           ${layers.map(
             (layer, index) => html`
@@ -364,7 +368,11 @@ export class HAXCFImageCardEditor extends LitElement {
                     type="text"
                     .value=${layer.entity}
                     @input=${(e: Event) =>
-                      this._entityLayerChanged(index, "entity", (e.target as HTMLInputElement).value)}
+                      this._entityLayerChanged(
+                        index,
+                        "entity",
+                        (e.target as HTMLInputElement).value
+                      )}
                     placeholder="light.living_room"
                   />
                 </div>
@@ -411,7 +419,11 @@ export class HAXCFImageCardEditor extends LitElement {
                     type="text"
                     .value=${layer.state_on || "on"}
                     @input=${(e: Event) =>
-                      this._entityLayerChanged(index, "state_on", (e.target as HTMLInputElement).value)}
+                      this._entityLayerChanged(
+                        index,
+                        "state_on",
+                        (e.target as HTMLInputElement).value
+                      )}
                     placeholder="on"
                   />
                 </div>
@@ -433,18 +445,16 @@ export class HAXCFImageCardEditor extends LitElement {
     return html`
       <div class="config-row">
         <label class="config-label">Entity Overlays (Optional)</label>
-        <div class="config-description">
-          Display entity badges/icons at layer positions
-        </div>
+        <div class="config-description">Display entity badges/icons at layer positions</div>
         ${this._loadingLayers
           ? html`<div class="config-description">Loading layers from XCF file...</div>`
           : this._layersError
-          ? html`<div class="config-description error">Error: ${this._layersError}</div>`
-          : this._layers.length === 0
-          ? html`<div class="config-description">
-              Enter an XCF URL above to load available layers
-            </div>`
-          : ""}
+            ? html`<div class="config-description error">Error: ${this._layersError}</div>`
+            : this._layers.length === 0
+              ? html`<div class="config-description">
+                  Enter an XCF URL above to load available layers
+                </div>`
+              : ""}
         <div class="entity-list">
           ${overlays.map(
             (overlay, index) => html`
@@ -478,7 +488,10 @@ export class HAXCFImageCardEditor extends LitElement {
                         >
                           ${this._layers.map(
                             (l) => html`
-                              <option value=${String(l.index)} ?selected=${l.index === overlay.layer}>
+                              <option
+                                value=${String(l.index)}
+                                ?selected=${l.index === overlay.layer}
+                              >
                                 ${l.index}: ${l.name}
                               </option>
                             `
@@ -578,7 +591,7 @@ export class HAXCFImageCardEditor extends LitElement {
     layers.splice(index, 1);
     this._config = {
       ...this._config,
-      entity_layers: layers.length > 0 ? layers : undefined
+      entity_layers: layers.length > 0 ? layers : undefined,
     };
     this._configChanged();
   }
@@ -610,7 +623,7 @@ export class HAXCFImageCardEditor extends LitElement {
     overlays.splice(index, 1);
     this._config = {
       ...this._config,
-      entity_overlays: overlays.length > 0 ? overlays : undefined
+      entity_overlays: overlays.length > 0 ? overlays : undefined,
     };
     this._configChanged();
   }
