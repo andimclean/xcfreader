@@ -11,7 +11,8 @@
   "module": "dist/ha-xcfimage-card.js",
   "types": "dist/ha-xcfimage-card.d.ts",
   "files": [
-    "dist/",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
     "README.md"
   ],
   "scripts": {

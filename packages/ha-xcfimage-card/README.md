@@ -45,6 +45,30 @@ resources:
     type: module
 ```
 
+## Browser Requirements
+
+This card requires a modern browser with **ES2022** support:
+
+| Browser     | Minimum Version    |
+| ----------- | ------------------ |
+| Chrome/Edge | 94+ (Sept 2021)    |
+| Firefox     | 101+ (May 2022)    |
+| Safari      | 15.4+ (March 2022) |
+
+Internet Explorer is not supported.
+
+## Performance & Bundle Size
+
+The card uses **code splitting** to optimize load times:
+
+- **Initial load**: ~94KB (card display only)
+- **Editor load**: +31KB (loaded on-demand when editing)
+- **Total if editing**: ~125KB
+
+The visual configuration editor is only loaded when you enter edit mode, reducing initial page load by 25%.
+
+With gzip compression enabled on your server, the initial load is **~32KB** delivered to the browser.
+
 ## Configuration
 
 ### Visual Configuration Editor ✨ NEW
@@ -102,7 +126,7 @@ entity_layers:
   - entity: climate.thermostat
     layer: 4
     state_on: "heat"
-default_visible: [5, 6]  # Background layers always visible
+default_visible: [5, 6] # Background layers always visible
 forcevisible: false
 ```
 
@@ -111,49 +135,52 @@ forcevisible: false
 This card supports two modes that can be used separately or together:
 
 ### 1. Layer Visibility Mode (`entity_layers`)
+
 Toggle XCF layer visibility based on entity states. When an entity is "on", its corresponding layer is shown.
 
 ### 2. Entity Overlay Mode (`entity_overlays`)
+
 Display entity badges, icons, or states at layer positions. The layer's position (x, y, width, height) is used to place the entity display, but the layer's actual image content is not shown.
 
 ## Configuration Options
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `type` | string | Yes | - | Must be `custom:ha-xcfimage-card` |
-| `xcf_url` | string | Yes | - | URL to the XCF file (e.g., `/local/image.xcf`) |
-| `entity_layers` | list | No* | - | List of entity-to-layer mappings for visibility control |
-| `entity_overlays` | list | No* | - | List of entity overlays to display at layer positions |
-| `title` | string | No | - | Card title |
-| `default_visible` | list | No | `[]` | Layer indices that are always visible |
-| `forcevisible` | boolean | No | `false` | Force all configured layers visible |
+| Name              | Type    | Required | Default | Description                                             |
+| ----------------- | ------- | -------- | ------- | ------------------------------------------------------- |
+| `type`            | string  | Yes      | -       | Must be `custom:ha-xcfimage-card`                       |
+| `xcf_url`         | string  | Yes      | -       | URL to the XCF file (e.g., `/local/image.xcf`)          |
+| `entity_layers`   | list    | No\*     | -       | List of entity-to-layer mappings for visibility control |
+| `entity_overlays` | list    | No\*     | -       | List of entity overlays to display at layer positions   |
+| `title`           | string  | No       | -       | Card title                                              |
+| `default_visible` | list    | No       | `[]`    | Layer indices that are always visible                   |
+| `forcevisible`    | boolean | No       | `false` | Force all configured layers visible                     |
 
-*At least one of `entity_layers` or `entity_overlays` is required
+\*At least one of `entity_layers` or `entity_overlays` is required
 
 ### Entity Layer Configuration
 
 Each item in `entity_layers` has the following options:
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `entity` | string | Yes | - | Home Assistant entity ID |
-| `layer` | number | Yes | - | XCF layer index (0-based) |
-| `state_on` | string | No | `"on"` | Entity state value that makes the layer visible |
+| Name       | Type   | Required | Default | Description                                     |
+| ---------- | ------ | -------- | ------- | ----------------------------------------------- |
+| `entity`   | string | Yes      | -       | Home Assistant entity ID                        |
+| `layer`    | number | Yes      | -       | XCF layer index (0-based)                       |
+| `state_on` | string | No       | `"on"`  | Entity state value that makes the layer visible |
 
 ### Entity Overlay Configuration
 
 Each item in `entity_overlays` has the following options:
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `entity` | string | Yes | - | Home Assistant entity ID |
-| `layer` | number | Yes | - | XCF layer index for positioning (0-based) |
-| `display_type` | string | No | `"badge"` | Display type: `badge`, `icon`, `state`, or `state-badge` |
-| `show_icon` | boolean | No | Auto* | Show entity icon |
-| `show_state` | boolean | No | Auto* | Show entity state |
-| `show_name` | boolean | No | `false` | Show entity name |
+| Name           | Type    | Required | Default   | Description                                              |
+| -------------- | ------- | -------- | --------- | -------------------------------------------------------- |
+| `entity`       | string  | Yes      | -         | Home Assistant entity ID                                 |
+| `layer`        | number  | Yes      | -         | XCF layer index for positioning (0-based)                |
+| `display_type` | string  | No       | `"badge"` | Display type: `badge`, `icon`, `state`, or `state-badge` |
+| `show_icon`    | boolean | No       | Auto\*    | Show entity icon                                         |
+| `show_state`   | boolean | No       | Auto\*    | Show entity state                                        |
+| `show_name`    | boolean | No       | `false`   | Show entity name                                         |
 
-*Auto-determined based on `display_type`:
+\*Auto-determined based on `display_type`:
+
 - `badge`: icon + state in a row
 - `state-badge`: icon above state in a column
 - `icon`: icon only
@@ -171,18 +198,18 @@ title: Home Control
 xcf_url: /local/floorplan.xcf
 entity_overlays:
   - entity: light.kitchen
-    layer: 0              # Kitchen position
+    layer: 0 # Kitchen position
     display_type: badge
   - entity: sensor.living_room_temp
-    layer: 1              # Living room position
+    layer: 1 # Living room position
     display_type: state-badge
   - entity: climate.thermostat
-    layer: 2              # Hallway position
+    layer: 2 # Hallway position
     display_type: badge
   - entity: switch.garage_door
-    layer: 3              # Garage position
+    layer: 3 # Garage position
     display_type: icon
-default_visible: [10]     # Background floor plan
+default_visible: [10] # Background floor plan
 ```
 
 Create your XCF file with invisible layers positioned at each control point. The overlay will use the layer's position but won't display the layer itself.
@@ -226,7 +253,7 @@ entity_layers:
     layer: 1
   - entity: light.bedroom
     layer: 2
-default_visible: [10]  # Background floor plan layer
+default_visible: [10] # Background floor plan layer
 ```
 
 ### Security Status
@@ -247,7 +274,7 @@ entity_layers:
   - entity: binary_sensor.motion_living
     layer: 2
     state_on: "on"
-default_visible: [5]  # House outline
+default_visible: [5] # House outline
 ```
 
 ### Weather Visualization

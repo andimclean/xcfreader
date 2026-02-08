@@ -1,5 +1,13 @@
 import "@theprogrammingiantpanda/ui-xcfimage";
-import "./ha-xcfimage-card-editor.js";
+
+// Editor is loaded lazily when needed (code splitting)
+let editorLoaded = false;
+async function loadEditor(): Promise<void> {
+  if (!editorLoaded) {
+    await import("./ha-xcfimage-card-editor.js");
+    editorLoaded = true;
+  }
+}
 
 /**
  * Home Assistant XCF Image Card
@@ -129,7 +137,23 @@ export class HAXCFImageCard extends HTMLElement {
   }
 
   static getConfigElement(): HTMLElement {
-    return document.createElement("ha-xcfimage-card-editor");
+    // Create a placeholder that loads the real editor on-demand
+    const placeholder = document.createElement("div");
+    placeholder.style.padding = "16px";
+    placeholder.textContent = "Loading editor...";
+
+    // Load editor asynchronously
+    loadEditor()
+      .then(() => {
+        const editor = document.createElement("ha-xcfimage-card-editor");
+        placeholder.replaceWith(editor);
+      })
+      .catch((err) => {
+        placeholder.textContent = `Failed to load editor: ${err.message}`;
+        placeholder.style.color = "red";
+      });
+
+    return placeholder;
   }
 
   setConfig(config: HAXCFImageCardConfig) {
