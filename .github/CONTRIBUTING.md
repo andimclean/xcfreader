@@ -62,7 +62,18 @@ npm run lint        # Run ESLint
 npm run lint:fix    # Fix linting issues
 npm run format      # Format code with Prettier
 npm run format:check # Check code formatting
+npm run validate:packages # Validate package.json consistency
+npm run validate:exports  # Check TypeScript type exports
 ```
+
+### Supply Chain Security
+
+```bash
+npm run sbom        # Generate SBOM for monorepo
+npm run sbom:all    # Generate SBOMs for all packages
+```
+
+Software Bill of Materials (SBOM) files are generated during releases and attached to GitHub releases for supply chain transparency.
 
 ### Git Hooks (Automated)
 
@@ -120,6 +131,7 @@ When publishing packages to npm, the project uses **package provenance** for tra
 Provenance provides cryptographic proof that packages were built in a specific CI environment, improving supply chain security.
 
 **Requirements:**
+
 - npm >= 9.5.0
 - Publishing from GitHub Actions (for provenance attestation)
 - OIDC token permissions (`id-token: write` in CI)
