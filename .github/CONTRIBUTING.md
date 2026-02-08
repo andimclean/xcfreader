@@ -60,15 +60,65 @@ npm test            # Run all tests
 ```bash
 npm run lint        # Run ESLint
 npm run lint:fix    # Fix linting issues
+npm run format      # Format code with Prettier
+npm run format:check # Check code formatting
 ```
+
+### Git Hooks (Automated)
+
+The project uses Husky for Git hooks:
+
+- **pre-commit**: Runs Prettier and ESLint on staged files (via lint-staged)
+- **commit-msg**: Validates commit message format (conventional commits)
+- **pre-push**: Runs full test suite before allowing push
+
+### Commit Message Format
+
+Use conventional commit format:
+
+```
+type(scope): subject
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+
+**Examples:**
+
+- `feat(xcfreader): add support for XCF v012 format`
+- `fix(ui-xcfimage): resolve layer visibility bug`
+- `docs: update README with installation instructions`
+- `chore(deps): update dependencies`
+
+### Creating Changesets
+
+For changes that affect package versions, create a changeset:
+
+```bash
+npm run changeset
+```
+
+This will prompt you to:
+
+1. Select which packages changed
+2. Choose bump type (major, minor, patch)
+3. Write a summary of changes
+
+Changesets are used to automatically generate changelogs and version bumps.
 
 ## Code Style & Review Process
 
 - All code must pass ESLint and TypeScript strict mode
+- Code is automatically formatted with Prettier on commit
 - Use 2-space indentation, LF line endings
+- Follow conventional commit message format
 - PRs should include tests for new features/bugfixes
 - PRs are reviewed for clarity, type safety, and documentation
-- Use clear commit messages and reference issues when possible
+- Reference issues in commit messages when applicable
+
 ### Documentation
 
 ```bash

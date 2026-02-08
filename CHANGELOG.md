@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Developer tooling improvements**:
+  - **Prettier** - Automatic code formatting with ESLint integration
+  - **Changesets** - Automated version management and changelog generation
+  - **Commitlint** - Enforce conventional commit message format
+  - **Stricter TypeScript** - Additional compiler checks (`noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `noPropertyAccessFromIndexSignature`)
+  - **Enhanced Dependabot** - Weekly dependency updates with grouping and better labels
+  - **Pre-push test hook** - Prevents broken code from being pushed
+
 - **ha-xcfimage-card: Visual Configuration Editor** - Complete UI editor for card configuration in Home Assistant
   - Smart layer dropdowns that automatically load and display layer names from XCF files
   - Dual configuration modes: Entity Layers (visibility control) and Entity Overlays (status badges)
@@ -44,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added 5 new npm scripts in `package.json` for running new examples
 
 ### Changed
+
+- **Upgraded Husky from v8 to v9** - Simplified Git hook format with better performance
+- **Self-contained bundles** - ui-xcfimage and ha-xcfimage-card now have zero runtime dependencies (all bundled at build time)
 
 - **Code quality improvements - Type casting complexity reduction**:
   - Reduced excessive type casting from 13 to 5 instances (62% reduction)
