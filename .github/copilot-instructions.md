@@ -17,6 +17,8 @@
 ## Where to look (key files)
 
 - [../src/gimpparser.ts](../src/gimpparser.ts) — main parser implementation with `GimpLayer`, `XCFParser` classes; types and error classes.
+- [../src/lib/binary-reader.ts](../src/lib/binary-reader.ts) — lightweight binary reader for XCF parsing (~1.5 KB minified).
+- [../src/lib/xcf-parsers.ts](../src/lib/xcf-parsers.ts) — functional parsers for all XCF structures (headers, layers, properties).
 - [../src/node.ts](../src/node.ts) — Node.js entry point; exports `XCFPNGImage` for PNG file output.
 - [../src/browser.ts](../src/browser.ts) — Browser entry point; exports `XCFDataImage` for canvas rendering.
 - [../src/lib/xcfpngimage.ts](../src/lib/xcfpngimage.ts) — PNG-based image class using `pngjs` (Node.js only).
@@ -30,15 +32,17 @@
 
 ## Architecture & implementation notes
 
-- **Binary parsing**: Uses `binary-parser` library to construct parser instances (`layerParser`, `levelParser`, `gimpHeader`, etc.).
+- **Binary parsing**: Uses custom `BinaryReader` class (in [lib/binary-reader.ts](../src/lib/binary-reader.ts)) for efficient XCF parsing.
+  - Lightweight implementation (~1.5 KB minified) with only XCF-specific operations
+  - Functional parsers in [lib/xcf-parsers.ts](../src/lib/xcf-parsers.ts) for all XCF structures
   - `XCF_PropType` enum in [types/index.ts](../src/types/index.ts) defines property types.
-  - Each property type is mapped to a `Parser` choice in `propertyListParser`.
-  - **XCF v011 support**: Separate parsers for v010 (32-bit) and v011 (64-bit pointers):
-    - `gimpHeaderV10`/`gimpHeaderV11` - header with layer/channel pointer lists
-    - `layerParserV10`/`layerParserV11` - layer with hptr/mptr pointers
-    - `hirerarchyParserV10`/`hirerarchyParserV11` - hierarchy with lptr pointer
-    - `levelParserV10`/`levelParserV11` - level with tptr tile pointer array
+  - **XCF v011 support**: Separate parser functions for v010 (32-bit) and v011 (64-bit pointers):
+    - `parseGimpHeaderV10`/`parseGimpHeaderV11` - header with layer/channel pointer lists
+    - `parseLayerV10`/`parseLayerV11` - layer with hptr/mptr pointers
+    - `parseHierarchyV10`/`parseHierarchyV11` - hierarchy with lptr pointer
+    - `parseLevelV10`/`parseLevelV11` - level with tptr tile pointer array
   - `XCFParser.isV11` getter detects version; `GimpLayer` selects correct parser at runtime.
+  - Perfect TypeScript types for all parsed structures
 - **Buffer management**: XCF is a single binary Buffer; offsets/pointers index into it. Use `XCFParser.getBufferForPointer(offset)` to slice.
 - **Tiled rendering**: Layers use 64×64 tile blocks. `GimpLayer.uncompress()` decompresses tile data; `copyTile()` writes pixels to image.
 - **Compositing**: `XCFCompositer.makeCompositer(mode, opacity)` returns compositing logic (blend modes); used in `GimpLayer.makeImage()`.
@@ -55,7 +59,7 @@
 
 - **Edit source in `src/` only**. TypeScript files (`.ts`) are compiled to `dist/` by `npm run build`.
 - **Do not edit `dist/`** except to inspect compiled output for debugging transpilation.
-- Prefer small, focused parser changes; preserve assertions in `new Parser()` chains unless fixing a discovered edge-case.
+- Prefer small, focused parser changes; add validation checks for expected field lengths and values.
 - Use native Array methods (`filter`, `map`, `forEach`, `find`, `slice`, `reverse`) for array flows.
 - Async API: `XCFParser.parseFileAsync(file)` returns `Promise<XCFParser>`; tests and examples use `async`/`await`.
 - When adding API features, update [readme.md](../readme.md) and examples in [src/examples/](../src/examples/).
@@ -103,10 +107,10 @@ npm run watch
 
 **Adding a new layer property**:
 
-1. Add `PROP_MY_THING = N` constant near line 14–40 in [gimpparser.ts](../src/gimpparser.ts).
-2. Create a parser: `var myPropParser = new Parser()...` (see existing patterns).
-3. Add to `propertyListParser.choice(...).choices` object with key `[PROP_MY_THING]`.
-4. Access via `layer.getProps(PROP_MY_THING)` in parsing code.
+1. Add `PROP_MY_THING = N` to `XCF_PropType` enum in [types/index.ts](../src/types/index.ts).
+2. Create a parser function in [lib/xcf-parsers.ts](../src/lib/xcf-parsers.ts) (see existing patterns).
+3. Add a case in `parseProperty()` switch statement for `XCF_PropType.PROP_MY_THING`.
+4. Access via `layer.getProps(XCF_PropType.PROP_MY_THING)` in parsing code.
 
 **Updating compositing logic**:
 
@@ -127,8 +131,8 @@ npm run watch
 - **Color** type: `{ red: number; green: number; blue: number; alpha?: number }` (0–255 range).
 - **ColorRGBA** type: `{ red; green; blue; alpha: number }` (always includes alpha).
 - **XCF_BaseType** enum: `RGB = 0`, `GRAYSCALE = 1`, `INDEXED = 2` - image color mode.
-- **Parser result types**: Inferred from `binary-parser` output; use `any` when result structure is dynamic.
-- Full `strict: true` in [tsconfig.json](../tsconfig.json); be explicit with types or use `as any` sparingly.
+- **Parser result types**: Strongly typed interfaces for all XCF structures (e.g., `ParsedGimpHeaderV10`, `ParsedLayerV11`).
+- Full `strict: true` in [tsconfig.json](../tsconfig.json); be explicit with types or use `as unknown as T` for unavoidable type conversions.
 
 ## Debugging
 
@@ -140,6 +144,6 @@ npm run watch
 ## Further reading
 
 - See [readme.md](../readme.md) for public API and usage examples.
-- See [CHANGELOG.md](../CHANGELOG.md) for recent changes (ESM migration, Promise-based API, TypeScript port).
+- See [CHANGELOG.md](../CHANGELOG.md) for recent changes (ESM migration, Promise-based API, TypeScript port, custom BinaryReader).
 - See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
-- binary-parser docs: https://github.com/keichi/binary-parser
+- See [BINARY-READER-MIGRATION.md](../BINARY-READER-MIGRATION.md) for details on the custom binary parser implementation.

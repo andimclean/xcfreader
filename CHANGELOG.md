@@ -81,6 +81,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **xcfreader: ParsedRGB field name typo** - Corrected "greed" to "green" in RGB color parsing
+  - Updated ParsedRGB interface type definition
+  - Updated parseRGB() parser function
+  - Updated colormap property mapping
+  - No functional changes, all tests passing
+
 - **ui-xcfimage: Critical Web Components violation** - Fixed bug where `setAttribute()` calls in constructor prevented custom element from initializing
   - Element was appearing as `HTMLUnknownElement` with no shadow DOM
   - Moved attribute setting to `connectedCallback()` per Web Components spec
