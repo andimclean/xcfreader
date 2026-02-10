@@ -4,8 +4,6 @@
  * @module xcfreader/lib/xcf-validator
  */
 
-import { Buffer } from "buffer";
-
 /**
  * Validation error thrown when XCF file structure is invalid or corrupted
  */
@@ -55,24 +53,27 @@ export class XCFValidator {
   /**
    * Validate buffer size and magic bytes
    */
-  validateHeader(buffer: Buffer): void {
+  validateHeader(buffer: ArrayBuffer | Uint8Array): void {
+    // Convert ArrayBuffer to Uint8Array if needed
+    const uint8Buffer = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
+
     // Check minimum buffer size (header is at least 14 bytes)
-    if (buffer.length < 14) {
+    if (uint8Buffer.length < 14) {
       throw new XCFValidationError(
-        `XCF file too small: ${buffer.length} bytes (minimum 14 bytes required)`,
+        `XCF file too small: ${uint8Buffer.length} bytes (minimum 14 bytes required)`
       );
     }
 
     // Validate magic bytes
-    const magic = buffer.toString("utf-8", 0, 4);
+    const magicBytes = uint8Buffer.subarray(0, 4);
+    const magic = new TextDecoder("utf-8").decode(magicBytes);
     if (magic !== "gimp") {
-      throw new XCFValidationError(
-        `Invalid magic bytes: expected "gimp", got "${magic}"`,
-      );
+      throw new XCFValidationError(`Invalid magic bytes: expected "gimp", got "${magic}"`);
     }
 
     // Validate version string format
-    const versionStr = buffer.toString("utf-8", 9, 13);
+    const versionBytes = uint8Buffer.subarray(9, 13);
+    const versionStr = new TextDecoder("utf-8").decode(versionBytes);
 
     // XCF files can have two formats:
     // 1. Old format: "gimp xcf file" (version = "file")
@@ -84,16 +85,14 @@ export class XCFValidator {
 
     if (!versionStr.startsWith("v0")) {
       throw new XCFValidationError(
-        `Invalid version format: expected "v0XX" or "file", got "${versionStr}"`,
+        `Invalid version format: expected "v0XX" or "file", got "${versionStr}"`
       );
     }
 
     // Parse and validate version number for new format
     const version = parseInt(versionStr.replace("v", ""), 10);
     if (isNaN(version) || version < 0 || version > 99) {
-      throw new XCFValidationError(
-        `Invalid version number: ${versionStr} (must be v000-v099)`,
-      );
+      throw new XCFValidationError(`Invalid version number: ${versionStr} (must be v000-v099)`);
     }
   }
 
@@ -105,19 +104,19 @@ export class XCFValidator {
 
     if (width <= 0 || height <= 0) {
       throw new XCFValidationError(
-        `Invalid image dimensions: ${width}x${height} (must be positive)`,
+        `Invalid image dimensions: ${width}x${height} (must be positive)`
       );
     }
 
     if (width > this.options.maxDimension) {
       throw new XCFValidationError(
-        `Image width ${width} exceeds maximum allowed dimension ${this.options.maxDimension}`,
+        `Image width ${width} exceeds maximum allowed dimension ${this.options.maxDimension}`
       );
     }
 
     if (height > this.options.maxDimension) {
       throw new XCFValidationError(
-        `Image height ${height} exceeds maximum allowed dimension ${this.options.maxDimension}`,
+        `Image height ${height} exceeds maximum allowed dimension ${this.options.maxDimension}`
       );
     }
 
@@ -125,7 +124,7 @@ export class XCFValidator {
     const totalPixels = width * height;
     if (totalPixels > Number.MAX_SAFE_INTEGER / 4) {
       throw new XCFValidationError(
-        `Image dimensions ${width}x${height} would cause integer overflow`,
+        `Image dimensions ${width}x${height} would cause integer overflow`
       );
     }
   }
@@ -138,25 +137,25 @@ export class XCFValidator {
     height: number,
     offsetX: number,
     offsetY: number,
-    layerName: string = "unknown",
+    layerName: string = "unknown"
   ): void {
     if (!this.options.checkLayerDimensions) return;
 
     if (width < 0 || height < 0) {
       throw new XCFValidationError(
-        `Layer "${layerName}" has negative dimensions: ${width}x${height}`,
+        `Layer "${layerName}" has negative dimensions: ${width}x${height}`
       );
     }
 
     if (width > this.options.maxDimension) {
       throw new XCFValidationError(
-        `Layer "${layerName}" width ${width} exceeds maximum ${this.options.maxDimension}`,
+        `Layer "${layerName}" width ${width} exceeds maximum ${this.options.maxDimension}`
       );
     }
 
     if (height > this.options.maxDimension) {
       throw new XCFValidationError(
-        `Layer "${layerName}" height ${height} exceeds maximum ${this.options.maxDimension}`,
+        `Layer "${layerName}" height ${height} exceeds maximum ${this.options.maxDimension}`
       );
     }
 
@@ -164,7 +163,7 @@ export class XCFValidator {
     const MAX_OFFSET = 1000000000; // 1 billion pixels offset
     if (Math.abs(offsetX) > MAX_OFFSET || Math.abs(offsetY) > MAX_OFFSET) {
       throw new XCFValidationError(
-        `Layer "${layerName}" has unreasonable offsets: (${offsetX}, ${offsetY})`,
+        `Layer "${layerName}" has unreasonable offsets: (${offsetX}, ${offsetY})`
       );
     }
   }
@@ -172,11 +171,7 @@ export class XCFValidator {
   /**
    * Validate pointer is within buffer bounds
    */
-  validatePointer(
-    pointer: number,
-    buffer: Buffer,
-    context: string = "pointer",
-  ): void {
+  validatePointer(pointer: number, buffer: Uint8Array, context: string = "pointer"): void {
     if (!this.options.checkPointerBounds) return;
 
     if (pointer < 0) {
@@ -184,16 +179,14 @@ export class XCFValidator {
     }
 
     if (pointer >= buffer.length) {
-      throw new XCFValidationError(
-        `${context} ${pointer} exceeds buffer size ${buffer.length}`,
-      );
+      throw new XCFValidationError(`${context} ${pointer} exceeds buffer size ${buffer.length}`);
     }
 
     // Check for circular references by tracking visited pointers
     if (this.options.checkCircularReferences) {
       if (this.visitedPointers.has(pointer)) {
         throw new XCFValidationError(
-          `Circular reference detected: ${context} ${pointer} already visited`,
+          `Circular reference detected: ${context} ${pointer} already visited`
         );
       }
       this.visitedPointers.add(pointer);
@@ -203,11 +196,7 @@ export class XCFValidator {
   /**
    * Validate array of pointers
    */
-  validatePointers(
-    pointers: number[],
-    buffer: Buffer,
-    context: string = "pointer list",
-  ): void {
+  validatePointers(pointers: number[], buffer: Uint8Array, context: string = "pointer list"): void {
     if (!this.options.checkPointerBounds) return;
 
     // Check for duplicate pointers (potential circular references)
@@ -222,7 +211,7 @@ export class XCFValidator {
 
       if (seen.has(ptr)) {
         throw new XCFValidationError(
-          `Duplicate pointer in ${context}: ${ptr} appears multiple times`,
+          `Duplicate pointer in ${context}: ${ptr} appears multiple times`
         );
       }
       seen.add(ptr);
@@ -235,7 +224,7 @@ export class XCFValidator {
   validateHierarchyDepth(depth: number, pathItems: number[]): void {
     if (depth > this.options.maxLayerDepth) {
       throw new XCFValidationError(
-        `Layer hierarchy depth ${depth} exceeds maximum ${this.options.maxLayerDepth} (path: ${pathItems.join(".")})`,
+        `Layer hierarchy depth ${depth} exceeds maximum ${this.options.maxLayerDepth} (path: ${pathItems.join(".")})`
       );
     }
 
@@ -243,15 +232,13 @@ export class XCFValidator {
     for (let i = 0; i < pathItems.length; i++) {
       const item = pathItems[i]!; // Safe: i < length
       if (item < 0) {
-        throw new XCFValidationError(
-          `Invalid negative path index at depth ${i}: ${item}`,
-        );
+        throw new XCFValidationError(`Invalid negative path index at depth ${i}: ${item}`);
       }
 
       // Check for unreasonably large indices (potential corruption)
       if (item > 10000) {
         throw new XCFValidationError(
-          `Unreasonably large path index at depth ${i}: ${item} (max 10000)`,
+          `Unreasonably large path index at depth ${i}: ${item} (max 10000)`
         );
       }
     }
@@ -264,7 +251,7 @@ export class XCFValidator {
     const validTypes = [0, 1, 2]; // RGB, GRAYSCALE, INDEXED
     if (!validTypes.includes(baseType)) {
       throw new XCFValidationError(
-        `Invalid base type: ${baseType} (must be 0=RGB, 1=GRAYSCALE, or 2=INDEXED)`,
+        `Invalid base type: ${baseType} (must be 0=RGB, 1=GRAYSCALE, or 2=INDEXED)`
       );
     }
   }

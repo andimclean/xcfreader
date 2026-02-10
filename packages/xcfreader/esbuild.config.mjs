@@ -1,15 +1,6 @@
 import * as esbuild from "esbuild";
-import { NodeModulesPolyfillPlugin } from "@esbuild-plugins/node-modules-polyfill";
-import { NodeGlobalsPolyfillPlugin } from "@esbuild-plugins/node-globals-polyfill";
 
-// Common plugins for browser polyfills
-const browserPlugins = [
-  NodeModulesPolyfillPlugin(),
-  NodeGlobalsPolyfillPlugin({
-    buffer: true,
-    process: true,
-  }),
-];
+// No polyfills needed - using native browser APIs (Uint8Array, DataView, TextDecoder)
 
 // Browser bundle (ESM) - uses browser.js entry point which excludes XCFPNGImage
 await esbuild.build({
@@ -21,11 +12,7 @@ await esbuild.build({
   target: ["es2022"],
   minify: true,
   sourcemap: true,
-  plugins: browserPlugins,
-  define: {
-    "process.env.NODE_ENV": '"production"',
-    global: "globalThis",
-  },
+  external: ["fs", "path", "pngjs"], // Mark Node.js modules as external
   banner: {
     js: "/* xcfreader - Browser Bundle - MIT License */",
   },
@@ -42,11 +29,7 @@ await esbuild.build({
   target: ["es2022"],
   minify: true,
   sourcemap: true,
-  plugins: browserPlugins,
-  define: {
-    "process.env.NODE_ENV": '"production"',
-    global: "globalThis",
-  },
+  external: ["fs", "path", "pngjs"], // Mark Node.js modules as external
   banner: {
     js: "/* xcfreader - Browser Bundle - MIT License */",
   },

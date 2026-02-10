@@ -10,6 +10,7 @@ build({
   globalName: "GPpXCFImage",
   outfile: "./dist/gpp-xcfimage.iife.js",
   target: ["es2022"],
+  platform: "browser",
   external: [],
 }).catch(() => process.exit(1));
 
@@ -24,6 +25,7 @@ build({
   globalName: "GPpXCFImage",
   outfile: "./dist/gpp-xcfimage.iife.min.js",
   target: ["es2022"],
+  platform: "browser",
   external: [],
   // Advanced minification
   drop: ["debugger"],
@@ -39,5 +41,6 @@ build({
   format: "esm",
   outfile: "./dist/gpp-xcfimage.js",
   target: ["es2022"],
+  platform: "browser",
   external: [],
 }).catch(() => process.exit(1));

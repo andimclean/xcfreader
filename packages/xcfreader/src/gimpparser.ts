@@ -6,8 +6,6 @@
  */
 
 import { Logger } from "./lib/logger.js";
-import FS from "fs";
-import { Buffer } from "buffer";
 import XCFCompositer from "./lib/xcfcompositer.js";
 import { XCFValidator, XCFValidationError, ValidationOptions } from "./lib/xcf-validator.js";
 import { BinaryReader } from "./lib/binary-reader.js";
@@ -146,14 +144,14 @@ const toPublicLayer = (layer: GimpLayer): import("./types/index.js").GimpLayerPu
  */
 class GimpLayer {
   private _parent: XCFParser;
-  private _buffer: Buffer;
+  private _buffer: Uint8Array;
   private _compiled: boolean;
   private _props: Partial<XCF_PropTypeMap> | null;
   private _details: ParsedLayer | null;
   private _name?: string;
   private _parasites?: Record<string, Record<string, string>>;
 
-  constructor(parent: XCFParser, buffer: Buffer) {
+  constructor(parent: XCFParser, buffer: Uint8Array) {
     this._parent = parent;
     this._buffer = buffer;
     this._compiled = false;
@@ -312,7 +310,7 @@ class GimpLayer {
       const parasite = this.getProps(XCF_PropType.PARASITES) as ParsedProperty | null;
       this._parasites = {};
       if (parasite) {
-        const parasiteBuffer = getPropertyData<{ parasite: Buffer }>(parasite);
+        const parasiteBuffer = getPropertyData<{ parasite: Uint8Array }>(parasite);
         if (parasiteBuffer?.parasite) {
           const parasiteItems = parseFullParasiteArray(parasiteBuffer.parasite);
           parasiteItems.forEach((parasiteItem: ParsedParasiteItem) => {
@@ -483,10 +481,15 @@ class GimpLayer {
     }
   }
 
-  uncompress(compressedData: Buffer, xpoints: number, ypoints: number, bpp: number): Buffer {
+  uncompress(
+    compressedData: Uint8Array,
+    xpoints: number,
+    ypoints: number,
+    bpp: number
+  ): Uint8Array {
     const size = xpoints * ypoints;
     if (size > 0) {
-      const tileBuffer = Buffer.alloc(size * bpp);
+      const tileBuffer = new Uint8Array(size * bpp);
       let compressOffset = 0;
       for (let bppLoop = 0; bppLoop < bpp; bppLoop += 1) {
         let currentSize = xpoints * ypoints;
@@ -545,7 +548,7 @@ class GimpLayer {
 
       return tileBuffer;
     }
-    return Buffer.alloc(0);
+    return new Uint8Array(0);
   }
 
   /**
@@ -559,7 +562,7 @@ class GimpLayer {
    * @returns The channel value scaled to 0-255
    */
   private readChannelValue(
-    buffer: Buffer,
+    buffer: Uint8Array,
     offset: number,
     bytesPerChannel: number,
     isFloat: boolean
@@ -568,28 +571,31 @@ class GimpLayer {
       // 8-bit integer: direct read
       return buffer[offset]!;
     } else if (bytesPerChannel === 2) {
+      const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 2);
       if (isFloat) {
         // 16-bit float: scale from 0.0-1.0 to 0-255
-        const floatVal = this.halfToFloat(buffer.readUInt16BE(offset));
+        const floatVal = this.halfToFloat(view.getUint16(0, false));
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
         // 16-bit integer: scale from 0-65535 to 0-255 using integer math (divisor 257)
-        const value = buffer.readUInt16BE(offset);
+        const value = view.getUint16(0, false);
         return (value / 257) | 0;
       }
     } else if (bytesPerChannel === 4) {
+      const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 4);
       if (isFloat) {
         // 32-bit float: scale from 0.0-1.0 to 0-255
-        const floatVal = buffer.readFloatBE(offset);
+        const floatVal = view.getFloat32(0, false);
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
         // 32-bit integer: scale from 0-4294967295 to 0-255 using integer math (divisor 16843009)
-        const value = buffer.readUInt32BE(offset);
+        const value = view.getUint32(0, false);
         return (value / 16843009) | 0;
       }
     } else if (bytesPerChannel === 8) {
       // 64-bit double float: scale from 0.0-1.0 to 0-255
-      const doubleVal = buffer.readDoubleBE(offset);
+      const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 8);
+      const doubleVal = view.getFloat64(0, false);
       return Math.round(Math.max(0, Math.min(1, doubleVal)) * 255);
     }
     return 0;
@@ -618,7 +624,7 @@ class GimpLayer {
 
   copyTile(
     image: IXCFImage,
-    tileBuffer: Buffer,
+    tileBuffer: Uint8Array,
     xoffset: number,
     yoffset: number,
     xpoints: number,
@@ -679,20 +685,25 @@ class GimpLayer {
       const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
+      const tileView = new DataView(
+        tileBuffer.buffer,
+        tileBuffer.byteOffset,
+        tileBuffer.byteLength
+      );
 
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
         const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
         for (let xloop = 0; xloop < xpoints; xloop += 1) {
           const bufIdx = pixelIdx + xloop * 4;
           // Read 16-bit values and scale to 0-255 using integer math (divisor 257)
-          const r = (tileBuffer.readUInt16BE(tileOffset) / 257) | 0;
-          const g = (tileBuffer.readUInt16BE(tileOffset + 2) / 257) | 0;
-          const b = (tileBuffer.readUInt16BE(tileOffset + 4) / 257) | 0;
+          const r = (tileView.getUint16(tileOffset, false) / 257) | 0;
+          const g = (tileView.getUint16(tileOffset + 2, false) / 257) | 0;
+          const b = (tileView.getUint16(tileOffset + 4, false) / 257) | 0;
           dataBuffer[bufIdx] = r;
           dataBuffer[bufIdx + 1] = g;
           dataBuffer[bufIdx + 2] = b;
           if (numChannels === 4) {
-            const a = (tileBuffer.readUInt16BE(tileOffset + 6) / 257) | 0;
+            const a = (tileView.getUint16(tileOffset + 6, false) / 257) | 0;
             dataBuffer[bufIdx + 3] = a;
             tileOffset += 8;
           } else {
@@ -715,20 +726,25 @@ class GimpLayer {
       const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
+      const tileView = new DataView(
+        tileBuffer.buffer,
+        tileBuffer.byteOffset,
+        tileBuffer.byteLength
+      );
 
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
         const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
         for (let xloop = 0; xloop < xpoints; xloop += 1) {
           const bufIdx = pixelIdx + xloop * 4;
           // Read 32-bit values and scale to 0-255 using integer math (divisor 16843009)
-          const r = (tileBuffer.readUInt32BE(tileOffset) / 16843009) | 0;
-          const g = (tileBuffer.readUInt32BE(tileOffset + 4) / 16843009) | 0;
-          const b = (tileBuffer.readUInt32BE(tileOffset + 8) / 16843009) | 0;
+          const r = (tileView.getUint32(tileOffset, false) / 16843009) | 0;
+          const g = (tileView.getUint32(tileOffset + 4, false) / 16843009) | 0;
+          const b = (tileView.getUint32(tileOffset + 8, false) / 16843009) | 0;
           dataBuffer[bufIdx] = r;
           dataBuffer[bufIdx + 1] = g;
           dataBuffer[bufIdx + 2] = b;
           if (numChannels === 4) {
-            const a = (tileBuffer.readUInt32BE(tileOffset + 12) / 16843009) | 0;
+            const a = (tileView.getUint32(tileOffset + 12, false) / 16843009) | 0;
             dataBuffer[bufIdx + 3] = a;
             tileOffset += 16;
           } else {
@@ -815,10 +831,10 @@ class GimpLayer {
  */
 class GimpChannel {
   private _parent: XCFParser;
-  private _buffer: Buffer;
+  private _buffer: Uint8Array;
   private _compiled: boolean;
 
-  constructor(parent: XCFParser, buffer: Buffer) {
+  constructor(parent: XCFParser, buffer: Uint8Array) {
     this._parent = parent;
     this._buffer = buffer;
     this._compiled = false;
@@ -857,7 +873,7 @@ class GimpChannel {
 export class XCFParser {
   private _layers: GimpLayer[] = [];
   private _channels: GimpChannel[] = [];
-  private _buffer: Buffer | null = null;
+  private _buffer: Uint8Array | null = null;
   private _header: ParsedGimpHeader | null = null;
   private _version: number = 0; // XCF version number (e.g., 10, 11)
   private _props: Partial<XCF_PropTypeMap> | null = null;
@@ -938,6 +954,9 @@ export class XCFParser {
    */
   static async parseFileAsync(file: string): Promise<XCFParser> {
     try {
+      // Dynamically import fs (Node.js only)
+      const FS = await import("fs");
+
       // Validate file exists
       await FS.promises.access(file, FS.constants.R_OK);
 
@@ -1002,27 +1021,15 @@ export class XCFParser {
    * const parser = XCFParser.parseBuffer(buffer);
    * ```
    */
-  static parseBuffer(data: Buffer | ArrayBuffer | Uint8Array): XCFParser {
-    // Convert to Buffer if needed
-    let buffer: Buffer;
-    if (data instanceof Buffer) {
-      buffer = data;
-    } else if (data instanceof ArrayBuffer) {
-      buffer = Buffer.from(data);
-    } else if (data instanceof Uint8Array) {
-      buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
-    } else {
-      throw new XCFParseError(
-        "Invalid input: expected Buffer, ArrayBuffer, or Uint8Array.\n" +
-          "Please provide a valid XCF file as a Node.js Buffer, browser ArrayBuffer, or Uint8Array."
-      );
-    }
+  static parseBuffer(data: ArrayBuffer | Uint8Array): XCFParser {
+    // BinaryReader accepts ArrayBuffer or Uint8Array directly
+    // (Node.js Buffer extends Uint8Array, so it works automatically!)
 
     const parser = new XCFParser();
 
     // Validate XCF header and magic bytes
     try {
-      parser._validator.validateHeader(buffer);
+      parser._validator.validateHeader(data);
     } catch (err) {
       if (err instanceof XCFValidationError) {
         throw new UnsupportedFormatError(
@@ -1035,12 +1042,14 @@ export class XCFParser {
       throw err;
     }
 
-    parser.parse(buffer);
+    parser.parse(data);
     return parser;
   }
 
-  parse(buffer: Buffer): void {
-    this._buffer = buffer;
+  parse(buffer: ArrayBuffer | Uint8Array): void {
+    // Convert ArrayBuffer to Uint8Array if needed
+    const uint8Buffer = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
+    this._buffer = uint8Buffer;
     this._layers = [];
     this._channels = [];
     this._groupLayers = { layer: null, children: [] };
@@ -1048,8 +1057,9 @@ export class XCFParser {
     // Reset validator state for new parse
     this._validator.reset();
 
-    // Detect XCF version to choose correct parser
-    const version = buffer.toString("utf-8", 9, 13);
+    // Detect XCF version to choose correct parser (bytes 9-13 contain version string)
+    const versionBytes = uint8Buffer.subarray(9, 13);
+    const version = new TextDecoder("utf-8").decode(versionBytes);
     const versionNum = parseInt(version.replace("v", ""), 10);
     this._version = versionNum;
 
@@ -1057,7 +1067,7 @@ export class XCFParser {
 
     if (versionNum >= 11) {
       // XCF v011+ uses 64-bit pointers and has precision field
-      const header = parseGimpHeaderV11(buffer);
+      const header = parseGimpHeaderV11(uint8Buffer);
       this._header = header as unknown as ParsedGimpHeader;
 
       // Validate image dimensions and base type
@@ -1070,7 +1080,7 @@ export class XCFParser {
         .map((p) => offset64ToNumber(p));
     } else {
       // XCF v010 and earlier use 32-bit pointers
-      const header = parseGimpHeaderV10(buffer);
+      const header = parseGimpHeaderV10(uint8Buffer);
       this._header = header as unknown as ParsedGimpHeader;
 
       // Validate image dimensions and base type
@@ -1081,7 +1091,7 @@ export class XCFParser {
     }
 
     // Validate layer pointers are within bounds
-    this._validator.validatePointers(layerPointers, buffer, "layer pointer");
+    this._validator.validatePointers(layerPointers, uint8Buffer, "layer pointer");
 
     /**
      * Layer Hierarchy Construction
@@ -1179,14 +1189,14 @@ export class XCFParser {
     const channelPointers = (this._header.channelList || []).filter(remove_empty);
 
     // Validate channel pointers are within bounds
-    this._validator.validatePointers(channelPointers, buffer, "channel pointer");
+    this._validator.validatePointers(channelPointers, uint8Buffer, "channel pointer");
 
     this._channels = channelPointers.map((channelPointer: number) => {
       return new GimpChannel(this, this._buffer!.slice(channelPointer));
     });
   }
 
-  getBufferForPointer(offset: number): Buffer {
+  getBufferForPointer(offset: number): Uint8Array {
     return this._buffer!.slice(offset);
   }
 

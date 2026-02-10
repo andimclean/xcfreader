@@ -1,14 +1,30 @@
 /**
  * Lightweight binary reader for XCF file parsing
- * Replaces binary-parser with XCF-specific optimized implementation
+ * Uses native browser APIs (Uint8Array, DataView, TextDecoder)
+ * Works in both Node.js and browser environments
  */
-
-import { Buffer } from "buffer";
 
 export class BinaryReader {
   private offset = 0;
+  private view: DataView;
+  private buffer: Uint8Array;
+  private textDecoder = new TextDecoder("ascii");
 
-  constructor(private buffer: Buffer) {}
+  /**
+   * Create a BinaryReader from ArrayBuffer, Uint8Array, or Node.js Buffer
+   * @param data - ArrayBuffer, Uint8Array, or Buffer (Buffer extends Uint8Array)
+   */
+  constructor(data: ArrayBuffer | Uint8Array) {
+    // Handle both ArrayBuffer and Uint8Array (Buffer extends Uint8Array)
+    if (data instanceof ArrayBuffer) {
+      this.buffer = new Uint8Array(data);
+      this.view = new DataView(data);
+    } else {
+      this.buffer = data;
+      // Handle Uint8Array or Buffer (which has byteOffset/byteLength)
+      this.view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    }
+  }
 
   /**
    * Get current read position
@@ -35,7 +51,7 @@ export class BinaryReader {
    * Read unsigned 8-bit integer
    */
   readUInt8(): number {
-    const value = this.buffer.readUInt8(this.offset);
+    const value = this.view.getUint8(this.offset);
     this.offset += 1;
     return value;
   }
@@ -44,7 +60,7 @@ export class BinaryReader {
    * Read signed 8-bit integer
    */
   readInt8(): number {
-    const value = this.buffer.readInt8(this.offset);
+    const value = this.view.getInt8(this.offset);
     this.offset += 1;
     return value;
   }
@@ -53,7 +69,7 @@ export class BinaryReader {
    * Read unsigned 32-bit big-endian integer
    */
   readUInt32BE(): number {
-    const value = this.buffer.readUInt32BE(this.offset);
+    const value = this.view.getUint32(this.offset, false); // false = big-endian
     this.offset += 4;
     return value;
   }
@@ -62,7 +78,7 @@ export class BinaryReader {
    * Read signed 32-bit big-endian integer
    */
   readInt32BE(): number {
-    const value = this.buffer.readInt32BE(this.offset);
+    const value = this.view.getInt32(this.offset, false); // false = big-endian
     this.offset += 4;
     return value;
   }
@@ -71,7 +87,7 @@ export class BinaryReader {
    * Read 32-bit big-endian float
    */
   readFloatBE(): number {
-    const value = this.buffer.readFloatBE(this.offset);
+    const value = this.view.getFloat32(this.offset, false); // false = big-endian
     this.offset += 4;
     return value;
   }
@@ -80,7 +96,7 @@ export class BinaryReader {
    * Read 32-bit little-endian float
    */
   readFloatLE(): number {
-    const value = this.buffer.readFloatLE(this.offset);
+    const value = this.view.getFloat32(this.offset, true); // true = little-endian
     this.offset += 4;
     return value;
   }
@@ -93,7 +109,8 @@ export class BinaryReader {
     while (end < this.buffer.length && this.buffer[end] !== 0) {
       end++;
     }
-    const value = this.buffer.toString("ascii", this.offset, end);
+    const bytes = this.buffer.subarray(this.offset, end);
+    const value = this.textDecoder.decode(bytes);
     this.offset = end + 1; // Skip the null terminator
     return value;
   }
@@ -102,15 +119,16 @@ export class BinaryReader {
    * Read fixed-length ASCII string
    */
   readString(length: number): string {
-    const value = this.buffer.toString("ascii", this.offset, this.offset + length);
+    const bytes = this.buffer.subarray(this.offset, this.offset + length);
+    const value = this.textDecoder.decode(bytes);
     this.offset += length;
     return value;
   }
 
   /**
-   * Read buffer slice of specified length
+   * Read Uint8Array slice of specified length
    */
-  readBuffer(length: number): Buffer {
+  readBuffer(length: number): Uint8Array {
     const value = this.buffer.subarray(this.offset, this.offset + length);
     this.offset += length;
     return value;
@@ -170,7 +188,7 @@ export class BinaryReader {
    * Peek at UInt32BE without advancing offset
    */
   peekUInt32BE(): number {
-    return this.buffer.readUInt32BE(this.offset);
+    return this.view.getUint32(this.offset, false); // false = big-endian
   }
 
   /**

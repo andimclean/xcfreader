@@ -3,8 +3,6 @@
  * @module xcfreader/types
  */
 
-import { Buffer } from "buffer";
-
 /**
  * XCF image base type (color mode)
  * @see https://developer.gimp.org/core/standards/xcf/
@@ -122,7 +120,7 @@ export interface ColorRGBA extends ColorRGB {
 export interface Parasite {
   name: string;
   flags: number;
-  details: Buffer;
+  details: Uint8Array;
 }
 
 // ============================================
@@ -187,7 +185,7 @@ export interface ParsedMode extends ParsedPropBase {
  * Result of parsing parasite buffer
  */
 export interface ParsedParasiteBuffer extends ParsedPropBase {
-  parasite: Buffer;
+  parasite: Uint8Array;
 }
 
 /**
@@ -197,7 +195,7 @@ export interface ParsedParasiteItem extends ParsedPropBase {
   name_length: number;
   name: string;
   flags: number;
-  details: Buffer;
+  details: Uint8Array;
 }
 
 /**
@@ -217,7 +215,7 @@ export type ParsedPropLength = ParsedPropBase;
  * Note: layerPtrBuf is a buffer containing the pointer (4 or 8 bytes depending on XCF version)
  */
 export interface ParsedPropFloatingSelection extends ParsedPropBase {
-  layerPtrBuf: Buffer;
+  layerPtrBuf: Uint8Array;
 }
 
 /**
@@ -354,7 +352,7 @@ export interface ParsedPropGroupItemFlags extends ParsedPropBase {
  * Default/unknown property with raw buffer
  */
 export interface ParsedPropDefault extends ParsedPropBase {
-  buffer: Buffer;
+  buffer: Uint8Array;
 }
 
 /**

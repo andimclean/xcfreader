@@ -4,7 +4,6 @@
  */
 
 import { BinaryReader } from "./binary-reader.js";
-import { Buffer } from "buffer";
 import { XCF_PropType, ParsedProperty, ParsedRGB, ParsedParasiteItem } from "../types/index.js";
 import { XCFParseError } from "../gimpparser.js";
 
@@ -196,7 +195,7 @@ export function parseResolutionProp(reader: BinaryReader): ResolutionProp {
 
 export interface ParasiteProp {
   length: number;
-  parasite: Buffer;
+  parasite: Uint8Array;
 }
 
 export function parseParasiteProp(reader: BinaryReader): ParasiteProp {
@@ -215,7 +214,7 @@ export function parseParasiteItem(reader: BinaryReader): ParsedParasiteItem {
   return { name_length, name, flags, length, details };
 }
 
-export function parseFullParasiteArray(buffer: Buffer): ParsedParasiteItem[] {
+export function parseFullParasiteArray(buffer: Uint8Array): ParsedParasiteItem[] {
   const reader = new BinaryReader(buffer);
   const items: ParsedParasiteItem[] = [];
 
@@ -287,7 +286,7 @@ export function parseEmptyProp(
  */
 export interface GenericProp {
   length: number;
-  buffer: Buffer;
+  buffer: Uint8Array;
 }
 
 export function parseGenericProp(reader: BinaryReader): GenericProp {
@@ -717,7 +716,7 @@ export interface ParsedGimpHeaderV10 {
   channelList: number[];
 }
 
-export function parseGimpHeaderV10(buffer: Buffer): ParsedGimpHeaderV10 {
+export function parseGimpHeaderV10(buffer: Uint8Array): ParsedGimpHeaderV10 {
   const reader = new BinaryReader(buffer);
 
   const magic = reader.readString(9);
@@ -766,7 +765,7 @@ export interface ParsedGimpHeaderV11 {
   channelList64: Offset64[];
 }
 
-export function parseGimpHeaderV11(buffer: Buffer): ParsedGimpHeaderV11 {
+export function parseGimpHeaderV11(buffer: Uint8Array): ParsedGimpHeaderV11 {
   const reader = new BinaryReader(buffer);
 
   const magic = reader.readString(9);
