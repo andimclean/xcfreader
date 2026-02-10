@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Critical rendering performance regression** - Fixed DataView allocation overhead causing 4x slowdown
+  - Eliminated millions of DataView object allocations in `readChannelValue()`
+  - Created single reusable DataView per tile buffer instead of per-channel allocations
+  - fullColour.xcf: 906ms → 305ms (66% faster), int32/float32: 57-76% faster
+  - Overall: 1239ms → 624ms (50% faster total time)
+  - All 33 tests passing with correct rendering output
 - Correct integer scaling for 16/32-bit channels (div 257/16843009)
 - Updated benchmark: total time now 473.78ms (18.6% faster overall)
 - ESLint plugin conflict: Added `root: true` to package-level `.eslintrc.json`

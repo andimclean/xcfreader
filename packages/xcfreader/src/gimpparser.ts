@@ -556,6 +556,7 @@ class GimpLayer {
    * Handles different precisions: 8-bit, 16-bit, 32-bit integer, and floating point.
    *
    * @param buffer - The tile buffer
+   * @param view - Reusable DataView for the buffer (for performance)
    * @param offset - Byte offset in the buffer
    * @param bytesPerChannel - Number of bytes per channel (1, 2, 4, or 8)
    * @param isFloat - Whether the precision is floating point
@@ -563,6 +564,7 @@ class GimpLayer {
    */
   private readChannelValue(
     buffer: Uint8Array,
+    view: DataView,
     offset: number,
     bytesPerChannel: number,
     isFloat: boolean
@@ -571,31 +573,28 @@ class GimpLayer {
       // 8-bit integer: direct read
       return buffer[offset]!;
     } else if (bytesPerChannel === 2) {
-      const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 2);
       if (isFloat) {
         // 16-bit float: scale from 0.0-1.0 to 0-255
-        const floatVal = this.halfToFloat(view.getUint16(0, false));
+        const floatVal = this.halfToFloat(view.getUint16(offset, false));
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
         // 16-bit integer: scale from 0-65535 to 0-255 using integer math (divisor 257)
-        const value = view.getUint16(0, false);
+        const value = view.getUint16(offset, false);
         return (value / 257) | 0;
       }
     } else if (bytesPerChannel === 4) {
-      const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 4);
       if (isFloat) {
         // 32-bit float: scale from 0.0-1.0 to 0-255
-        const floatVal = view.getFloat32(0, false);
+        const floatVal = view.getFloat32(offset, false);
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
         // 32-bit integer: scale from 0-4294967295 to 0-255 using integer math (divisor 16843009)
-        const value = view.getUint32(0, false);
+        const value = view.getUint32(offset, false);
         return (value / 16843009) | 0;
       }
     } else if (bytesPerChannel === 8) {
       // 64-bit double float: scale from 0.0-1.0 to 0-255
-      const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 8);
-      const doubleVal = view.getFloat64(0, false);
+      const doubleVal = view.getFloat64(offset, false);
       return Math.round(Math.max(0, Math.min(1, doubleVal)) * 255);
     }
     return 0;
@@ -758,6 +757,8 @@ class GimpLayer {
 
     // General path: handle all other cases
     let bufferOffset = 0;
+    // Create a single DataView for the tile buffer to avoid creating millions of DataView objects
+    const tileView = new DataView(tileBuffer.buffer, tileBuffer.byteOffset, tileBuffer.byteLength);
 
     for (let yloop = 0; yloop < ypoints; yloop += 1) {
       for (let xloop = 0; xloop < xpoints; xloop += 1) {
@@ -775,7 +776,13 @@ class GimpLayer {
           };
         } else if (numChannels === 1 || numChannels === 2) {
           // Grayscale: convert gray value to RGB
-          const gray = this.readChannelValue(tileBuffer, bufferOffset, bytesPerChannel, isFloat);
+          const gray = this.readChannelValue(
+            tileBuffer,
+            tileView,
+            bufferOffset,
+            bytesPerChannel,
+            isFloat
+          );
           colour = {
             red: gray,
             green: gray,
@@ -784,6 +791,7 @@ class GimpLayer {
               numChannels === 2
                 ? this.readChannelValue(
                     tileBuffer,
+                    tileView,
                     bufferOffset + bytesPerChannel,
                     bytesPerChannel,
                     isFloat
@@ -793,15 +801,23 @@ class GimpLayer {
         } else {
           // RGB/RGBA
           colour = {
-            red: this.readChannelValue(tileBuffer, bufferOffset, bytesPerChannel, isFloat),
+            red: this.readChannelValue(
+              tileBuffer,
+              tileView,
+              bufferOffset,
+              bytesPerChannel,
+              isFloat
+            ),
             green: this.readChannelValue(
               tileBuffer,
+              tileView,
               bufferOffset + bytesPerChannel,
               bytesPerChannel,
               isFloat
             ),
             blue: this.readChannelValue(
               tileBuffer,
+              tileView,
               bufferOffset + 2 * bytesPerChannel,
               bytesPerChannel,
               isFloat
@@ -810,6 +826,7 @@ class GimpLayer {
               numChannels === 4
                 ? this.readChannelValue(
                     tileBuffer,
+                    tileView,
                     bufferOffset + 3 * bytesPerChannel,
                     bytesPerChannel,
                     isFloat

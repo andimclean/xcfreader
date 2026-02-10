@@ -81,6 +81,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **xcfreader: Critical rendering performance regression** - Fixed DataView allocation overhead causing 4x slowdown
+  - Eliminated millions of DataView object allocations in `readChannelValue()`
+  - Created single reusable DataView per tile buffer instead of per-channel allocations
+  - **Performance improvements**:
+    - fullColour.xcf: 906ms → 305ms (66% faster rendering)
+    - Overall: 1239ms → 624ms (50% faster total time)
+    - int32/float32 formats: 57-76% faster
+  - Regression was introduced in Buffer polyfill elimination commit
+  - All 33 tests passing with correct rendering output
+
 - **xcfreader: ParsedRGB field name typo** - Corrected "greed" to "green" in RGB color parsing
   - Updated ParsedRGB interface type definition
   - Updated parseRGB() parser function
