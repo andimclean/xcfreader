@@ -15,6 +15,8 @@ packages/xcfreader/examples/output/*.png
 packages/xcfreader/examples/output/*/
 examples/map1
 docs/
+sbom.json
+packages/*/sbom.json
 
 # IDE & environment
 .browse*

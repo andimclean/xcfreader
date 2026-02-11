@@ -117,7 +117,7 @@ export async function test27V012Format(): Promise<void> {
     const pixels = image.getPixelData();
     let hasNonBlack = false;
     for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] > 0 || pixels[i + 1] > 0 || pixels[i + 2] > 0) {
+      if (pixels[i]! > 0 || pixels[i + 1]! > 0 || pixels[i + 2]! > 0) {
         hasNonBlack = true;
         break;
       }

@@ -11,7 +11,8 @@
   "module": "dist/ha-xcfimage-card.js",
   "types": "dist/ha-xcfimage-card.d.ts",
   "files": [
-    "dist/",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
     "README.md"
   ],
   "scripts": {
@@ -40,15 +41,13 @@
     "home-automation"
   ],
   "homepage": "https://github.com/andimclean/xcfreader#readme",
-  "dependencies": {
-    "@theprogrammingiantpanda/ui-xcfimage": "^0.1.2",
-    "lit": "^3.1.0"
-  },
   "devDependencies": {
+    "@theprogrammingiantpanda/ui-xcfimage": "^0.1.2",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
+    "lit": "^3.1.0",
     "typescript": "^5.3.3"
   }
 }

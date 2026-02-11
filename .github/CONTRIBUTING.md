@@ -60,15 +60,92 @@ npm test            # Run all tests
 ```bash
 npm run lint        # Run ESLint
 npm run lint:fix    # Fix linting issues
+npm run format      # Format code with Prettier
+npm run format:check # Check code formatting
+npm run validate:packages # Validate package.json consistency
+npm run validate:exports  # Check TypeScript type exports
 ```
+
+### Supply Chain Security
+
+```bash
+npm run sbom        # Generate SBOM for monorepo
+npm run sbom:all    # Generate SBOMs for all packages
+```
+
+Software Bill of Materials (SBOM) files are generated during releases and attached to GitHub releases for supply chain transparency.
+
+### Git Hooks (Automated)
+
+The project uses Husky for Git hooks:
+
+- **pre-commit**: Runs Prettier and ESLint on staged files (via lint-staged)
+- **commit-msg**: Validates commit message format (conventional commits)
+- **pre-push**: Runs full test suite before allowing push
+
+### Commit Message Format
+
+Use conventional commit format:
+
+```
+type(scope): subject
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+
+**Examples:**
+
+- `feat(xcfreader): add support for XCF v012 format`
+- `fix(ui-xcfimage): resolve layer visibility bug`
+- `docs: update README with installation instructions`
+- `chore(deps): update dependencies`
+
+### Creating Changesets
+
+For changes that affect package versions, create a changeset:
+
+```bash
+npm run changeset
+```
+
+This will prompt you to:
+
+1. Select which packages changed
+2. Choose bump type (major, minor, patch)
+3. Write a summary of changes
+
+Changesets are used to automatically generate changelogs and version bumps.
+
+### Publishing Packages
+
+When publishing packages to npm, the project uses **package provenance** for transparency and security:
+
+- **CI Publishing**: GitHub Actions automatically publishes with provenance (`--provenance` flag)
+- **Local Publishing**: Use `npm run changeset:publish` which includes provenance automatically
+- **Manual Publishing**: If publishing manually, always use `npm publish --provenance --access public`
+
+Provenance provides cryptographic proof that packages were built in a specific CI environment, improving supply chain security.
+
+**Requirements:**
+
+- npm >= 9.5.0
+- Publishing from GitHub Actions (for provenance attestation)
+- OIDC token permissions (`id-token: write` in CI)
 
 ## Code Style & Review Process
 
 - All code must pass ESLint and TypeScript strict mode
+- Code is automatically formatted with Prettier on commit
 - Use 2-space indentation, LF line endings
+- Follow conventional commit message format
 - PRs should include tests for new features/bugfixes
 - PRs are reviewed for clarity, type safety, and documentation
-- Use clear commit messages and reference issues when possible
+- Reference issues in commit messages when applicable
+
 ### Documentation
 
 ```bash

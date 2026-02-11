@@ -3,8 +3,6 @@
  * @module xcfreader/types
  */
 
-import { Buffer } from "buffer";
-
 /**
  * XCF image base type (color mode)
  * @see https://developer.gimp.org/core/standards/xcf/
@@ -122,7 +120,7 @@ export interface ColorRGBA extends ColorRGB {
 export interface Parasite {
   name: string;
   flags: number;
-  details: Buffer;
+  details: Uint8Array;
 }
 
 // ============================================
@@ -145,11 +143,11 @@ export interface ParsedString {
 }
 
 /**
- * Result of parsing RGB color data (note: GIMP typo preserved)
+ * Result of parsing RGB color data
  */
 export interface ParsedRGB {
   red: number;
-  greed: number; // Note: typo in original parser, kept for compatibility
+  green: number;
   blue: number;
 }
 
@@ -187,7 +185,7 @@ export interface ParsedMode extends ParsedPropBase {
  * Result of parsing parasite buffer
  */
 export interface ParsedParasiteBuffer extends ParsedPropBase {
-  parasite: Buffer;
+  parasite: Uint8Array;
 }
 
 /**
@@ -197,7 +195,7 @@ export interface ParsedParasiteItem extends ParsedPropBase {
   name_length: number;
   name: string;
   flags: number;
-  details: Buffer;
+  details: Uint8Array;
 }
 
 /**
@@ -217,7 +215,7 @@ export type ParsedPropLength = ParsedPropBase;
  * Note: layerPtrBuf is a buffer containing the pointer (4 or 8 bytes depending on XCF version)
  */
 export interface ParsedPropFloatingSelection extends ParsedPropBase {
-  layerPtrBuf: Buffer;
+  layerPtrBuf: Uint8Array;
 }
 
 /**
@@ -354,7 +352,7 @@ export interface ParsedPropGroupItemFlags extends ParsedPropBase {
  * Default/unknown property with raw buffer
  */
 export interface ParsedPropDefault extends ParsedPropBase {
-  buffer: Buffer;
+  buffer: Uint8Array;
 }
 
 /**
@@ -554,12 +552,30 @@ export interface IXCFImage {
   setAt(x: number, y: number, colour: ColorRGBA): void;
 
   /**
+   * Set a pixel color at the specified coordinates without bounds checking.
+   * This is a performance optimization for hot paths where coordinates are guaranteed valid.
+   * @param x - X coordinate (must be valid, no bounds check)
+   * @param y - Y coordinate (must be valid, no bounds check)
+   * @param colour - Color to set (with RGBA values)
+   */
+  setAtUnchecked?(x: number, y: number, colour: ColorRGBA): void;
+
+  /**
    * Get the color of a pixel at the specified coordinates
    * @param x - X coordinate
    * @param y - Y coordinate
    * @returns Color at the given coordinates
    */
   getAt(x: number, y: number): ColorRGBA;
+
+  /**
+   * Read pixel directly into provided buffer (performance optimization).
+   * Avoids object allocation by writing values directly to reusable buffer.
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param outBuffer - Output buffer [r, g, b, a] (must have length >= 4)
+   */
+  getAtDirect?(x: number, y: number, outBuffer: Uint8ClampedArray): void;
 
   /**
    * Fill a rectangle with a color

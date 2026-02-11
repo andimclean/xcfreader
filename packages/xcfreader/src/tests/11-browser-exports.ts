@@ -26,7 +26,7 @@ export async function test11BrowserExports(): Promise<void> {
   }
   
   // Check that XCFPNGImage is NOT exported (should be undefined)
-  if ((browserModule as Record<string, unknown>).XCFPNGImage !== undefined) {
+  if ((browserModule as Record<string, unknown>)['XCFPNGImage'] !== undefined) {
     throw new Error('browser.ts should NOT export XCFPNGImage');
   }
   

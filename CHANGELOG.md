@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Developer tooling improvements**:
+  - **Prettier** - Automatic code formatting with ESLint integration
+  - **Changesets** - Automated version management and changelog generation
+  - **Commitlint** - Enforce conventional commit message format
+  - **Stricter TypeScript** - Additional compiler checks (`noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `noPropertyAccessFromIndexSignature`)
+  - **Enhanced Dependabot** - Weekly dependency updates with grouping and better labels
+  - **Pre-push test hook** - Prevents broken code from being pushed
+
 - **ha-xcfimage-card: Visual Configuration Editor** - Complete UI editor for card configuration in Home Assistant
   - Smart layer dropdowns that automatically load and display layer names from XCF files
   - Dual configuration modes: Entity Layers (visibility control) and Entity Overlays (status badges)
@@ -45,6 +53,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Replaced binary-parser with custom BinaryReader** - Reduced bundle size by 18% and improved type safety
+  - Created lightweight `BinaryReader` class (~1.5 KB minified) with only XCF-specific operations
+  - Implemented functional parsers in `xcf-parsers.ts` (~4 KB minified) for all XCF structures
+  - **Bundle size improvements**:
+    - ui-xcfimage: 104 KB → 85 KB minified (-19 KB, -18.3%)
+    - ui-xcfimage: 146 KB → 123 KB unminified (-23 KB, -15.8%)
+    - ha-xcfimage-card: ~208 KB → ~189 KB estimated (-19 KB, -9%)
+  - **Better developer experience**:
+    - Perfect TypeScript types for all XCF structures (no more `any`)
+    - Descriptive error messages (e.g., "COMPRESSION property: expected length 1, got 4")
+    - Tree-shakeable parser functions
+  - Removed binary-parser dependency (~46 KB source code)
+  - All 34 tests passing with no breaking changes
+  - Slightly faster parsing with fewer object allocations
+
+- **Upgraded Husky from v8 to v9** - Simplified Git hook format with better performance
+- **Self-contained bundles** - ui-xcfimage and ha-xcfimage-card now have zero runtime dependencies (all bundled at build time)
+
 - **Code quality improvements - Type casting complexity reduction**:
   - Reduced excessive type casting from 13 to 5 instances (62% reduction)
   - Added type guard helper functions: `hasDataField`, `getPropertyData`, `getPropertyField`, `toPublicLayer`
@@ -54,6 +80,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated benchmark baseline with current performance metrics
 
 ### Fixed
+
+- **xcfreader: Critical rendering performance regression** - Fixed DataView allocation overhead causing 4x slowdown
+  - Eliminated millions of DataView object allocations in `readChannelValue()`
+  - Created single reusable DataView per tile buffer instead of per-channel allocations
+  - **Performance improvements**:
+    - fullColour.xcf: 906ms → 305ms (66% faster rendering)
+    - Overall: 1239ms → 624ms (50% faster total time)
+    - int32/float32 formats: 57-76% faster
+  - Regression was introduced in Buffer polyfill elimination commit
+  - All 33 tests passing with correct rendering output
+
+- **xcfreader: Phase 1 rendering optimizations** - 11% overall performance improvement
+  - Added grayscale fast path for 8-bit grayscale images without compositing
+  - Optimized general compositing path to skip `getAt()` when mode is null
+  - **Performance improvements (Phase 1)**:
+    - fullColour.xcf: 215ms → 171ms (21% faster)
+    - grey.xcf: 152ms → 152ms (unchanged, has compositing modes)
+    - indexed.xcf: 109ms → 101ms (8% faster)
+    - Overall: 476ms → 424ms (11% improvement)
+  - All 33 tests passing with no regressions
+
+- **xcfreader: Phase 2 rendering optimizations** - Additional 16% performance improvement
+  - Implemented bulk copy for RGBA scanlines using `TypedArray.set()`
+  - Added `composeDirect()` method to eliminate object allocations in compositing
+  - Created reusable buffers for zero-allocation pixel compositing
+  - **Performance improvements (Phase 2)**:
+    - fullColour.xcf: 171ms → 136ms (20.5% faster)
+    - grey.xcf: 152ms → 133ms (12.5% faster)
+    - indexed.xcf: 101ms → 88ms (12.9% faster)
+    - Overall: 424ms → 357ms (15.8% improvement)
+  - **Combined Phase 1+2 improvement**: 27% faster than baseline (490ms → 357ms)
+  - All 33 tests passing with no regressions
+  - Maintained full backward compatibility with optional methods
+
+- **xcfreader: ParsedRGB field name typo** - Corrected "greed" to "green" in RGB color parsing
+  - Updated ParsedRGB interface type definition
+  - Updated parseRGB() parser function
+  - Updated colormap property mapping
+  - No functional changes, all tests passing
 
 - **ui-xcfimage: Critical Web Components violation** - Fixed bug where `setAttribute()` calls in constructor prevented custom element from initializing
   - Element was appearing as `HTMLUnknownElement` with no shadow DOM

@@ -1,5 +1,13 @@
 import "@theprogrammingiantpanda/ui-xcfimage";
-import "./ha-xcfimage-card-editor.js";
+
+// Editor is loaded lazily when needed (code splitting)
+let editorLoaded = false;
+async function loadEditor(): Promise<void> {
+  if (!editorLoaded) {
+    await import("./ha-xcfimage-card-editor.js");
+    editorLoaded = true;
+  }
+}
 
 /**
  * Home Assistant XCF Image Card
@@ -44,7 +52,7 @@ import "./ha-xcfimage-card-editor.js";
 interface EntityLayerConfig {
   entity: string;
   layer: number;
-  state_on?: string;  // State value that makes layer visible (default: "on")
+  state_on?: string; // State value that makes layer visible (default: "on")
 }
 
 interface EntityOverlayConfig {
@@ -129,7 +137,23 @@ export class HAXCFImageCard extends HTMLElement {
   }
 
   static getConfigElement(): HTMLElement {
-    return document.createElement("ha-xcfimage-card-editor");
+    // Create a placeholder that loads the real editor on-demand
+    const placeholder = document.createElement("div");
+    placeholder.style.padding = "16px";
+    placeholder.textContent = "Loading editor...";
+
+    // Load editor asynchronously
+    loadEditor()
+      .then(() => {
+        const editor = document.createElement("ha-xcfimage-card-editor");
+        placeholder.replaceWith(editor);
+      })
+      .catch((err) => {
+        placeholder.textContent = `Failed to load editor: ${err.message}`;
+        placeholder.style.color = "red";
+      });
+
+    return placeholder;
   }
 
   setConfig(config: HAXCFImageCardConfig) {
@@ -197,17 +221,19 @@ export class HAXCFImageCard extends HTMLElement {
       this.showLoadingState();
     });
 
-    this.xcfElement.addEventListener("xcf-loaded", ((event: CustomEvent<XCFLoadedEventDetail>) => {
+    this.xcfElement.addEventListener("xcf-loaded", (event: Event) => {
+      const customEvent = event as CustomEvent<XCFLoadedEventDetail>;
       this.hideLoadingState();
-      this.layerData = event.detail.layers;
-      this.imageWidth = event.detail.width;
-      this.imageHeight = event.detail.height;
+      this.layerData = customEvent.detail.layers;
+      this.imageWidth = customEvent.detail.width;
+      this.imageHeight = customEvent.detail.height;
       this.updateOverlays();
-    }) as EventListener);
+    });
 
-    this.xcfElement.addEventListener("xcf-error", ((event: CustomEvent) => {
-      this.showErrorState(event.detail.error);
-    }) as EventListener);
+    this.xcfElement.addEventListener("xcf-error", (event: Event) => {
+      const customEvent = event as CustomEvent;
+      this.showErrorState(customEvent.detail.error);
+    });
 
     imageWrapper.appendChild(this.xcfElement);
 
@@ -300,12 +326,12 @@ export class HAXCFImageCard extends HTMLElement {
     overlay.className = "entity-overlay";
 
     // Debug: Log layer positioning data
-     
+    // eslint-disable-next-line no-console
     console.log(`Entity overlay for ${config.entity}:`, {
       layer: config.layer,
       position: { x: layerInfo.x, y: layerInfo.y },
       size: { width: layerInfo.width, height: layerInfo.height },
-      imageDimensions: { width: this.imageWidth, height: this.imageHeight }
+      imageDimensions: { width: this.imageWidth, height: this.imageHeight },
     });
 
     // Position overlay at layer coordinates (as percentage of image size)
@@ -326,8 +352,12 @@ export class HAXCFImageCard extends HTMLElement {
     const content = document.createElement("div");
     content.className = `overlay-content overlay-${displayType}`;
 
-    const showIcon = config.show_icon ?? (displayType === "badge" || displayType === "icon" || displayType === "state-badge");
-    const showState = config.show_state ?? (displayType === "badge" || displayType === "state" || displayType === "state-badge");
+    const showIcon =
+      config.show_icon ??
+      (displayType === "badge" || displayType === "icon" || displayType === "state-badge");
+    const showState =
+      config.show_state ??
+      (displayType === "badge" || displayType === "state" || displayType === "state-badge");
     const showName = config.show_name ?? false;
 
     // Add icon if requested
@@ -348,7 +378,7 @@ export class HAXCFImageCard extends HTMLElement {
     if (showName) {
       const nameText = document.createElement("span");
       nameText.className = "entity-name";
-      const friendlyName = entityState.attributes.friendly_name as string | undefined;
+      const friendlyName = entityState.attributes["friendly_name"] as string | undefined;
       nameText.textContent = friendlyName || config.entity;
       content.appendChild(nameText);
     }
@@ -363,14 +393,17 @@ export class HAXCFImageCard extends HTMLElement {
     return overlay;
   }
 
-  private createEntityIcon(entityId: string, entityState: HomeAssistant["states"][string]): HTMLElement {
+  private createEntityIcon(
+    entityId: string,
+    entityState: HomeAssistant["states"][string]
+  ): HTMLElement {
     const icon = document.createElement("ha-icon");
-    const iconAttr = entityState.attributes.icon as string | undefined;
+    const iconAttr = entityState.attributes["icon"] as string | undefined;
     const iconName = iconAttr || this.getDefaultIcon(entityId);
     icon.setAttribute("icon", iconName);
 
     // Add state-based coloring
-    const domain = entityId.split(".")[0];
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
     if ((domain === "light" || domain === "switch") && entityState.state === "on") {
       icon.style.color = "var(--state-icon-active-color, #ffc107)";
     } else {
@@ -381,7 +414,7 @@ export class HAXCFImageCard extends HTMLElement {
   }
 
   private getDefaultIcon(entityId: string): string {
-    const domain = entityId.split(".")[0];
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
     const iconMap: Record<string, string> = {
       light: "mdi:lightbulb",
       switch: "mdi:toggle-switch",
@@ -396,11 +429,14 @@ export class HAXCFImageCard extends HTMLElement {
     return iconMap[domain] || "mdi:help-circle";
   }
 
-  private formatEntityState(entityId: string, entityState: HomeAssistant["states"][string]): string {
-    const domain = entityId.split(".")[0];
+  private formatEntityState(
+    entityId: string,
+    entityState: HomeAssistant["states"][string]
+  ): string {
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
 
     // Special formatting for certain domains
-    const unitOfMeasurement = entityState.attributes.unit_of_measurement as string | undefined;
+    const unitOfMeasurement = entityState.attributes["unit_of_measurement"] as string | undefined;
     if (domain === "sensor" && unitOfMeasurement) {
       return `${entityState.state}${unitOfMeasurement}`;
     }
@@ -416,7 +452,7 @@ export class HAXCFImageCard extends HTMLElement {
   private toggleEntity(entityId: string) {
     if (!this._hass) return;
 
-    const domain = entityId.split(".")[0];
+    const domain = entityId.split(".")[0]!; // Safe: entity IDs always have domain.entity format
     const service = this._hass.states[entityId]?.state === "on" ? "turn_off" : "turn_on";
 
     this._hass.callService(domain, service, { entity_id: entityId });
@@ -606,13 +642,14 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "ha-xcfimage-card",
   name: "XCF Image Card",
-  description: "Display GIMP XCF files with entity-controlled layers or entity overlays at layer positions",
+  description:
+    "Display GIMP XCF files with entity-controlled layers or entity overlays at layer positions",
   preview: false,
 });
 
- 
+// eslint-disable-next-line no-console
 console.info(
   "%c HA-XCFIMAGE-CARD %c v0.2.0 ",
   "color: white; background: #1976d2; font-weight: 700;",
-  "color: white; background: #424242; font-weight: 700;",
+  "color: white; background: #424242; font-weight: 700;"
 );

@@ -27,6 +27,18 @@ Use directly from a CDN without any build step:
 npm install @theprogrammingiantpanda/ui-xcfimage
 ```
 
+## Browser Requirements
+
+This component requires a modern browser with **ES2022** support:
+
+| Browser     | Minimum Version    |
+| ----------- | ------------------ |
+| Chrome/Edge | 94+ (Sept 2021)    |
+| Firefox     | 101+ (May 2022)    |
+| Safari      | 15.4+ (March 2022) |
+
+Internet Explorer is not supported.
+
 ## Usage
 
 ```html
@@ -39,6 +51,7 @@ npm install @theprogrammingiantpanda/ui-xcfimage
 The bundle is self-contained and includes all dependencies (xcfreader, binary-parser, etc.).
 
 **Available bundles:**
+
 - `gpp-xcfimage.iife.min.js` - **Recommended**: Minified production version (~99KB)
 - `gpp-xcfimage.iife.js` - Development version with sourcemap (~140KB)
 - `gpp-xcfimage.js` - ESM module version for bundlers
@@ -86,11 +99,7 @@ Because layer names can be duplicated (e.g. multiple layers named "br_red"), the
 <gpp-xcfimage src="/file.xcf"></gpp-xcfimage>
 
 <!-- Lazy loading with accessibility -->
-<gpp-xcfimage
-  src="/file.xcf"
-  loading="lazy"
-  alt="Project mockup layers">
-</gpp-xcfimage>
+<gpp-xcfimage src="/file.xcf" loading="lazy" alt="Project mockup layers"> </gpp-xcfimage>
 ```
 
 ## Features
@@ -114,31 +123,28 @@ The component uses IntersectionObserver to load files when they're about to ente
 - **Error states**: `aria-invalid` when loading fails
 
 ```html
-<gpp-xcfimage
-  src="/design.xcf"
-  alt="Product design mockup with 5 layer variations">
-</gpp-xcfimage>
+<gpp-xcfimage src="/design.xcf" alt="Product design mockup with 5 layer variations"> </gpp-xcfimage>
 ```
 
 ### Events
 
 The component dispatches custom events for monitoring:
 
-| Event          | When                  | Detail Properties                              |
-| -------------- | --------------------- | ---------------------------------------------- |
-| `xcf-loading`  | File loading starts   | `{ src }`                                      |
-| `xcf-loaded`   | File loaded success   | `{ src, width, height, layerCount }`           |
-| `xcf-error`    | Loading/parsing fails | `{ src, error }`                               |
-| `xcf-activate` | Keyboard activation   | -                                              |
+| Event          | When                  | Detail Properties                    |
+| -------------- | --------------------- | ------------------------------------ |
+| `xcf-loading`  | File loading starts   | `{ src }`                            |
+| `xcf-loaded`   | File loaded success   | `{ src, width, height, layerCount }` |
+| `xcf-error`    | Loading/parsing fails | `{ src, error }`                     |
+| `xcf-activate` | Keyboard activation   | -                                    |
 
 ```javascript
-const element = document.querySelector('gpp-xcfimage');
+const element = document.querySelector("gpp-xcfimage");
 
-element.addEventListener('xcf-loaded', (e) => {
+element.addEventListener("xcf-loaded", (e) => {
   console.log(`Loaded ${e.detail.layerCount} layers`);
 });
 
-element.addEventListener('xcf-error', (e) => {
+element.addEventListener("xcf-error", (e) => {
   console.error(`Failed to load: ${e.detail.error}`);
 });
 ```
@@ -146,6 +152,7 @@ element.addEventListener('xcf-error', (e) => {
 ### Keyboard Navigation
 
 The component is fully keyboard accessible:
+
 - **Tab**: Focus on the element
 - **Enter/Space**: Trigger `xcf-activate` event
 - **Visual focus indicator**: 2px blue outline

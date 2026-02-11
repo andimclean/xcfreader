@@ -5,16 +5,28 @@
  * https://github.com/andimclean/xcfreader
  */
 
-import { Parser } from "binary-parser";
 import { Logger } from "./lib/logger.js";
-import FS from "fs";
-import { Buffer } from "buffer";
 import XCFCompositer from "./lib/xcfcompositer.js";
+import { XCFValidator, XCFValidationError, ValidationOptions } from "./lib/xcf-validator.js";
+import { BinaryReader } from "./lib/binary-reader.js";
 import {
-  XCFValidator,
-  XCFValidationError,
-  ValidationOptions,
-} from "./lib/xcf-validator.js";
+  parseGimpHeaderV10,
+  parseGimpHeaderV11,
+  parseLayerV10,
+  parseLayerV11,
+  parseHierarchyV10,
+  parseHierarchyV11,
+  parseLevelV10,
+  parseLevelV11,
+  parseFullParasiteArray,
+  offset64ToNumber,
+  type ParsedLayerV10,
+  type ParsedLayerV11,
+  type ParsedHierarchyV10,
+  type ParsedHierarchyV11,
+  type ParsedLevelV10,
+  type ParsedLevelV11,
+} from "./lib/xcf-parsers.js";
 import {
   XCF_PropType,
   XCF_PropTypeMap,
@@ -24,15 +36,11 @@ import {
   ColorRGBA,
   IXCFImage,
   ParsedLayer,
-  ParsedHierarchy,
-  ParsedLevel,
   ParsedGimpHeader,
   ParsedProperty,
   ParsedParasiteItem,
-  ParsedParasiteArray,
   ParsedPropItemPath,
   ParsedRGB,
-  CompositerMode,
   GroupLayerNode,
 } from "./types/index.js";
 
@@ -66,303 +74,7 @@ export class UnsupportedFormatError extends Error {
   }
 }
 
-const itemIsZero = (item: number, _buffer: Buffer): boolean => {
-  return item === 0;
-};
-
-const stringParser = new Parser().string("data", { zeroTerminated: true });
-
-const rgbParser = new Parser().uint8("red").uint8("greed").uint8("blue");
-
-const prop_colorMapParser = new Parser()
-  .uint32("length")
-  .uint32("numcolours")
-  .array("colours", {
-    type: rgbParser,
-    length: "numcolours",
-  });
-
-const prop_guidesParser = new Parser().uint32("length").array("guides", {
-  type: new Parser().int32("c").int8("o"),
-  length: function (this: { length: number }) {
-    return this.length / 5;
-  },
-});
-
-const prop_modeParser = new Parser()
-  .uint32("length", { assert: 4 })
-  .uint32("mode");
-
-const parasiteParser = new Parser()
-  .uint32("length")
-  .buffer("parasite", { length: "length" });
-
-const parasiteArrayItemParser = new Parser()
-  .uint32("name_length")
-  .string("name", {
-    encoding: "ascii",
-    zeroTerminated: true,
-  })
-  .uint32("flags")
-  .uint32("length")
-  .buffer("details", { length: "length" });
-
-const fullParasiteParser = new Parser().array("items", {
-  type: parasiteArrayItemParser,
-  readUntil: "eof",
-});
-
-const propLengthF = new Parser().uint32("length", { assert: 4 }).uint32("f");
-
-const propertyListParser = new Parser()
-  .endianess("big")
-  .uint32("type")
-  .choice("data", {
-    tag: "type",
-    choices: {
-      [XCF_PropType.END]: new Parser().uint32("length", { assert: 0 }),
-      [XCF_PropType.COLORMAP]: prop_colorMapParser,
-      [XCF_PropType.ACTIVE_LAYER]: new Parser().uint32("length", { assert: 0 }),
-      [XCF_PropType.ACTIVE_CHANNEL]: new Parser().uint32("length", {
-        assert: 0,
-      }),
-      [XCF_PropType.SELECTION]: new Parser().uint32("length", { assert: 0 }),
-      [XCF_PropType.FLOATING_SELECTION]: new Parser()
-        .uint32("length")
-        .buffer("layerPtrBuf", { length: "length" }),
-      [XCF_PropType.OPACITY]: new Parser().uint32("length").uint32("opacity"),
-      [XCF_PropType.MODE]: prop_modeParser,
-      [XCF_PropType.VISIBLE]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("isVisible"),
-      [XCF_PropType.LINKED]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("isLinked"),
-      [XCF_PropType.LOCK_ALPHA]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("alpha"),
-      [XCF_PropType.APPLY_MASK]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("mask"),
-      [XCF_PropType.EDIT_MASK]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("editmask"),
-      [XCF_PropType.SHOW_MASK]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("showmask"),
-      [XCF_PropType.SHOW_MASKED]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("showmasked"),
-      [XCF_PropType.OFFSETS]: new Parser()
-        .uint32("length", { assert: 8 })
-        .int32("dx")
-        .int32("dy"),
-      [XCF_PropType.COLOR]: new Parser()
-        .uint32("length", { assert: 3 })
-        .int8("r")
-        .int8("g")
-        .int8("b"),
-      [XCF_PropType.COMPRESSION]: new Parser()
-        .uint32("length", { assert: 1 })
-        .uint8("compressionType"),
-      [XCF_PropType.GUIDES]: prop_guidesParser,
-      [XCF_PropType.RESOLUTION]: new Parser()
-        .uint32("length")
-        .floatle("x")
-        .floatle("y"),
-      [XCF_PropType.TATTOO]: new Parser().uint32("length").uint32("tattoo"),
-      [XCF_PropType.PARASITES]: parasiteParser,
-      [XCF_PropType.UNIT]: new Parser().uint32("length").uint32("c"),
-      [XCF_PropType.TEXT_LAYER_FLAGS]: propLengthF,
-      [XCF_PropType.LOCK_CONTENT]: new Parser()
-        .uint32("length")
-        .uint32("isLocked"),
-      [XCF_PropType.GROUP_ITEM]: new Parser().uint32("length", { assert: 0 }),
-      [XCF_PropType.ITEM_PATH]: new Parser()
-        .uint32("length", {
-          formatter: function (value: number) {
-            return value / 4;
-          },
-        })
-        .array("items", { type: "uint32be", length: "length" }),
-      [XCF_PropType.GROUP_ITEM_FLAGS]: new Parser()
-        .uint32("length")
-        .uint32("flags"),
-      [XCF_PropType.FLOAT_OPACITY]: new Parser()
-        .uint32("length", { assert: 4 })
-        .floatbe("opacity"),
-      [XCF_PropType.COLOR_TAG]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("colorTag"),
-      [XCF_PropType.COMPOSITE_MODE]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("compositeMode"),
-      [XCF_PropType.COMPOSITE_SPACE]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("compositeSpace"),
-      [XCF_PropType.BLEND_SPACE]: new Parser()
-        .uint32("length", { assert: 4 })
-        .uint32("blendSpace"),
-      [XCF_PropType.FLOAT_COLOR]: new Parser()
-        .uint32("length", { assert: 12 })
-        .floatbe("r")
-        .floatbe("g")
-        .floatbe("b"),
-      [XCF_PropType.SAMPLE_POINTS_V2]: new Parser()
-        .uint32("length")
-        .buffer("samplePoints", {
-          length: function (this: { length: number }) {
-            return this.length;
-          },
-        }),
-    },
-    defaultChoice: new Parser().uint32("length").buffer("buffer", {
-      length: function (this: { length: number }) {
-        return this.length;
-      },
-    }),
-  });
-
-// Helper to check if 64-bit value is zero (for readUntil)
-const itemIsZero64 = (item: { high: number; low: number }): boolean => {
-  return item.high === 0 && item.low === 0;
-};
-
-// Parser for 64-bit big-endian offset
-const offset64Parser = new Parser()
-  .endianess("big")
-  .uint32("high")
-  .uint32("low");
-
-// V10 parsers (32-bit pointers)
-const layerParserV10 = new Parser()
-  .uint32("width")
-  .uint32("height")
-  .uint32("type")
-  .uint32("name_length")
-  .string("name", {
-    encoding: "ascii",
-    zeroTerminated: true,
-  })
-  .array("propertyList", {
-    type: propertyListParser,
-    readUntil: function (item: { type: number }, _buffer: Buffer) {
-      return item.type === 0;
-    },
-  })
-  .uint32("hptr")
-  .uint32("mptr");
-
-const hirerarchyParserV10 = new Parser()
-  .uint32("width")
-  .uint32("height")
-  .uint32("bpp")
-  .uint32("lptr");
-
-const levelParserV10 = new Parser()
-  .uint32("width")
-  .uint32("height")
-  .array("tptr", {
-    type: "uint32be",
-    readUntil: itemIsZero,
-  });
-
-// V11 parsers (64-bit pointers)
-const layerParserV11 = new Parser()
-  .uint32("width")
-  .uint32("height")
-  .uint32("type")
-  .uint32("name_length")
-  .string("name", {
-    encoding: "ascii",
-    zeroTerminated: true,
-  })
-  .array("propertyList", {
-    type: propertyListParser,
-    readUntil: function (item: { type: number }, _buffer: Buffer) {
-      return item.type === 0;
-    },
-  })
-  .uint32("hptr_high")
-  .uint32("hptr_low")
-  .uint32("mptr_high")
-  .uint32("mptr_low");
-
-const hirerarchyParserV11 = new Parser()
-  .uint32("width")
-  .uint32("height")
-  .uint32("bpp")
-  .uint32("lptr_high")
-  .uint32("lptr_low");
-
-const levelParserV11 = new Parser()
-  .uint32("width")
-  .uint32("height")
-  .array("tptr64", {
-    type: offset64Parser,
-    readUntil: itemIsZero64,
-  });
-
-// XCF v010 and earlier use 32-bit pointers
-const gimpHeaderV10 = new Parser()
-  .endianess("big")
-  .string("magic", {
-    encoding: "ascii",
-    length: 9,
-  })
-  .string("version", {
-    encoding: "ascii",
-    length: 4,
-  })
-  .int8("padding", { assert: 0 })
-  .uint32("width")
-  .uint32("height")
-  .uint32("base_type") // 0=RGB, 1=Grayscale, 2=Indexed
-  .array("propertyList", {
-    type: propertyListParser,
-    readUntil: function (item: { type: number }, _buffer: Buffer) {
-      return item.type === 0;
-    },
-  })
-  .array("layerList", {
-    type: "int32be",
-    readUntil: itemIsZero,
-  })
-  .array("channelList", {
-    type: "int32be",
-    readUntil: itemIsZero,
-  });
-
-// XCF v011+ use 64-bit pointers
-const gimpHeaderV11 = new Parser()
-  .endianess("big")
-  .string("magic", {
-    encoding: "ascii",
-    length: 9,
-  })
-  .string("version", {
-    encoding: "ascii",
-    length: 4,
-  })
-  .int8("padding", { assert: 0 })
-  .uint32("width")
-  .uint32("height")
-  .uint32("base_type") // 0=RGB, 1=Grayscale, 2=Indexed
-  .uint32("precision") // v011 adds precision field
-  .array("propertyList", {
-    type: propertyListParser,
-    readUntil: function (item: { type: number }, _buffer: Buffer) {
-      return item.type === 0;
-    },
-  })
-  .array("layerList64", {
-    type: offset64Parser,
-    readUntil: itemIsZero64,
-  })
-  .array("channelList64", {
-    type: offset64Parser,
-    readUntil: itemIsZero64,
-  });
+// All parsers now imported from xcf-parsers.ts
 
 const remove_empty = (data: number): boolean => {
   return data !== 0;
@@ -375,22 +87,14 @@ const isUnset = (value: unknown): boolean => {
 /**
  * Type guard to check if a property has a data field
  */
-const hasDataField = <T>(
-  prop: unknown,
-): prop is { data: T } => {
-  return (
-    prop !== null &&
-    typeof prop === "object" &&
-    "data" in prop
-  );
+const hasDataField = <T>(prop: unknown): prop is { data: T } => {
+  return prop !== null && typeof prop === "object" && "data" in prop;
 };
 
 /**
  * Safely extract data from a property value
  */
-const getPropertyData = <T>(
-  propValue: unknown,
-): T | null => {
+const getPropertyData = <T>(propValue: unknown): T | null => {
   if (hasDataField<T>(propValue)) {
     return propValue.data;
   }
@@ -400,10 +104,7 @@ const getPropertyData = <T>(
 /**
  * Safely get a field from property data
  */
-const getPropertyField = <T>(
-  propValue: unknown,
-  field: string,
-): T | null => {
+const getPropertyField = <T>(propValue: unknown, field: string): T | null => {
   const data = getPropertyData<Record<string, T>>(propValue);
   return data?.[field] ?? null;
 };
@@ -413,9 +114,7 @@ const getPropertyField = <T>(
  * This is necessary because GimpLayer is an internal class but needs to be
  * exposed through the public API as GimpLayerPublic interface.
  */
-const toPublicLayer = (
-  layer: GimpLayer,
-): import("./types/index.js").GimpLayerPublic => {
+const toPublicLayer = (layer: GimpLayer): import("./types/index.js").GimpLayerPublic => {
   return layer as unknown as import("./types/index.js").GimpLayerPublic;
 };
 
@@ -444,14 +143,14 @@ const toPublicLayer = (
  */
 class GimpLayer {
   private _parent: XCFParser;
-  private _buffer: Buffer;
+  private _buffer: Uint8Array;
   private _compiled: boolean;
   private _props: Partial<XCF_PropTypeMap> | null;
   private _details: ParsedLayer | null;
   private _name?: string;
   private _parasites?: Record<string, Record<string, string>>;
 
-  constructor(parent: XCFParser, buffer: Buffer) {
+  constructor(parent: XCFParser, buffer: Uint8Array) {
     this._parent = parent;
     this._buffer = buffer;
     this._compiled = false;
@@ -460,8 +159,10 @@ class GimpLayer {
   }
 
   compile(): void {
-    const parser = this._parent.isV11 ? layerParserV11 : layerParserV10;
-    this._details = parser.parse(this._buffer) as ParsedLayer;
+    const reader = new BinaryReader(this._buffer);
+    this._details = (
+      this._parent.isV11 ? parseLayerV11(reader) : parseLayerV10(reader)
+    ) as ParsedLayer;
     this._compiled = true;
 
     // Validate layer dimensions after compilation
@@ -470,7 +171,7 @@ class GimpLayer {
       this._details.height,
       this.x,
       this.y,
-      this._details.name || "unknown",
+      this._details.name || "unknown"
     );
   }
 
@@ -524,7 +225,7 @@ class GimpLayer {
     let item: GroupLayerNode = this._parent._groupLayers;
     const name: string[] = [];
     for (let index = 0; index < pathItems.length; index += 1) {
-      item = item.children[pathItems[index]];
+      item = item.children[pathItems[index]!]!; // Safe: index < length, children exist
       name.push(item.layer!.name);
     }
 
@@ -605,35 +306,28 @@ class GimpLayer {
    */
   get parasites(): Record<string, Record<string, string>> {
     if (this._parasites === undefined) {
-      const parasite = this.getProps(
-        XCF_PropType.PARASITES,
-      ) as ParsedProperty | null;
+      const parasite = this.getProps(XCF_PropType.PARASITES) as ParsedProperty | null;
       this._parasites = {};
       if (parasite) {
-        const parasiteBuffer = getPropertyData<{ parasite: Buffer }>(parasite);
+        const parasiteBuffer = getPropertyData<{ parasite: Uint8Array }>(parasite);
         if (parasiteBuffer?.parasite) {
-          const parsedParasite = fullParasiteParser.parse(
-            parasiteBuffer.parasite,
-          ) as ParsedParasiteArray;
-          (parsedParasite.items || []).forEach(
-            (parasiteItem: ParsedParasiteItem) => {
-              const parasiteName = parasiteItem.name;
-              if (parasiteName === "gimp-text-layer") {
-                const text = (
-                  stringParser.parse(parasiteItem.details) as { data: string }
-                ).data;
-                const fields: Record<string, string> = {};
-                const matches = text.match(/(\(.*\))+/g) || [];
-                matches.forEach((item: string) => {
-                  const itemParts = item.substring(1, item.length - 1).split(" ");
-                  const key = itemParts[0];
-                  const value = itemParts.slice(1).join(" ");
-                  fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
-                });
-                this._parasites![parasiteName] = fields;
-              }
-            },
-          );
+          const parasiteItems = parseFullParasiteArray(parasiteBuffer.parasite);
+          parasiteItems.forEach((parasiteItem: ParsedParasiteItem) => {
+            const parasiteName = parasiteItem.name;
+            if (parasiteName === "gimp-text-layer") {
+              const detailsReader = new BinaryReader(parasiteItem.details);
+              const text = detailsReader.readZeroTerminatedString();
+              const fields: Record<string, string> = {};
+              const matches = text.match(/(\(.*\))+/g) || [];
+              matches.forEach((item: string) => {
+                const itemParts = item.substring(1, item.length - 1).split(" ");
+                const key = itemParts[0]!; // Safe: split always returns at least one element
+                const value = itemParts.slice(1).join(" ");
+                fields[key] = value.replace(/^["]+/, "").replace(/["]+$/, "");
+              });
+              this._parasites![parasiteName] = fields;
+            }
+          });
         }
       }
     }
@@ -664,22 +358,17 @@ class GimpLayer {
    * const isGroup = layer.getProps(XCF_PropType.GROUP_ITEM) !== null;
    * ```
    */
-  getProps<T extends XCF_PropType>(
-    prop: T,
-    index?: string,
-  ): XCF_PropTypeMap[T] | number | null {
+  getProps<T extends XCF_PropType>(prop: T, index?: string): XCF_PropTypeMap[T] | number | null {
     if (!this._compiled) {
       this.compile();
     }
 
     if (!this._props) {
       this._props = {};
-      (this._details!.propertyList || []).forEach(
-        (property: ParsedProperty) => {
-          // Type assertion needed: ParsedProperty is a union that gets narrowed by property.type
-          this._props![property.type as T] = property as unknown as XCF_PropTypeMap[T];
-        },
-      );
+      (this._details!.propertyList || []).forEach((property: ParsedProperty) => {
+        // Type assertion needed: ParsedProperty is a union that gets narrowed by property.type
+        this._props![property.type as T] = property as unknown as XCF_PropTypeMap[T];
+      });
     }
 
     const propValue = this._props[prop];
@@ -728,47 +417,39 @@ class GimpLayer {
 
       // Select parsers based on XCF version
       const isV11 = this._parent.isV11;
-      const hierarchyParserToUse = isV11
-        ? hirerarchyParserV11
-        : hirerarchyParserV10;
-      const levelParserToUse = isV11 ? levelParserV11 : levelParserV10;
 
       // Get hierarchy pointer (64-bit in v11, 32-bit in v10)
       let hptr: number;
       if (isV11) {
-        const details = this._details as ParsedLayer & {
-          hptr_high: number;
-          hptr_low: number;
-        };
+        const details = this._details as unknown as ParsedLayerV11;
         hptr = details.hptr_high * 0x100000000 + details.hptr_low;
       } else {
-        hptr = this._details!.hptr;
+        const details = this._details as unknown as ParsedLayerV10;
+        hptr = details.hptr;
       }
 
-      const hDetails = hierarchyParserToUse.parse(
-        this._parent.getBufferForPointer(hptr),
-      ) as ParsedHierarchy & { lptr_high?: number; lptr_low?: number };
+      const hReader = new BinaryReader(this._parent.getBufferForPointer(hptr));
+      const hDetails = isV11 ? parseHierarchyV11(hReader) : parseHierarchyV10(hReader);
 
       // Get level pointer (64-bit in v11, 32-bit in v10)
       let lptr: number;
       if (isV11) {
-        lptr = hDetails.lptr_high! * 0x100000000 + hDetails.lptr_low!;
+        const h11 = hDetails as ParsedHierarchyV11;
+        lptr = h11.lptr_high * 0x100000000 + h11.lptr_low;
       } else {
-        lptr = hDetails.lptr;
+        const h10 = hDetails as ParsedHierarchyV10;
+        lptr = h10.lptr;
       }
 
-      const levels = levelParserToUse.parse(
-        this._parent.getBufferForPointer(lptr),
-      ) as ParsedLevel & { tptr64?: Array<{ high: number; low: number }> };
+      const lReader = new BinaryReader(this._parent.getBufferForPointer(lptr));
+      const levels = isV11 ? parseLevelV11(lReader) : parseLevelV10(lReader);
 
       const tilesAcross = Math.ceil(this.width / 64);
 
       // Get tile pointers (64-bit array in v11, 32-bit array in v10)
       const tilePointers: number[] = isV11
-        ? (levels.tptr64 || []).map(
-            (t: { high: number; low: number }) => t.high * 0x100000000 + t.low,
-          )
-        : levels.tptr || [];
+        ? (levels as ParsedLevelV11).tptr64.map((t) => offset64ToNumber(t))
+        : (levels as ParsedLevelV10).tptr;
 
       // Get colormap for indexed images
       const colormap = this._parent.colormap;
@@ -783,12 +464,7 @@ class GimpLayer {
         const ypoints = Math.min(64, this.height - yIndex);
         this.copyTile(
           image,
-          this.uncompress(
-            this._parent.getBufferForPointer(tptr),
-            xpoints,
-            ypoints,
-            hDetails.bpp,
-          ),
+          this.uncompress(this._parent.getBufferForPointer(tptr), xpoints, ypoints, hDetails.bpp),
           x + xIndex,
           y + yIndex,
           xpoints,
@@ -798,33 +474,33 @@ class GimpLayer {
           baseType,
           colormap,
           bytesPerChannel,
-          isFloat,
+          isFloat
         );
       });
     }
   }
 
   uncompress(
-    compressedData: Buffer,
+    compressedData: Uint8Array,
     xpoints: number,
     ypoints: number,
-    bpp: number,
-  ): Buffer {
+    bpp: number
+  ): Uint8Array {
     const size = xpoints * ypoints;
     if (size > 0) {
-      const tileBuffer = Buffer.alloc(size * bpp);
+      const tileBuffer = new Uint8Array(size * bpp);
       let compressOffset = 0;
       for (let bppLoop = 0; bppLoop < bpp; bppLoop += 1) {
         let currentSize = xpoints * ypoints;
         let offset = bppLoop;
 
         while (currentSize > 0) {
-          const length = compressedData[compressOffset];
+          const length = compressedData[compressOffset]!;
 
           compressOffset += 1;
           if (length < 127) {
             let newLength = length;
-            const byte = compressedData[compressOffset];
+            const byte = compressedData[compressOffset]!;
             compressOffset += 1;
             while (newLength >= 0) {
               tileBuffer[offset] = byte;
@@ -834,10 +510,9 @@ class GimpLayer {
             }
           } else if (length === 127) {
             let newLength =
-              compressedData[compressOffset] * 256 +
-              compressedData[compressOffset + 1];
+              compressedData[compressOffset]! * 256 + compressedData[compressOffset + 1]!;
             compressOffset += 2;
-            const byte = compressedData[compressOffset];
+            const byte = compressedData[compressOffset]!;
             compressOffset += 1;
             while (newLength > 0) {
               tileBuffer[offset] = byte;
@@ -847,12 +522,11 @@ class GimpLayer {
             }
           } else if (length === 128) {
             let newLength =
-              compressedData[compressOffset] * 256 +
-              compressedData[compressOffset + 1];
+              compressedData[compressOffset]! * 256 + compressedData[compressOffset + 1]!;
             compressOffset += 2;
 
             while (newLength > 0) {
-              tileBuffer[offset] = compressedData[compressOffset];
+              tileBuffer[offset] = compressedData[compressOffset]!;
               compressOffset += 1;
               offset += bpp;
               currentSize -= 1;
@@ -861,7 +535,7 @@ class GimpLayer {
           } else {
             let newLength = 256 - length;
             while (newLength > 0) {
-              tileBuffer[offset] = compressedData[compressOffset];
+              tileBuffer[offset] = compressedData[compressOffset]!;
               compressOffset += 1;
               offset += bpp;
               currentSize -= 1;
@@ -873,7 +547,7 @@ class GimpLayer {
 
       return tileBuffer;
     }
-    return Buffer.alloc(0);
+    return new Uint8Array(0);
   }
 
   /**
@@ -881,43 +555,45 @@ class GimpLayer {
    * Handles different precisions: 8-bit, 16-bit, 32-bit integer, and floating point.
    *
    * @param buffer - The tile buffer
+   * @param view - Reusable DataView for the buffer (for performance)
    * @param offset - Byte offset in the buffer
    * @param bytesPerChannel - Number of bytes per channel (1, 2, 4, or 8)
    * @param isFloat - Whether the precision is floating point
    * @returns The channel value scaled to 0-255
    */
   private readChannelValue(
-    buffer: Buffer,
+    buffer: Uint8Array,
+    view: DataView,
     offset: number,
     bytesPerChannel: number,
-    isFloat: boolean,
+    isFloat: boolean
   ): number {
     if (bytesPerChannel === 1) {
       // 8-bit integer: direct read
-      return buffer[offset];
+      return buffer[offset]!;
     } else if (bytesPerChannel === 2) {
       if (isFloat) {
         // 16-bit float: scale from 0.0-1.0 to 0-255
-        const floatVal = this.halfToFloat(buffer.readUInt16BE(offset));
+        const floatVal = this.halfToFloat(view.getUint16(offset, false));
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
         // 16-bit integer: scale from 0-65535 to 0-255 using integer math (divisor 257)
-        const value = buffer.readUInt16BE(offset);
+        const value = view.getUint16(offset, false);
         return (value / 257) | 0;
       }
     } else if (bytesPerChannel === 4) {
       if (isFloat) {
         // 32-bit float: scale from 0.0-1.0 to 0-255
-        const floatVal = buffer.readFloatBE(offset);
+        const floatVal = view.getFloat32(offset, false);
         return Math.round(Math.max(0, Math.min(1, floatVal)) * 255);
       } else {
         // 32-bit integer: scale from 0-4294967295 to 0-255 using integer math (divisor 16843009)
-        const value = buffer.readUInt32BE(offset);
+        const value = view.getUint32(offset, false);
         return (value / 16843009) | 0;
       }
     } else if (bytesPerChannel === 8) {
       // 64-bit double float: scale from 0.0-1.0 to 0-255
-      const doubleVal = buffer.readDoubleBE(offset);
+      const doubleVal = view.getFloat64(offset, false);
       return Math.round(Math.max(0, Math.min(1, doubleVal)) * 255);
     }
     return 0;
@@ -946,17 +622,17 @@ class GimpLayer {
 
   copyTile(
     image: IXCFImage,
-    tileBuffer: Buffer,
+    tileBuffer: Uint8Array,
     xoffset: number,
     yoffset: number,
     xpoints: number,
     ypoints: number,
     bpp: number,
-    mode: CompositerMode | null,
+    mode: XCFCompositer | null,
     baseType: XCF_BaseType = XCF_BaseType.RGB,
     colormap: ColorRGB[] | null = null,
     bytesPerChannel: number = 1,
-    isFloat: boolean = false,
+    isFloat: boolean = false
   ): void {
     const numChannels = bpp / bytesPerChannel;
 
@@ -968,28 +644,26 @@ class GimpLayer {
       baseType === XCF_BaseType.RGB &&
       image.getDataBuffer
     ) {
-      const dataBuffer = image.getDataBuffer() as
-        | Uint8Array
-        | Uint8ClampedArray;
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
 
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
-        const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
-        for (let xloop = 0; xloop < xpoints; xloop += 1) {
-          const bufIdx = pixelIdx + xloop * 4;
-          if (numChannels === 4) {
-            // RGBA
-            dataBuffer[bufIdx] = tileBuffer[tileOffset];
-            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1];
-            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2];
-            dataBuffer[bufIdx + 3] = tileBuffer[tileOffset + 3];
-            tileOffset += 4;
-          } else {
-            // RGB
-            dataBuffer[bufIdx] = tileBuffer[tileOffset];
-            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1];
-            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2];
+        const destIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
+
+        if (numChannels === 4) {
+          // RGBA: bulk copy entire scanline using TypedArray.set()
+          const scanlineBytes = xpoints * 4;
+          const srcSlice = tileBuffer.subarray(tileOffset, tileOffset + scanlineBytes);
+          dataBuffer.set(srcSlice, destIdx);
+          tileOffset += scanlineBytes;
+        } else {
+          // RGB: need to add alpha channel, keep per-pixel loop
+          for (let xloop = 0; xloop < xpoints; xloop += 1) {
+            const bufIdx = destIdx + xloop * 4;
+            dataBuffer[bufIdx] = tileBuffer[tileOffset]!;
+            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1]!;
+            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2]!;
             dataBuffer[bufIdx + 3] = 255;
             tileOffset += 3;
           }
@@ -1006,25 +680,28 @@ class GimpLayer {
       baseType === XCF_BaseType.RGB &&
       image.getDataBuffer
     ) {
-      const dataBuffer = image.getDataBuffer() as
-        | Uint8Array
-        | Uint8ClampedArray;
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
+      const tileView = new DataView(
+        tileBuffer.buffer,
+        tileBuffer.byteOffset,
+        tileBuffer.byteLength
+      );
 
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
         const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
         for (let xloop = 0; xloop < xpoints; xloop += 1) {
           const bufIdx = pixelIdx + xloop * 4;
           // Read 16-bit values and scale to 0-255 using integer math (divisor 257)
-          const r = (tileBuffer.readUInt16BE(tileOffset) / 257) | 0;
-          const g = (tileBuffer.readUInt16BE(tileOffset + 2) / 257) | 0;
-          const b = (tileBuffer.readUInt16BE(tileOffset + 4) / 257) | 0;
+          const r = (tileView.getUint16(tileOffset, false) / 257) | 0;
+          const g = (tileView.getUint16(tileOffset + 2, false) / 257) | 0;
+          const b = (tileView.getUint16(tileOffset + 4, false) / 257) | 0;
           dataBuffer[bufIdx] = r;
           dataBuffer[bufIdx + 1] = g;
           dataBuffer[bufIdx + 2] = b;
           if (numChannels === 4) {
-            const a = (tileBuffer.readUInt16BE(tileOffset + 6) / 257) | 0;
+            const a = (tileView.getUint16(tileOffset + 6, false) / 257) | 0;
             dataBuffer[bufIdx + 3] = a;
             tileOffset += 8;
           } else {
@@ -1044,25 +721,28 @@ class GimpLayer {
       baseType === XCF_BaseType.RGB &&
       image.getDataBuffer
     ) {
-      const dataBuffer = image.getDataBuffer() as
-        | Uint8Array
-        | Uint8ClampedArray;
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
       const imageWidth = image.width;
       let tileOffset = 0;
+      const tileView = new DataView(
+        tileBuffer.buffer,
+        tileBuffer.byteOffset,
+        tileBuffer.byteLength
+      );
 
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
         const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
         for (let xloop = 0; xloop < xpoints; xloop += 1) {
           const bufIdx = pixelIdx + xloop * 4;
           // Read 32-bit values and scale to 0-255 using integer math (divisor 16843009)
-          const r = (tileBuffer.readUInt32BE(tileOffset) / 16843009) | 0;
-          const g = (tileBuffer.readUInt32BE(tileOffset + 4) / 16843009) | 0;
-          const b = (tileBuffer.readUInt32BE(tileOffset + 8) / 16843009) | 0;
+          const r = (tileView.getUint32(tileOffset, false) / 16843009) | 0;
+          const g = (tileView.getUint32(tileOffset + 4, false) / 16843009) | 0;
+          const b = (tileView.getUint32(tileOffset + 8, false) / 16843009) | 0;
           dataBuffer[bufIdx] = r;
           dataBuffer[bufIdx + 1] = g;
           dataBuffer[bufIdx + 2] = b;
           if (numChannels === 4) {
-            const a = (tileBuffer.readUInt32BE(tileOffset + 12) / 16843009) | 0;
+            const a = (tileView.getUint32(tileOffset + 12, false) / 16843009) | 0;
             dataBuffer[bufIdx + 3] = a;
             tileOffset += 16;
           } else {
@@ -1074,8 +754,43 @@ class GimpLayer {
       return;
     }
 
+    // Fast path: 8-bit Grayscale with direct buffer access and no compositing
+    if (
+      bytesPerChannel === 1 &&
+      !isFloat &&
+      mode === null &&
+      baseType === XCF_BaseType.GRAYSCALE &&
+      image.getDataBuffer
+    ) {
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const imageWidth = image.width;
+      let tileOffset = 0;
+
+      for (let yloop = 0; yloop < ypoints; yloop += 1) {
+        const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
+        for (let xloop = 0; xloop < xpoints; xloop += 1) {
+          const bufIdx = pixelIdx + xloop * 4;
+          const gray = tileBuffer[tileOffset]!;
+
+          // Convert grayscale to RGB (all channels same value)
+          dataBuffer[bufIdx] = gray;
+          dataBuffer[bufIdx + 1] = gray;
+          dataBuffer[bufIdx + 2] = gray;
+          dataBuffer[bufIdx + 3] = numChannels === 2 ? tileBuffer[tileOffset + 1]! : 255;
+
+          tileOffset += numChannels;
+        }
+      }
+      return;
+    }
+
     // General path: handle all other cases
     let bufferOffset = 0;
+    // Create a single DataView for the tile buffer to avoid creating millions of DataView objects
+    const tileView = new DataView(tileBuffer.buffer, tileBuffer.byteOffset, tileBuffer.byteLength);
+    // Create reusable buffers for compositing to avoid object allocations
+    const bgColBuffer = new Uint8ClampedArray(4);
+    const composeBuffer = new Uint8ClampedArray(4);
 
     for (let yloop = 0; yloop < ypoints; yloop += 1) {
       for (let xloop = 0; xloop < xpoints; xloop += 1) {
@@ -1083,21 +798,22 @@ class GimpLayer {
 
         if (baseType === XCF_BaseType.INDEXED && colormap) {
           // Indexed: look up color from palette (always 8-bit index)
-          const index = tileBuffer[bufferOffset];
+          const index = tileBuffer[bufferOffset]!;
           const paletteColor = colormap[index] || { red: 0, green: 0, blue: 0 };
           colour = {
             red: paletteColor.red,
             green: paletteColor.green,
             blue: paletteColor.blue,
-            alpha: numChannels === 2 ? tileBuffer[bufferOffset + 1] : 255,
+            alpha: numChannels === 2 ? tileBuffer[bufferOffset + 1]! : 255,
           };
         } else if (numChannels === 1 || numChannels === 2) {
           // Grayscale: convert gray value to RGB
           const gray = this.readChannelValue(
             tileBuffer,
+            tileView,
             bufferOffset,
             bytesPerChannel,
-            isFloat,
+            isFloat
           );
           colour = {
             red: gray,
@@ -1107,9 +823,10 @@ class GimpLayer {
               numChannels === 2
                 ? this.readChannelValue(
                     tileBuffer,
+                    tileView,
                     bufferOffset + bytesPerChannel,
                     bytesPerChannel,
-                    isFloat,
+                    isFloat
                   )
                 : 255,
           };
@@ -1118,38 +835,69 @@ class GimpLayer {
           colour = {
             red: this.readChannelValue(
               tileBuffer,
+              tileView,
               bufferOffset,
               bytesPerChannel,
-              isFloat,
+              isFloat
             ),
             green: this.readChannelValue(
               tileBuffer,
+              tileView,
               bufferOffset + bytesPerChannel,
               bytesPerChannel,
-              isFloat,
+              isFloat
             ),
             blue: this.readChannelValue(
               tileBuffer,
+              tileView,
               bufferOffset + 2 * bytesPerChannel,
               bytesPerChannel,
-              isFloat,
+              isFloat
             ),
             alpha:
               numChannels === 4
                 ? this.readChannelValue(
                     tileBuffer,
+                    tileView,
                     bufferOffset + 3 * bytesPerChannel,
                     bytesPerChannel,
-                    isFloat,
+                    isFloat
                   )
                 : 255,
           };
         }
-        const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
-        const composedColour = mode
-          ? (mode.compose(bgCol, colour) as ColorRGBA)
-          : colour;
-        image.setAt(xoffset + xloop, yoffset + yloop, composedColour);
+
+        // Compose and write (optimized to avoid redundant reads when no compositing)
+        if (mode) {
+          // Use composeDirect for zero-allocation compositing if available
+          if (image.getAtDirect && mode.composeDirect) {
+            image.getAtDirect(xoffset + xloop, yoffset + yloop, bgColBuffer);
+            mode.composeDirect(
+              bgColBuffer[0]!,
+              bgColBuffer[1]!,
+              bgColBuffer[2]!,
+              bgColBuffer[3]!,
+              colour.red,
+              colour.green,
+              colour.blue,
+              colour.alpha,
+              composeBuffer
+            );
+            image.setAt(xoffset + xloop, yoffset + yloop, {
+              red: composeBuffer[0]!,
+              green: composeBuffer[1]!,
+              blue: composeBuffer[2]!,
+              alpha: composeBuffer[3]!,
+            });
+          } else {
+            // Fallback to object-based compositing
+            const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
+            const composedColour = mode.compose(bgCol, colour) as ColorRGBA;
+            image.setAt(xoffset + xloop, yoffset + yloop, composedColour);
+          }
+        } else {
+          image.setAt(xoffset + xloop, yoffset + yloop, colour);
+        }
         bufferOffset += bpp;
       }
     }
@@ -1161,10 +909,10 @@ class GimpLayer {
  */
 class GimpChannel {
   private _parent: XCFParser;
-  private _buffer: Buffer;
+  private _buffer: Uint8Array;
   private _compiled: boolean;
 
-  constructor(parent: XCFParser, buffer: Buffer) {
+  constructor(parent: XCFParser, buffer: Uint8Array) {
     this._parent = parent;
     this._buffer = buffer;
     this._compiled = false;
@@ -1203,7 +951,7 @@ class GimpChannel {
 export class XCFParser {
   private _layers: GimpLayer[] = [];
   private _channels: GimpChannel[] = [];
-  private _buffer: Buffer | null = null;
+  private _buffer: Uint8Array | null = null;
   private _header: ParsedGimpHeader | null = null;
   private _version: number = 0; // XCF version number (e.g., 10, 11)
   private _props: Partial<XCF_PropTypeMap> | null = null;
@@ -1234,15 +982,9 @@ export class XCFParser {
     height: number,
     offsetX: number,
     offsetY: number,
-    layerName: string,
+    layerName: string
   ): void {
-    this._validator.validateLayerDimensions(
-      width,
-      height,
-      offsetX,
-      offsetY,
-      layerName,
-    );
+    this._validator.validateLayerDimensions(width, height, offsetX, offsetY, layerName);
   }
 
   /**
@@ -1251,12 +993,9 @@ export class XCFParser {
    * @param callback - Callback function (err, parser)
    * @deprecated Use parseFileAsync instead
    */
-  static parseFile(
-    file: string,
-    callback: (err: Error | null, parser?: XCFParser) => void,
-  ): void {
+  static parseFile(file: string, callback: (err: Error | null, parser?: XCFParser) => void): void {
     Logger.warn(
-      "XCFParser.parseFile() is deprecated. Use parseFileAsync() with async/await instead.",
+      "XCFParser.parseFile() is deprecated. Use parseFileAsync() with async/await instead."
     );
     XCFParser.parseFileAsync(file)
       .then((parser) => callback(null, parser))
@@ -1293,6 +1032,9 @@ export class XCFParser {
    */
   static async parseFileAsync(file: string): Promise<XCFParser> {
     try {
+      // Dynamically import fs (Node.js only)
+      const FS = await import("fs");
+
       // Validate file exists
       await FS.promises.access(file, FS.constants.R_OK);
 
@@ -1309,7 +1051,7 @@ export class XCFParser {
             `Invalid XCF file "${file}": ${err.message}\n` +
               `This file does not appear to be a valid GIMP XCF file.\n` +
               `Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n` +
-              `Please verify the file and try exporting from GIMP again.`,
+              `Please verify the file and try exporting from GIMP again.`
           );
         }
         throw err;
@@ -1325,7 +1067,7 @@ export class XCFParser {
       throw new XCFParseError(
         `Failed to parse XCF file "${file}": ${message}\n` +
           `This may be due to file corruption, unsupported features, or an invalid file format.\n` +
-          `If this is a valid XCF file, please report this issue with the file details.`,
+          `If this is a valid XCF file, please report this issue with the file details.`
       );
     }
   }
@@ -1357,45 +1099,35 @@ export class XCFParser {
    * const parser = XCFParser.parseBuffer(buffer);
    * ```
    */
-  static parseBuffer(data: Buffer | ArrayBuffer | Uint8Array): XCFParser {
-    // Convert to Buffer if needed
-    let buffer: Buffer;
-    if (data instanceof Buffer) {
-      buffer = data;
-    } else if (data instanceof ArrayBuffer) {
-      buffer = Buffer.from(data);
-    } else if (data instanceof Uint8Array) {
-      buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
-    } else {
-      throw new XCFParseError(
-        "Invalid input: expected Buffer, ArrayBuffer, or Uint8Array.\n" +
-          "Please provide a valid XCF file as a Node.js Buffer, browser ArrayBuffer, or Uint8Array.",
-      );
-    }
+  static parseBuffer(data: ArrayBuffer | Uint8Array): XCFParser {
+    // BinaryReader accepts ArrayBuffer or Uint8Array directly
+    // (Node.js Buffer extends Uint8Array, so it works automatically!)
 
     const parser = new XCFParser();
 
     // Validate XCF header and magic bytes
     try {
-      parser._validator.validateHeader(buffer);
+      parser._validator.validateHeader(data);
     } catch (err) {
       if (err instanceof XCFValidationError) {
         throw new UnsupportedFormatError(
           `Invalid XCF data: ${err.message}\n` +
             "This does not appear to be a valid GIMP XCF file.\n" +
             "Possible causes: wrong file type, file is corrupt, or not saved from GIMP.\n" +
-            "Please verify the file and try exporting from GIMP again.",
+            "Please verify the file and try exporting from GIMP again."
         );
       }
       throw err;
     }
 
-    parser.parse(buffer);
+    parser.parse(data);
     return parser;
   }
 
-  parse(buffer: Buffer): void {
-    this._buffer = buffer;
+  parse(buffer: ArrayBuffer | Uint8Array): void {
+    // Convert ArrayBuffer to Uint8Array if needed
+    const uint8Buffer = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
+    this._buffer = uint8Buffer;
     this._layers = [];
     this._channels = [];
     this._groupLayers = { layer: null, children: [] };
@@ -1403,8 +1135,9 @@ export class XCFParser {
     // Reset validator state for new parse
     this._validator.reset();
 
-    // Detect XCF version to choose correct parser
-    const version = buffer.toString("utf-8", 9, 13);
+    // Detect XCF version to choose correct parser (bytes 9-13 contain version string)
+    const versionBytes = uint8Buffer.subarray(9, 13);
+    const version = new TextDecoder("utf-8").decode(versionBytes);
     const versionNum = parseInt(version.replace("v", ""), 10);
     this._version = versionNum;
 
@@ -1412,36 +1145,31 @@ export class XCFParser {
 
     if (versionNum >= 11) {
       // XCF v011+ uses 64-bit pointers and has precision field
-      const header = gimpHeaderV11.parse(buffer) as ParsedGimpHeader & {
-        layerList64?: Array<{ high: number; low: number }>;
-        channelList64?: Array<{ high: number; low: number }>;
-      };
-      this._header = header;
+      const header = parseGimpHeaderV11(uint8Buffer);
+      this._header = header as unknown as ParsedGimpHeader;
 
       // Validate image dimensions and base type
       this._validator.validateImageDimensions(header.width, header.height);
       this._validator.validateBaseType(header.base_type);
 
       // Convert 64-bit pointers to numbers (JavaScript can handle up to 2^53)
-      layerPointers = (header.layerList64 || [])
+      layerPointers = header.layerList64
         .filter((p) => p.high !== 0 || p.low !== 0)
-        .map((p) => p.high * 0x100000000 + p.low);
+        .map((p) => offset64ToNumber(p));
     } else {
       // XCF v010 and earlier use 32-bit pointers
-      this._header = gimpHeaderV10.parse(buffer) as ParsedGimpHeader;
+      const header = parseGimpHeaderV10(uint8Buffer);
+      this._header = header as unknown as ParsedGimpHeader;
 
       // Validate image dimensions and base type
-      this._validator.validateImageDimensions(
-        this._header.width,
-        this._header.height,
-      );
-      this._validator.validateBaseType(this._header.base_type);
+      this._validator.validateImageDimensions(header.width, header.height);
+      this._validator.validateBaseType(header.base_type);
 
-      layerPointers = (this._header.layerList || []).filter(remove_empty);
+      layerPointers = header.layerList.filter((p) => p !== 0);
     }
 
     // Validate layer pointers are within bounds
-    this._validator.validatePointers(layerPointers, buffer, "layer pointer");
+    this._validator.validatePointers(layerPointers, uint8Buffer, "layer pointer");
 
     /**
      * Layer Hierarchy Construction
@@ -1484,10 +1212,7 @@ export class XCFParser {
         }
 
         // Validate hierarchy depth and path items
-        this._validator.validateHierarchyDepth(
-          pathData.items.length,
-          pathData.items,
-        );
+        this._validator.validateHierarchyDepth(pathData.items.length, pathData.items);
 
         /**
          * Recursive function to build layer hierarchy tree
@@ -1508,16 +1233,13 @@ export class XCFParser {
          * - Second call (index=1): Navigate to children[0].children[1]
          * - Third call (index=2): Place layer at children[0].children[1].layer
          */
-        const toCall = (
-          node: GroupLayerNode,
-          index: number,
-        ): GroupLayerNode => {
+        const toCall = (node: GroupLayerNode, index: number): GroupLayerNode => {
           if (index === pathData.items.length) {
             // Reached end of path: place layer here
             node.layer = toPublicLayer(layer);
           } else {
             // Navigate deeper into hierarchy
-            const childIndex = pathData.items[index];
+            const childIndex = pathData.items[index]!; // Safe: index < length
 
             // Create child node if it doesn't exist
             if (isUnset(node.children[childIndex])) {
@@ -1528,10 +1250,7 @@ export class XCFParser {
             }
 
             // Recursively process next level
-            node.children[childIndex] = toCall(
-              node.children[childIndex],
-              index + 1,
-            );
+            node.children[childIndex] = toCall(node.children[childIndex]!, index + 1);
           }
 
           return node;
@@ -1545,23 +1264,17 @@ export class XCFParser {
 
     // Note: Channel parsing for v011 would need similar 64-bit handling
     // Currently only supporting layer parsing for v011
-    const channelPointers = (this._header.channelList || []).filter(
-      remove_empty,
-    );
+    const channelPointers = (this._header.channelList || []).filter(remove_empty);
 
     // Validate channel pointers are within bounds
-    this._validator.validatePointers(
-      channelPointers,
-      buffer,
-      "channel pointer",
-    );
+    this._validator.validatePointers(channelPointers, uint8Buffer, "channel pointer");
 
     this._channels = channelPointers.map((channelPointer: number) => {
       return new GimpChannel(this, this._buffer!.slice(channelPointer));
     });
   }
 
-  getBufferForPointer(offset: number): Buffer {
+  getBufferForPointer(offset: number): Uint8Array {
     return this._buffer!.slice(offset);
   }
 
@@ -1651,10 +1364,7 @@ export class XCFParser {
    * @param index - Optional sub-field to extract from the property data
    * @returns The property value, a specific field value if index is provided, or null if not found
    */
-  getProps<T extends XCF_PropType>(
-    prop: T,
-    index?: string,
-  ): XCF_PropTypeMap[T] | number | null {
+  getProps<T extends XCF_PropType>(prop: T, index?: string): XCF_PropTypeMap[T] | number | null {
     if (!this._props) {
       this._props = {};
       (this._header!.propertyList || []).forEach((property: ParsedProperty) => {
@@ -1700,7 +1410,7 @@ export class XCFParser {
     if (data?.colours) {
       return data.colours.map((c: ParsedRGB) => ({
         red: c.red,
-        green: c.greed, // Note: typo in parser "greed" instead of "green"
+        green: c.green,
         blue: c.blue,
       }));
     }
@@ -1719,29 +1429,22 @@ export class XCFParser {
         let cursor = this._groupLayers;
 
         for (let i = 0; i < segments.length - 1; ++i) {
-          const segmentKey = segments[i];
-          const cursorChildren = cursor.children as unknown as Record<
-            string,
-            GroupLayerNode
-          >;
+          const segmentKey = segments[i]!; // Safe: i < length
+          const cursorChildren = cursor.children as unknown as Record<string, GroupLayerNode>;
           cursorChildren[segmentKey] = cursorChildren[segmentKey] || {
             layer: null,
             children: [],
           };
-          cursorChildren[segmentKey].children =
-            cursorChildren[segmentKey].children || [];
-          cursor = cursorChildren[segmentKey];
+          cursorChildren[segmentKey]!.children = cursorChildren[segmentKey]!.children || [];
+          cursor = cursorChildren[segmentKey]!;
         }
-        const lastSegment = segments[segments.length - 1];
-        const cursorChildren = cursor.children as unknown as Record<
-          string,
-          GroupLayerNode
-        >;
+        const lastSegment = segments[segments.length - 1]!; // Safe: length > 0
+        const cursorChildren = cursor.children as unknown as Record<string, GroupLayerNode>;
         cursorChildren[lastSegment] = cursorChildren[lastSegment] || {
           layer: null,
           children: [],
         };
-        cursorChildren[lastSegment].layer = toPublicLayer(layer);
+        cursorChildren[lastSegment]!.layer = toPublicLayer(layer);
       });
     }
     return this._groupLayers;
@@ -1793,10 +1496,7 @@ export class XCFParser {
    * const tempLayers = parser.findLayersByPattern(/temp|draft/i);
    * ```
    */
-  findLayersByPattern(
-    pattern: RegExp | string,
-    flags?: string,
-  ): GimpLayer[] {
+  findLayersByPattern(pattern: RegExp | string, flags?: string): GimpLayer[] {
     const regex = typeof pattern === "string" ? new RegExp(pattern, flags) : pattern;
     return this.layers.filter((layer) => regex.test(layer.name));
   }
@@ -1935,7 +1635,7 @@ export class XCFParser {
   createImageFromLayers(
     image: IXCFImage,
     layerNames: string[],
-    options?: { ignoreVisibility?: boolean },
+    options?: { ignoreVisibility?: boolean }
   ): IXCFImage {
     const ignoreVisibility = options?.ignoreVisibility ?? false;
 

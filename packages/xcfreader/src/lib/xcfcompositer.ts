@@ -360,28 +360,13 @@ class XCFCompositer {
     const a1 = xcfToFloat(backColour.alpha ?? 255);
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
     const red = floatToXcf(
-      this.blend(
-        a1,
-        xcfToFloat(backColour.red),
-        a2,
-        xcfToFloat(layerColour.red),
-      ),
+      this.blend(a1, xcfToFloat(backColour.red), a2, xcfToFloat(layerColour.red))
     );
     const green = floatToXcf(
-      this.blend(
-        a1,
-        xcfToFloat(backColour.green),
-        a2,
-        xcfToFloat(layerColour.green),
-      ),
+      this.blend(a1, xcfToFloat(backColour.green), a2, xcfToFloat(layerColour.green))
     );
     const blue = floatToXcf(
-      this.blend(
-        a1,
-        xcfToFloat(backColour.blue),
-        a2,
-        xcfToFloat(layerColour.blue),
-      ),
+      this.blend(a1, xcfToFloat(backColour.blue), a2, xcfToFloat(layerColour.blue))
     );
     return {
       red: red,
@@ -389,6 +374,48 @@ class XCFCompositer {
       blue: blue,
       alpha: floatToXcf(1 - (1 - a1) * (1 - a2)),
     };
+  }
+
+  /**
+   * Compose directly into output buffer (performance optimization)
+   * Eliminates intermediate object allocations in hot paths
+   * @param bgR Background red (0-255)
+   * @param bgG Background green (0-255)
+   * @param bgB Background blue (0-255)
+   * @param bgA Background alpha (0-255)
+   * @param fgR Foreground red (0-255)
+   * @param fgG Foreground green (0-255)
+   * @param fgB Foreground blue (0-255)
+   * @param fgA Foreground alpha (0-255)
+   * @param outBuffer Output buffer [r, g, b, a]
+   */
+  composeDirect(
+    bgR: number,
+    bgG: number,
+    bgB: number,
+    bgA: number,
+    fgR: number,
+    fgG: number,
+    fgB: number,
+    fgA: number,
+    outBuffer: Uint8ClampedArray
+  ): void {
+    // Fast path: full opacity and fully opaque layer color (common case)
+    if (this._opacity === 1.0 && fgA === 255) {
+      outBuffer[0] = fgR;
+      outBuffer[1] = fgG;
+      outBuffer[2] = fgB;
+      outBuffer[3] = 255;
+      return;
+    }
+
+    // Normal compositing - write directly to buffer
+    const a1 = xcfToFloat(bgA);
+    const a2 = xcfToFloat(fgA) * this._opacity;
+    outBuffer[0] = floatToXcf(this.blend(a1, xcfToFloat(bgR), a2, xcfToFloat(fgR)));
+    outBuffer[1] = floatToXcf(this.blend(a1, xcfToFloat(bgG), a2, xcfToFloat(fgG)));
+    outBuffer[2] = floatToXcf(this.blend(a1, xcfToFloat(bgB), a2, xcfToFloat(fgB)));
+    outBuffer[3] = floatToXcf(1 - (1 - a1) * (1 - a2));
   }
 
   blend(a1: number, x1: number, a2: number, x2: number): number {
@@ -418,7 +445,7 @@ class XCFCompositer {
 }
 
 class DissolveCompositer extends XCFCompositer {
-  compose(backColour: Color, layerColour: Color): Color {
+  override compose(backColour: Color, layerColour: Color): Color {
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
     const random = Math.random();
     return {
@@ -431,21 +458,15 @@ class DissolveCompositer extends XCFCompositer {
 }
 
 class GeneralCompositer extends XCFCompositer {
-  compose(backColour: Color, layerColour: Color): Color {
+  override compose(backColour: Color, layerColour: Color): Color {
     const a1 = xcfToFloat(backColour.alpha ?? 255);
     const a2 = xcfToFloat((layerColour.alpha as number) ?? 255) * this._opacity;
 
     // Fast path: full opacity and fully opaque layer color
     if (a2 === 1.0) {
-      const red = floatToXcf(
-        this.chooseFunction(0, xcfToFloat(layerColour.red)),
-      );
-      const green = floatToXcf(
-        this.chooseFunction(0, xcfToFloat(layerColour.green)),
-      );
-      const blue = floatToXcf(
-        this.chooseFunction(0, xcfToFloat(layerColour.blue)),
-      );
+      const red = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.red)));
+      const green = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.green)));
+      const blue = floatToXcf(this.chooseFunction(0, xcfToFloat(layerColour.blue)));
       return {
         red: red,
         green: green,
@@ -455,28 +476,13 @@ class GeneralCompositer extends XCFCompositer {
     }
 
     const red = floatToXcf(
-      this.performBlend(
-        a1,
-        xcfToFloat(backColour.red),
-        a2,
-        xcfToFloat(layerColour.red),
-      ),
+      this.performBlend(a1, xcfToFloat(backColour.red), a2, xcfToFloat(layerColour.red))
     );
     const green = floatToXcf(
-      this.performBlend(
-        a1,
-        xcfToFloat(backColour.green),
-        a2,
-        xcfToFloat(layerColour.green),
-      ),
+      this.performBlend(a1, xcfToFloat(backColour.green), a2, xcfToFloat(layerColour.green))
     );
     const blue = floatToXcf(
-      this.performBlend(
-        a1,
-        xcfToFloat(backColour.blue),
-        a2,
-        xcfToFloat(layerColour.blue),
-      ),
+      this.performBlend(a1, xcfToFloat(backColour.blue), a2, xcfToFloat(layerColour.blue))
     );
     return {
       red: red,
@@ -484,6 +490,35 @@ class GeneralCompositer extends XCFCompositer {
       blue: blue,
       alpha: floatToXcf(a1),
     };
+  }
+
+  override composeDirect(
+    bgR: number,
+    bgG: number,
+    bgB: number,
+    bgA: number,
+    fgR: number,
+    fgG: number,
+    fgB: number,
+    fgA: number,
+    outBuffer: Uint8ClampedArray
+  ): void {
+    const a1 = xcfToFloat(bgA);
+    const a2 = xcfToFloat(fgA) * this._opacity;
+
+    // Fast path: full opacity and fully opaque layer color
+    if (a2 === 1.0) {
+      outBuffer[0] = floatToXcf(this.chooseFunction(0, xcfToFloat(fgR)));
+      outBuffer[1] = floatToXcf(this.chooseFunction(0, xcfToFloat(fgG)));
+      outBuffer[2] = floatToXcf(this.chooseFunction(0, xcfToFloat(fgB)));
+      outBuffer[3] = 255;
+      return;
+    }
+
+    outBuffer[0] = floatToXcf(this.performBlend(a1, xcfToFloat(bgR), a2, xcfToFloat(fgR)));
+    outBuffer[1] = floatToXcf(this.performBlend(a1, xcfToFloat(bgG), a2, xcfToFloat(fgG)));
+    outBuffer[2] = floatToXcf(this.performBlend(a1, xcfToFloat(bgB), a2, xcfToFloat(fgB)));
+    outBuffer[3] = floatToXcf(a1);
   }
 
   performBlend(a1: number, x1: number, a2: number, x2: number): number {
@@ -532,7 +567,7 @@ class HsvCompositor extends XCFCompositer {
     super(mode, opacity);
   }
 
-  compose(backColour: Color, layerColour: Color): Color {
+  override compose(backColour: Color, layerColour: Color): Color {
     const inA = xcfToFloat(backColour.alpha ?? 255);
     const laA = xcfToFloat(layerColour.alpha ?? 255);
 

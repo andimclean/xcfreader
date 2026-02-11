@@ -20,11 +20,11 @@ A monorepo for parsing and rendering GIMP XCF files in TypeScript/JavaScript.
 
 ## Packages
 
-| Package | Description | Links |
-| ------- | ----------- | ----- |
-| **[xcfreader](packages/xcfreader)** | Core XCF parser library for Node.js and browser | [README](packages/xcfreader/readme.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader) |
-| **[ui-xcfimage](packages/ui-xcfimage)** | `<gpp-xcfimage>` web component for rendering XCF files | [README](packages/ui-xcfimage/README.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage) |
-| **[ha-xcfimage-card](packages/ha-xcfimage-card)** | Home Assistant custom card with entity-based layer control | [README](packages/ha-xcfimage-card/README.md) |
+| Package                                           | Description                                                | Links                                                                                                                |
+| ------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **[xcfreader](packages/xcfreader)**               | Core XCF parser library for Node.js and browser            | [README](packages/xcfreader/readme.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)     |
+| **[ui-xcfimage](packages/ui-xcfimage)**           | `<gpp-xcfimage>` web component for rendering XCF files     | [README](packages/ui-xcfimage/README.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage) |
+| **[ha-xcfimage-card](packages/ha-xcfimage-card)** | Home Assistant custom card with entity-based layer control | [README](packages/ha-xcfimage-card/README.md)                                                                        |
 
 ## Quick Start
 
@@ -33,18 +33,20 @@ A monorepo for parsing and rendering GIMP XCF files in TypeScript/JavaScript.
 Parse and render GIMP XCF files in Node.js or the browser.
 
 **Node.js:**
-```typescript
-import { XCFParser, XCFPNGImage } from '@theprogrammingiantpanda/xcfreader/node';
 
-const parser = await XCFParser.parseFileAsync('./image.xcf');
+```typescript
+import { XCFParser, XCFPNGImage } from "@theprogrammingiantpanda/xcfreader/node";
+
+const parser = await XCFParser.parseFileAsync("./image.xcf");
 const image = new XCFPNGImage(parser.width, parser.height);
 parser.createImage(image);
-await image.writeImage('./output.png');
+await image.writeImage("./output.png");
 ```
 
 **Browser:**
+
 ```typescript
-import { XCFParser, XCFDataImage } from '@theprogrammingiantpanda/xcfreader/browser';
+import { XCFParser, XCFDataImage } from "@theprogrammingiantpanda/xcfreader/browser";
 
 const arrayBuffer = await file.arrayBuffer();
 const parser = XCFParser.parseBuffer(arrayBuffer);
@@ -84,8 +86,20 @@ After loading, the element exposes a `layers` attribute with the full layer hier
 - **GIMP 2.10+ support**: Full XCF v011 64-bit pointer format compatibility
 - **Multiple color modes**: RGB/RGBA, Grayscale, and Indexed (paletted) images
 - **High bit-depth**: 8-bit, 16-bit, 32-bit integer; 16-bit (half), 32-bit, 64-bit float
-- **High performance**: Optimized rendering with **up to 38% speedup** through direct buffer access and specialized fast paths
+- **High performance**: Optimized rendering with **27% improvement** through zero-allocation compositing, bulk copy operations, and specialized fast paths
 - **Type-safe compositing**: All blend modes via the `CompositerMode` enum
+
+## Browser Requirements
+
+Browser bundles require **ES2022** support:
+
+| Browser     | Minimum Version    |
+| ----------- | ------------------ |
+| Chrome/Edge | 94+ (Sept 2021)    |
+| Firefox     | 101+ (May 2022)    |
+| Safari      | 15.4+ (March 2022) |
+
+Internet Explorer is not supported. Node.js version 18+ is required for server-side usage.
 
 ## Installation
 

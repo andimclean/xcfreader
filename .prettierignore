@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+docs/
+**/docs/
+
+# Coverage
+coverage/
+**/coverage/
+.c8_output/
+**/.c8_output/
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Misc
+.nx/
+*.log
+*.tsbuildinfo
