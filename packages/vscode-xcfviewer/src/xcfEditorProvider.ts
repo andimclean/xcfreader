@@ -97,7 +97,14 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
   private buildLayerHierarchy(parser: XCFParser): LayerInfo[] {
     console.log(`Building layer hierarchy from groupLayers structure`);
 
-    const buildFromNode = (node: any, index: number): LayerInfo | null => {
+    // Build a map from layer object to its flat index (same as ui-xcfimage does)
+    // This ensures indices match what HA package expects
+    const layerIndexMap = new Map<any, number>();
+    parser.layers.forEach((layer, i) => {
+      layerIndexMap.set(layer, i);
+    });
+
+    const buildFromNode = (node: any): LayerInfo | null => {
       // node.layer is null for group containers, otherwise it's the actual layer
       const layer = node.layer;
 
@@ -109,9 +116,12 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
         return null;
       }
 
+      // Get the flat index from the layerIndexMap (same as HA package)
+      const flatIndex = layer ? (layerIndexMap.get(layer) ?? -1) : -1;
+
       const info: LayerInfo = {
-        index,
-        name: layer ? layer.name : `Group ${index}`,
+        index: flatIndex,
+        name: layer ? layer.name : `Group ${flatIndex}`,
         visible: layer ? layer.isVisible !== false : true,
         opacity: layer ? (layer.opacity ?? 100) : 100,
         type: (layer && layer.isGroup) || hasChildren ? "group" : "layer",
@@ -120,7 +130,7 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
       if (hasChildren) {
         // Filter out null results from child nodes
         info.children = node.children
-          .map((child: any, i: number) => buildFromNode(child, i))
+          .map((child: any) => buildFromNode(child))
           .filter((child: LayerInfo | null) => child !== null);
         if (info.children) {
           console.log(`Group "${info.name}" has ${info.children.length} children`);
@@ -138,7 +148,7 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
     }
 
     const hierarchy = groupLayers.children
-      .map((node: any, i: number) => buildFromNode(node, i))
+      .map((node: any) => buildFromNode(node))
       .filter((item: LayerInfo | null) => item !== null);
 
     console.log(`Built ${hierarchy.length} top-level layer items`);

@@ -171,6 +171,8 @@ class LayerTreeItem extends vscode.TreeItem {
       this.visible ? "eye" : "eye-closed",
       this.visible ? undefined : new vscode.ThemeColor("editorWarning.foreground")
     );
+    // Show layer index as description (for use in HA package)
+    this.description = `[${this.index}]`;
   }
 }
 
