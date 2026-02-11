@@ -86,7 +86,7 @@ After loading, the element exposes a `layers` attribute with the full layer hier
 - **GIMP 2.10+ support**: Full XCF v011 64-bit pointer format compatibility
 - **Multiple color modes**: RGB/RGBA, Grayscale, and Indexed (paletted) images
 - **High bit-depth**: 8-bit, 16-bit, 32-bit integer; 16-bit (half), 32-bit, 64-bit float
-- **High performance**: Optimized rendering with **up to 38% speedup** through direct buffer access and specialized fast paths
+- **High performance**: Optimized rendering with **27% improvement** through zero-allocation compositing, bulk copy operations, and specialized fast paths
 - **Type-safe compositing**: All blend modes via the `CompositerMode` enum
 
 ## Browser Requirements

@@ -41,7 +41,6 @@ import {
   ParsedParasiteItem,
   ParsedPropItemPath,
   ParsedRGB,
-  CompositerMode,
   GroupLayerNode,
 } from "./types/index.js";
 
@@ -629,7 +628,7 @@ class GimpLayer {
     xpoints: number,
     ypoints: number,
     bpp: number,
-    mode: CompositerMode | null,
+    mode: XCFCompositer | null,
     baseType: XCF_BaseType = XCF_BaseType.RGB,
     colormap: ColorRGB[] | null = null,
     bytesPerChannel: number = 1,
@@ -650,18 +649,18 @@ class GimpLayer {
       let tileOffset = 0;
 
       for (let yloop = 0; yloop < ypoints; yloop += 1) {
-        const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
-        for (let xloop = 0; xloop < xpoints; xloop += 1) {
-          const bufIdx = pixelIdx + xloop * 4;
-          if (numChannels === 4) {
-            // RGBA
-            dataBuffer[bufIdx] = tileBuffer[tileOffset]!;
-            dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1]!;
-            dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2]!;
-            dataBuffer[bufIdx + 3] = tileBuffer[tileOffset + 3]!;
-            tileOffset += 4;
-          } else {
-            // RGB
+        const destIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
+
+        if (numChannels === 4) {
+          // RGBA: bulk copy entire scanline using TypedArray.set()
+          const scanlineBytes = xpoints * 4;
+          const srcSlice = tileBuffer.subarray(tileOffset, tileOffset + scanlineBytes);
+          dataBuffer.set(srcSlice, destIdx);
+          tileOffset += scanlineBytes;
+        } else {
+          // RGB: need to add alpha channel, keep per-pixel loop
+          for (let xloop = 0; xloop < xpoints; xloop += 1) {
+            const bufIdx = destIdx + xloop * 4;
             dataBuffer[bufIdx] = tileBuffer[tileOffset]!;
             dataBuffer[bufIdx + 1] = tileBuffer[tileOffset + 1]!;
             dataBuffer[bufIdx + 2] = tileBuffer[tileOffset + 2]!;
@@ -789,6 +788,9 @@ class GimpLayer {
     let bufferOffset = 0;
     // Create a single DataView for the tile buffer to avoid creating millions of DataView objects
     const tileView = new DataView(tileBuffer.buffer, tileBuffer.byteOffset, tileBuffer.byteLength);
+    // Create reusable buffers for compositing to avoid object allocations
+    const bgColBuffer = new Uint8ClampedArray(4);
+    const composeBuffer = new Uint8ClampedArray(4);
 
     for (let yloop = 0; yloop < ypoints; yloop += 1) {
       for (let xloop = 0; xloop < xpoints; xloop += 1) {
@@ -867,9 +869,32 @@ class GimpLayer {
 
         // Compose and write (optimized to avoid redundant reads when no compositing)
         if (mode) {
-          const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
-          const composedColour = mode.compose(bgCol, colour) as ColorRGBA;
-          image.setAt(xoffset + xloop, yoffset + yloop, composedColour);
+          // Use composeDirect for zero-allocation compositing if available
+          if (image.getAtDirect && mode.composeDirect) {
+            image.getAtDirect(xoffset + xloop, yoffset + yloop, bgColBuffer);
+            mode.composeDirect(
+              bgColBuffer[0]!,
+              bgColBuffer[1]!,
+              bgColBuffer[2]!,
+              bgColBuffer[3]!,
+              colour.red,
+              colour.green,
+              colour.blue,
+              colour.alpha,
+              composeBuffer
+            );
+            image.setAt(xoffset + xloop, yoffset + yloop, {
+              red: composeBuffer[0]!,
+              green: composeBuffer[1]!,
+              blue: composeBuffer[2]!,
+              alpha: composeBuffer[3]!,
+            });
+          } else {
+            // Fallback to object-based compositing
+            const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
+            const composedColour = mode.compose(bgCol, colour) as ColorRGBA;
+            image.setAt(xoffset + xloop, yoffset + yloop, composedColour);
+          }
         } else {
           image.setAt(xoffset + xloop, yoffset + yloop, colour);
         }
