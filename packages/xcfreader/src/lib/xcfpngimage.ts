@@ -58,6 +58,22 @@ export class XCFPNGImage implements IXCFImage {
   }
 
   /**
+   * Set a pixel color at the specified coordinates without bounds checking.
+   * This is a performance optimization for hot paths where coordinates are guaranteed valid.
+   * @param x - X coordinate (must be valid, no bounds check)
+   * @param y - Y coordinate (must be valid, no bounds check)
+   * @param colour - Color to set (with RGBA values)
+   */
+  setAtUnchecked(x: number, y: number, colour: ColorRGBA): void {
+    const idx = (y * this._width + x) * 4;
+    const buf: Buffer = this._image.data;
+    buf[idx] = colour.red;
+    buf[idx + 1] = colour.green;
+    buf[idx + 2] = colour.blue;
+    buf[idx + 3] = colour.alpha ?? 255;
+  }
+
+  /**
    * Get the color of a pixel at the specified coordinates
    * @param x - X coordinate
    * @param y - Y coordinate
@@ -72,6 +88,22 @@ export class XCFPNGImage implements IXCFImage {
       blue: buf[idx + 2]!,
       alpha: buf[idx + 3]!,
     };
+  }
+
+  /**
+   * Read pixel directly into provided buffer (performance optimization).
+   * Avoids object allocation by writing values directly to reusable buffer.
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param outBuffer - Output buffer [r, g, b, a] (must have length >= 4)
+   */
+  getAtDirect(x: number, y: number, outBuffer: Uint8ClampedArray): void {
+    const idx = (y * this._width + x) * 4;
+    const buf: Buffer = this._image.data;
+    outBuffer[0] = buf[idx]!;
+    outBuffer[1] = buf[idx + 1]!;
+    outBuffer[2] = buf[idx + 2]!;
+    outBuffer[3] = buf[idx + 3]!;
   }
 
   /**

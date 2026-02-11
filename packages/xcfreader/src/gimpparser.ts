@@ -755,6 +755,36 @@ class GimpLayer {
       return;
     }
 
+    // Fast path: 8-bit Grayscale with direct buffer access and no compositing
+    if (
+      bytesPerChannel === 1 &&
+      !isFloat &&
+      mode === null &&
+      baseType === XCF_BaseType.GRAYSCALE &&
+      image.getDataBuffer
+    ) {
+      const dataBuffer = image.getDataBuffer() as Uint8Array | Uint8ClampedArray;
+      const imageWidth = image.width;
+      let tileOffset = 0;
+
+      for (let yloop = 0; yloop < ypoints; yloop += 1) {
+        const pixelIdx = ((yoffset + yloop) * imageWidth + xoffset) * 4;
+        for (let xloop = 0; xloop < xpoints; xloop += 1) {
+          const bufIdx = pixelIdx + xloop * 4;
+          const gray = tileBuffer[tileOffset]!;
+
+          // Convert grayscale to RGB (all channels same value)
+          dataBuffer[bufIdx] = gray;
+          dataBuffer[bufIdx + 1] = gray;
+          dataBuffer[bufIdx + 2] = gray;
+          dataBuffer[bufIdx + 3] = numChannels === 2 ? tileBuffer[tileOffset + 1]! : 255;
+
+          tileOffset += numChannels;
+        }
+      }
+      return;
+    }
+
     // General path: handle all other cases
     let bufferOffset = 0;
     // Create a single DataView for the tile buffer to avoid creating millions of DataView objects
@@ -834,9 +864,15 @@ class GimpLayer {
                 : 255,
           };
         }
-        const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
-        const composedColour = mode ? (mode.compose(bgCol, colour) as ColorRGBA) : colour;
-        image.setAt(xoffset + xloop, yoffset + yloop, composedColour);
+
+        // Compose and write (optimized to avoid redundant reads when no compositing)
+        if (mode) {
+          const bgCol = image.getAt(xoffset + xloop, yoffset + yloop);
+          const composedColour = mode.compose(bgCol, colour) as ColorRGBA;
+          image.setAt(xoffset + xloop, yoffset + yloop, composedColour);
+        } else {
+          image.setAt(xoffset + xloop, yoffset + yloop, colour);
+        }
         bufferOffset += bpp;
       }
     }
