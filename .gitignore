@@ -48,3 +48,8 @@ packages/ui-xcfimage/coverage-tmp/
 # Output directories
 output/
 *.local.json
+
+# Temporary test files
+test-browser-bundle.html
+test-native-api-result.png
+test-native-api.spec.ts
