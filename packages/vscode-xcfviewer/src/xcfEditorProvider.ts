@@ -62,6 +62,24 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
         this.activeWebviewPanel = webviewPanel;
         this._onDidChangeActiveEditor.fire(this);
         this._onDidChangeDocument.fire(document);
+      } else {
+        // Panel became inactive
+        if (this.activeDocument === document) {
+          this.activeEditor = undefined;
+          this.activeDocument = undefined;
+          this.activeWebviewPanel = undefined;
+          this._onDidChangeActiveEditor.fire(undefined);
+        }
+      }
+    });
+
+    // Handle panel disposal
+    webviewPanel.onDidDispose(() => {
+      if (this.activeDocument === document) {
+        this.activeEditor = undefined;
+        this.activeDocument = undefined;
+        this.activeWebviewPanel = undefined;
+        this._onDidChangeActiveEditor.fire(undefined);
       }
     });
 
