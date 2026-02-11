@@ -40,7 +40,7 @@
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
     "@cyclonedx/cyclonedx-npm": "^4.1.2",
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.54.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
