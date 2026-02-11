@@ -14,6 +14,7 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
 
   private activeEditor: XCFEditorProvider | undefined;
   private activeDocument: XCFDocument | undefined;
+  private activeWebviewPanel: vscode.WebviewPanel | undefined;
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -41,8 +42,9 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
     webviewPanel: vscode.WebviewPanel,
     token: vscode.CancellationToken
   ): Promise<void> {
-    // Store active document
+    // Store active document and webview panel
     this.activeDocument = document;
+    this.activeWebviewPanel = webviewPanel;
 
     // Set up webview options
     webviewPanel.webview.options = {
@@ -57,16 +59,17 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
       if (e.webviewPanel.active) {
         this.activeEditor = this;
         this.activeDocument = document;
+        this.activeWebviewPanel = webviewPanel;
         this._onDidChangeActiveEditor.fire(this);
         this._onDidChangeDocument.fire(document);
       }
     });
 
     // Handle messages from webview
-    webviewPanel.webview.onDidReceiveMessage((message) => {
+    webviewPanel.webview.onDidReceiveMessage(async (message) => {
       switch (message.type) {
         case "ready":
-          this.sendImageData(webviewPanel.webview, document);
+          await this.sendImageData(webviewPanel.webview, document);
           break;
         case "updateLayers":
           this.updateLayers(webviewPanel.webview, document, message.visibleLayers);
@@ -80,14 +83,17 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
     this._onDidChangeDocument.fire(document);
   }
 
-  private sendImageData(webview: vscode.Webview, document: XCFDocument): void {
+  private async sendImageData(webview: vscode.Webview, document: XCFDocument): Promise<void> {
     const parser = document.parser;
 
-    // Send complete parser data to webview
+    // Read the XCF file data to send to webview
+    const fileData = await vscode.workspace.fs.readFile(document.uri);
+
+    // Send complete file data and layer hierarchy to webview
     const layers = this.buildLayerHierarchy(parser);
     webview.postMessage({
       type: "initialize",
-      parserData: this.serializeParser(parser),
+      fileData: Array.from(fileData), // Convert Uint8Array to array for JSON serialization
       layers,
       width: parser.width,
       height: parser.height,
@@ -160,36 +166,12 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
     parser: XCFParser,
     visibleLayers: number[] | null
   ): void {
-    // Send parser data and visible layers to webview
-    // Let the webview handle the actual rendering using browser APIs
+    // Send visible layers update to webview
+    // The webview handles the actual rendering using the browser bundle
     webview.postMessage({
       type: "renderImage",
-      parserData: this.serializeParser(parser),
       visibleLayers: visibleLayers,
     });
-  }
-
-  private serializeParser(parser: XCFParser): unknown {
-    // Serialize only the data needed for rendering, avoiding circular references
-    const serializeLayer = (layer: any): any => {
-      return {
-        name: layer.name,
-        visible: layer.visible,
-        opacity: layer.opacity,
-        width: layer.width,
-        height: layer.height,
-        offsetX: layer.offsetX,
-        offsetY: layer.offsetY,
-        // Don't include _parent or other circular references
-      };
-    };
-
-    return {
-      width: parser.width,
-      height: parser.height,
-      baseType: (parser as any).baseType,
-      layers: parser.layers.map(serializeLayer),
-    };
   }
 
   private updateLayers(
@@ -211,8 +193,26 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
     return this.buildLayerHierarchy(this.activeDocument.parser);
   }
 
+  public updateVisibleLayers(visibleLayerIndices: number[]): void {
+    if (!this.activeWebviewPanel || !this.activeDocument) {
+      console.log("No active webview panel or document");
+      return;
+    }
+    console.log("Updating visible layers:", visibleLayerIndices);
+    this.renderImage(
+      this.activeWebviewPanel.webview,
+      this.activeDocument.parser,
+      visibleLayerIndices
+    );
+  }
+
   private getHtmlForWebview(webview: vscode.Webview, document: XCFDocument): string {
     const nonce = getNonce();
+
+    // Get URI for the xcfreader browser bundle
+    const xcfreaderUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "dist", "xcfreader.browser.js")
+    );
 
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -237,10 +237,10 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
             max-width: 100%;
             max-height: 100vh;
         }
-        #image {
+        #canvas {
             max-width: 100%;
             height: auto;
-            display: block;
+            display: none;
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
         }
@@ -249,43 +249,142 @@ export class XCFEditorProvider implements vscode.CustomReadonlyEditorProvider<XC
             font-family: system-ui, -apple-system, sans-serif;
             text-align: center;
         }
+        #error {
+            color: #f48771;
+            font-family: system-ui, -apple-system, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
     <div id="container">
         <div id="loading">Loading XCF file...</div>
-        <img id="image" style="display: none;" />
+        <div id="error" style="display: none;"></div>
+        <canvas id="canvas"></canvas>
     </div>
+    <script nonce="${nonce}" src="${xcfreaderUri}"></script>
     <script nonce="${nonce}">
         const vscode = acquireVsCodeApi();
-        const imageEl = document.getElementById('image');
+        const canvasEl = document.getElementById('canvas');
         const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
 
-        let parserData = null;
+        let xcfFileData = null;
+        let parser = null;
 
-        window.addEventListener('message', event => {
+        window.addEventListener('message', async event => {
             const message = event.data;
             switch (message.type) {
                 case 'initialize':
-                    parserData = message.parserData;
-                    window.layerHierarchy = message.layers;
-                    renderXCF(parserData, null);
+                    await initializeXCF(message);
                     break;
                 case 'renderImage':
-                    parserData = message.parserData;
-                    renderXCF(parserData, message.visibleLayers);
+                    await updateVisibleLayers(message.visibleLayers);
                     break;
             }
         });
 
-        function renderXCF(data, visibleLayers) {
-            // For now, just show basic info
-            // TODO: Implement actual XCF rendering using xcfreader browser bundle
-            loadingEl.innerHTML = 'XCF File: ' + data.width + 'x' + data.height +
-                '<br>Layers: ' + (data.layers ? data.layers.length : 0) +
-                '<br><br>Rendering not yet implemented - needs browser bundle integration';
-            loadingEl.style.display = 'block';
-            imageEl.style.display = 'none';
+        async function initializeXCF(message) {
+            try {
+                console.log('[XCF Viewer] Initializing...');
+                loadingEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                canvasEl.style.display = 'none';
+
+                // Store the XCF file data from the extension
+                xcfFileData = message.fileData;
+                console.log('[XCF Viewer] Received file data:', xcfFileData?.length, 'bytes');
+
+                if (!xcfFileData) {
+                    throw new Error('No file data received');
+                }
+
+                // Check if XCFReader is available
+                console.log('[XCF Viewer] window.XCFReader:', typeof window.XCFReader);
+                console.log('[XCF Viewer] window.XCFReader.XCFParser:', typeof window.XCFReader?.XCFParser);
+                console.log('[XCF Viewer] window.XCFReader.XCFDataImage:', typeof window.XCFReader?.XCFDataImage);
+
+                // Parse the XCF file using the browser bundle
+                const buffer = new Uint8Array(xcfFileData);
+                console.log('[XCF Viewer] Created buffer, parsing...');
+                parser = window.XCFReader.XCFParser.parseBuffer(buffer);
+                console.log('[XCF Viewer] Parser created:', parser);
+                console.log('[XCF Viewer] Image dimensions:', parser.width, 'x', parser.height);
+                console.log('[XCF Viewer] Layers:', parser.layers?.length);
+
+                // Initial render with all layers
+                console.log('[XCF Viewer] Rendering to canvas...');
+                await renderToCanvas(null);
+
+                loadingEl.style.display = 'none';
+                canvasEl.style.display = 'block';
+                console.log('[XCF Viewer] Initialization complete!');
+            } catch (err) {
+                console.error('[XCF Viewer] Error initializing XCF:', err);
+                console.error('[XCF Viewer] Error stack:', err.stack);
+                showError('Failed to load XCF file: ' + err.message);
+            }
+        }
+
+        async function updateVisibleLayers(visibleLayers) {
+            try {
+                if (!parser) {
+                    throw new Error('Parser not initialized');
+                }
+                await renderToCanvas(visibleLayers);
+            } catch (err) {
+                console.error('Error updating layers:', err);
+                showError('Failed to update layers: ' + err.message);
+            }
+        }
+
+        async function renderToCanvas(visibleLayerIndices) {
+            if (!parser) {
+                console.log('[XCF Viewer] renderToCanvas: No parser available');
+                return;
+            }
+
+            try {
+                console.log('[XCF Viewer] renderToCanvas: Creating XCFDataImage...');
+                const image = new window.XCFReader.XCFDataImage(parser.width, parser.height);
+
+                // Use the new createImage parameter to specify which layers to render
+                if (visibleLayerIndices === null) {
+                    console.log('[XCF Viewer] Rendering all visible layers');
+                    parser.createImage(image);
+                } else {
+                    console.log('[XCF Viewer] Rendering specific layers by index:', visibleLayerIndices);
+                    parser.createImage(image, visibleLayerIndices);
+                }
+
+                console.log('[XCF Viewer] Rendering complete, setting canvas dimensions...');
+                canvasEl.width = parser.width;
+                canvasEl.height = parser.height;
+
+                const ctx = canvasEl.getContext('2d');
+                const xcfImageData = image.imageData;
+
+                const imageData = new ImageData(
+                    new Uint8ClampedArray(xcfImageData.data),
+                    xcfImageData.width,
+                    xcfImageData.height
+                );
+
+                ctx.putImageData(imageData, 0, 0);
+                console.log('[XCF Viewer] Canvas render complete!');
+            } catch (err) {
+                console.error('[XCF Viewer] Error rendering to canvas:', err);
+                console.error('[XCF Viewer] Error stack:', err.stack);
+                showError('Failed to render image: ' + err.message);
+            }
+        }
+
+        function showError(message) {
+            loadingEl.style.display = 'none';
+            canvasEl.style.display = 'none';
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
         }
 
         // Notify extension that webview is ready
