@@ -10,3 +10,7 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 node_modules/**
+
+# Exclude parent directories and monorepo files
+../../**
+../**

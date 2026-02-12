@@ -3,8 +3,7 @@
   "displayName": "XCF Viewer",
   "description": "Preview GIMP XCF files with layer hierarchy and visibility control",
   "version": "0.1.0",
-  "publisher": "theprogrammingiantpanda",
-  "private": true,
+  "publisher": "theprogramminggiantpanda",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0",
