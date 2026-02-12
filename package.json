@@ -11,17 +11,19 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "npm run test:xcfreader && npm run test:ui && npm run test:browser",
+    "test": "npm run test:xcfreader && npm run test:ui && npm run test:browser && npm run test:vscode",
     "test:xcfreader": "npm test -w @theprogrammingiantpanda/xcfreader",
     "test:ui": "npm test -w @theprogrammingiantpanda/ui-xcfimage",
     "test:browser": "npm run test:browser -w @theprogrammingiantpanda/xcfreader",
+    "test:vscode": "npm test -w vscode-xcfviewer",
     "coverage": "npm run coverage -w @theprogrammingiantpanda/xcfreader",
     "coverage:all": "npm run coverage -w @theprogrammingiantpanda/xcfreader && npm run test:coverage -w @theprogrammingiantpanda/ui-xcfimage",
     "coverage:combined": "npm run coverage -w @theprogrammingiantpanda/xcfreader && node calculate-total-coverage.mjs",
-    "build": "npm run build -w @theprogrammingiantpanda/xcfreader && npm run build -w @theprogrammingiantpanda/ui-xcfimage && npm run build -w @theprogrammingiantpanda/ha-xcfimage-card",
+    "build": "npm run build -w @theprogrammingiantpanda/xcfreader && npm run build -w @theprogrammingiantpanda/ui-xcfimage && npm run build -w @theprogrammingiantpanda/ha-xcfimage-card && npm run build -w vscode-xcfviewer",
     "build:xcfreader": "npm run build -w @theprogrammingiantpanda/xcfreader",
     "build:ui": "npm run build -w @theprogrammingiantpanda/ui-xcfimage",
     "build:ha": "npm run build -w @theprogrammingiantpanda/ha-xcfimage-card",
+    "build:vscode": "npm run build -w vscode-xcfviewer",
     "benchmark": "npm run benchmark -w @theprogrammingiantpanda/xcfreader",
     "format": "prettier --write \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
@@ -32,7 +34,8 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "npm run build && changeset publish",
-    "release": "npm run build && changeset version && changeset publish"
+    "release": "npm run build && changeset version && changeset publish",
+    "package:vscode": "npm run build:vscode && cd packages/vscode-xcfviewer && npm run package"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",

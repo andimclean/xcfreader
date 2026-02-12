@@ -98,15 +98,38 @@
       "request": "attach",
       "port": 9229,
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Run VS Code Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-xcfviewer"],
+      "outFiles": ["${workspaceFolder}/packages/vscode-xcfviewer/dist/**/*.js"],
+      "preLaunchTask": "npm: build - packages/vscode-xcfviewer"
+    },
+    {
+      "name": "Run VS Code Extension Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-xcfviewer",
+        "--extensionTestsPath=${workspaceFolder}/packages/vscode-xcfviewer/dist/test/suite/index"
+      ],
+      "outFiles": ["${workspaceFolder}/packages/vscode-xcfviewer/dist/test/**/*.js"],
+      "preLaunchTask": "npm: build - packages/vscode-xcfviewer"
+    },
+    {
+      "name": "Run VS Code Extension (No Build)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-xcfviewer"],
+      "outFiles": ["${workspaceFolder}/packages/vscode-xcfviewer/dist/**/*.js"]
     }
   ],
   "compounds": [
     {
       "name": "Run All Tests (Both Packages)",
-      "configurations": [
-        "Run All Tests (xcfreader)",
-        "Run Playwright Tests"
-      ],
+      "configurations": ["Run All Tests (xcfreader)", "Run Playwright Tests"],
       "stopAll": true
     }
   ]

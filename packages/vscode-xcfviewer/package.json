@@ -1,0 +1,130 @@
+{
+  "name": "vscode-xcfviewer",
+  "displayName": "XCF Viewer",
+  "description": "Preview GIMP XCF files with layer hierarchy and visibility control",
+  "version": "0.1.0",
+  "publisher": "theprogrammingiantpanda",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=18.0.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "gimp",
+    "xcf",
+    "image",
+    "viewer",
+    "preview"
+  ],
+  "activationEvents": [
+    "onCustomEditor:xcfviewer.xcfEditor"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "xcfviewer.xcfEditor",
+        "displayName": "XCF Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.xcf"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "xcfviewer.layersView",
+          "name": "XCF Layers",
+          "when": "xcfviewer.hasActiveEditor"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "xcfviewer.toggleLayer",
+        "title": "Toggle Layer Visibility",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "xcfviewer.showAllLayers",
+        "title": "Show All Layers",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "xcfviewer.hideAllLayers",
+        "title": "Hide All Layers",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "xcfviewer.refreshLayers",
+        "title": "Refresh Layers",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "xcfviewer.showAllLayers",
+          "when": "view == xcfviewer.layersView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "xcfviewer.hideAllLayers",
+          "when": "view == xcfviewer.layersView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "xcfviewer.refreshLayers",
+          "when": "view == xcfviewer.layersView",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "xcfviewer.toggleLayer",
+          "when": "view == xcfviewer.layersView",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsc && node esbuild.config.mjs",
+    "watch": "tsc --watch",
+    "pretest": "npm run build",
+    "test": "node ./dist/test/runTest.js",
+    "test:unit": "mocha --require ts-node/register 'src/test/suite/**/*.test.ts'",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts",
+    "lint:fix": "eslint src --ext ts --fix"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2",
+    "glob": "^10.5.0",
+    "mocha": "^10.8.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@theprogrammingiantpanda/xcfreader": "^1.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/andimclean/xcfreader.git"
+  }
+}

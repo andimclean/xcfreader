@@ -1578,6 +1578,7 @@ export class XCFParser {
    * each visible layer using its blend mode, opacity, and position settings.
    *
    * @param image - The XCFImage to render onto. Create one with `new XCFImage(parser.width, parser.height)`.
+   * @param visibleLayerIndices - Optional array of layer indices to render. If provided, only these layers are rendered (regardless of their visibility flag). If null/undefined, all visible layers are rendered. Indices correspond to the layer's position in parser.layers array.
    * @returns The composited XCFImage with all visible layers flattened
    *
    * @example
@@ -1588,6 +1589,11 @@ export class XCFParser {
    * parser.createImage(image);
    * await image.writeImage('./flattened.png');
    *
+   * // Render only specific layers by index (same indices as used by HA package)
+   * const image2 = new XCFImage(parser.width, parser.height);
+   * parser.createImage(image2, [0, 2, 5]); // Render only layers at indices 0, 2, and 5
+   * await image2.writeImage('./selected-layers.png');
+   *
    * // Composite onto a custom canvas with white background
    * const canvas = new XCFImage(1920, 1080);
    * canvas.fillRect(0, 0, 1920, 1080, { red: 255, green: 255, blue: 255, alpha: 255 });
@@ -1595,10 +1601,72 @@ export class XCFParser {
    * await canvas.writeImage('./on-white-bg.png');
    * ```
    */
-  createImage(image: IXCFImage): IXCFImage {
+  createImage(image: IXCFImage, visibleLayerIndices?: number[] | null): IXCFImage {
     const resultImage: IXCFImage = image;
 
-    (this.layers || [])
+    // Determine which layers to render
+    let layersToRender: GimpLayer[];
+
+    if (visibleLayerIndices != null) {
+      // Build a map from layer object to its index in the layers array
+      const layerToIndexMap = new Map<any, number>();
+      this.layers.forEach((layer, idx) => {
+        layerToIndexMap.set(layer, idx);
+      });
+
+      // Build a parent map from the layer hierarchy
+      const parentMap = new Map<number, number>(); // child index -> parent index
+      const buildParentMap = (node: GroupLayerNode, parentIdx?: number): void => {
+        if (node.layer) {
+          const layerIdx = layerToIndexMap.get(node.layer);
+          if (layerIdx !== undefined && parentIdx !== undefined) {
+            parentMap.set(layerIdx, parentIdx);
+          }
+          if (node.children) {
+            node.children.forEach((child) => buildParentMap(child, layerIdx));
+          }
+        } else if (node.children) {
+          node.children.forEach((child) => buildParentMap(child, parentIdx));
+        }
+      };
+
+      // Build parent map from groupLayers structure
+      if (this._groupLayers && this._groupLayers.children) {
+        this._groupLayers.children.forEach((child) => buildParentMap(child));
+      }
+
+      // Helper function to check if a layer and all its parent groups are visible
+      const isLayerAndParentsVisible = (layerIdx: number, indexSet: Set<number>): boolean => {
+        // Check if the layer itself is in the visible set
+        if (!indexSet.has(layerIdx)) {
+          return false;
+        }
+
+        // Check all parent groups recursively
+        let currentIdx = layerIdx;
+        while (parentMap.has(currentIdx)) {
+          const parentIdx = parentMap.get(currentIdx)!;
+          if (!indexSet.has(parentIdx)) {
+            // Parent group is not visible, so this layer should not be rendered
+            return false;
+          }
+          currentIdx = parentIdx;
+        }
+
+        return true;
+      };
+
+      // Filter layers: include only if layer AND all parent groups are visible
+      const indexSet = new Set(visibleLayerIndices);
+      layersToRender = (this.layers || []).filter((layer, idx) =>
+        isLayerAndParentsVisible(idx, indexSet)
+      );
+    } else {
+      // Render all layers (their makeImage will check visibility)
+      layersToRender = this.layers || [];
+    }
+
+    layersToRender
       .slice()
       .reverse()
       .forEach((layer) => {

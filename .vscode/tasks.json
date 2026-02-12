@@ -29,7 +29,8 @@
       "label": "Build All Packages",
       "dependsOn": [
         "npm: build - packages/xcfreader",
-        "npm: build - packages/ui-xcfimage"
+        "npm: build - packages/ui-xcfimage",
+        "npm: build - packages/vscode-xcfviewer"
       ],
       "problemMatcher": [],
       "group": {
@@ -63,6 +64,35 @@
       "label": "npm: lint:fix - packages/xcfreader",
       "detail": "Run ESLint with auto-fix on xcfreader",
       "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "path": "packages/vscode-xcfviewer",
+      "label": "npm: build - packages/vscode-xcfviewer",
+      "detail": "Build VS Code extension",
+      "problemMatcher": ["$tsc"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "type": "npm",
+      "script": "watch",
+      "path": "packages/vscode-xcfviewer",
+      "label": "npm: watch - packages/vscode-xcfviewer",
+      "detail": "Watch VS Code extension",
+      "isBackground": true,
+      "problemMatcher": ["$tsc-watch"]
+    },
+    {
+      "type": "npm",
+      "script": "test",
+      "path": "packages/vscode-xcfviewer",
+      "label": "npm: test - packages/vscode-xcfviewer",
+      "detail": "Test VS Code extension",
+      "problemMatcher": []
     }
   ]
 }

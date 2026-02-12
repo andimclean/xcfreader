@@ -20,11 +20,12 @@ A monorepo for parsing and rendering GIMP XCF files in TypeScript/JavaScript.
 
 ## Packages
 
-| Package                                           | Description                                                | Links                                                                                                                |
-| ------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **[xcfreader](packages/xcfreader)**               | Core XCF parser library for Node.js and browser            | [README](packages/xcfreader/readme.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)     |
-| **[ui-xcfimage](packages/ui-xcfimage)**           | `<gpp-xcfimage>` web component for rendering XCF files     | [README](packages/ui-xcfimage/README.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage) |
-| **[ha-xcfimage-card](packages/ha-xcfimage-card)** | Home Assistant custom card with entity-based layer control | [README](packages/ha-xcfimage-card/README.md)                                                                        |
+| Package                                           | Description                                                   | Links                                                                                                                |
+| ------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **[xcfreader](packages/xcfreader)**               | Core XCF parser library for Node.js and browser               | [README](packages/xcfreader/readme.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)     |
+| **[ui-xcfimage](packages/ui-xcfimage)**           | `<gpp-xcfimage>` web component for rendering XCF files        | [README](packages/ui-xcfimage/README.md) · [npm](https://www.npmjs.com/package/@theprogrammingiantpanda/ui-xcfimage) |
+| **[ha-xcfimage-card](packages/ha-xcfimage-card)** | Home Assistant custom card with entity-based layer control    | [README](packages/ha-xcfimage-card/README.md)                                                                        |
+| **[vscode-xcfviewer](packages/vscode-xcfviewer)** | VS Code extension for previewing XCF files with layer control | [README](packages/vscode-xcfviewer/README.md)                                                                        |
 
 ## Quick Start
 
