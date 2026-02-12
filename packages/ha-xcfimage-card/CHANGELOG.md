@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- New features and improvements:
+  - **Visual Configuration Editor**: Complete UI editor with smart layer dropdowns that automatically load layer names from XCF files. Supports both Entity Layers (visibility control) and Entity Overlays (status badges).
+  - **Entity Overlay Positioning**: Display entity status badges/icons at specific x/y coordinates with full support for Home Assistant click actions.
+  - **CDN Installation Support**: Use the card directly from jsDelivr or unpkg without downloads, with version pinning for production stability.
+
+  Enhanced developer experience with live XCF file parsing and no need to manually look up layer indices.
+
 All notable changes to the ha-xcfimage-card package will be documented in this file.
 
 ## [Unreleased]
@@ -35,6 +46,7 @@ All notable changes to the ha-xcfimage-card package will be documented in this f
 ## [0.1.0] - 2024-01-XX
 
 ### Added
+
 - Initial release of Home Assistant XCF Image Card
 - Entity-based layer visibility control
 - Support for custom state values (`state_on`)
@@ -47,6 +59,7 @@ All notable changes to the ha-xcfimage-card package will be documented in this f
 - Comprehensive README and installation guide
 
 ### Features
+
 - Map Home Assistant entities to XCF layers
 - Control layer visibility based on entity states
 - Always-visible background layers

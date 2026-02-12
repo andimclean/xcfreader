@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+### Patch Changes
+
+- Critical bug fix: Resolved Web Components spec violation where `setAttribute()` calls in constructor prevented custom element initialization. Element now properly initializes with shadow DOM. All 30 Playwright tests now passing.
+
 All notable changes to this package will be documented in this file.
 
 ## [Unreleased]

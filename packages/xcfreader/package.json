@@ -1,6 +1,6 @@
 {
   "name": "@theprogrammingiantpanda/xcfreader",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Reads in GIMP xcf files",
   "type": "module",
   "engines": {

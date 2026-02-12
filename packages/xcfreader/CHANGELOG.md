@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- Major performance improvements and bundle size optimizations:
+  - **DataView allocation fix**: Eliminated critical rendering performance regression (66% faster for some files, 50% overall improvement)
+  - **Phase 1 & 2 rendering optimizations**: 27% faster rendering through grayscale fast path, bulk RGBA copy, and zero-allocation compositing
+  - **Binary parser replacement**: Custom BinaryReader reduces bundle size by 18% (104KB → 85KB minified) with better TypeScript types
+  - **Bug fix**: Corrected ParsedRGB field name typo ("greed" → "green")
+  - **Quality improvements**: Reduced type casting complexity by 62% with helper functions
+
+  All 33 tests passing with full backward compatibility maintained.
+
 All notable changes to the xcfreader package will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
