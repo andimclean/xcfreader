@@ -6,18 +6,18 @@ suite("Extension Test Suite", () => {
   vscode.window.showInformationMessage("Start all tests.");
 
   test("Extension should be present", () => {
-    assert.ok(vscode.extensions.getExtension("theprogrammingiantpanda.vscode-xcfviewer"));
+    assert.ok(vscode.extensions.getExtension("theprogramminggiantpanda.vscode-xcfviewer"));
   });
 
   test("Extension should activate", async () => {
-    const extension = vscode.extensions.getExtension("theprogrammingiantpanda.vscode-xcfviewer");
+    const extension = vscode.extensions.getExtension("theprogramminggiantpanda.vscode-xcfviewer");
     assert.ok(extension);
     await extension!.activate();
     assert.strictEqual(extension!.isActive, true);
   });
 
   test("Should register custom editor provider", async () => {
-    const extension = vscode.extensions.getExtension("theprogrammingiantpanda.vscode-xcfviewer");
+    const extension = vscode.extensions.getExtension("theprogramminggiantpanda.vscode-xcfviewer");
     await extension?.activate();
 
     // The custom editor should be registered
@@ -30,7 +30,7 @@ suite("Extension Test Suite", () => {
   });
 
   test("Should register tree view provider", async () => {
-    const extension = vscode.extensions.getExtension("theprogrammingiantpanda.vscode-xcfviewer");
+    const extension = vscode.extensions.getExtension("theprogramminggiantpanda.vscode-xcfviewer");
     await extension?.activate();
 
     // Tree view should be registered
