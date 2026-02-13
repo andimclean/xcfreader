@@ -12,6 +12,29 @@ Thank you for your interest in contributing to xcfreader! This document provides
 
 ### Getting Started
 
+#### Option 1: Development Container (Recommended)
+
+The easiest way to get started is using a development container:
+
+1. **Install prerequisites:**
+   - [VS Code](https://code.visualstudio.com/)
+   - [Docker Desktop](https://www.docker.com/products/docker-desktop)
+   - [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+2. **Open in container:**
+
+   ```bash
+   git clone https://github.com/yourusername/xcfreader.git
+   cd xcfreader
+   code .
+   ```
+
+   Then click "Reopen in Container" when prompted.
+
+Everything will be automatically configured! See [.devcontainer/README.md](../.devcontainer/README.md) for details.
+
+#### Option 2: Local Setup
+
 1. **Fork and clone the repository**
 
    ```bash
@@ -82,6 +105,41 @@ The project uses Husky for Git hooks:
 - **pre-commit**: Runs Prettier and ESLint on staged files (via lint-staged)
 - **commit-msg**: Validates commit message format (conventional commits)
 - **pre-push**: Runs full test suite before allowing push
+
+#### Skipping Git Hooks
+
+In rare cases where you need to skip hooks (e.g., WIP commits, emergency fixes):
+
+```bash
+# Skip pre-commit and commit-msg hooks
+git commit --no-verify -m "WIP: work in progress"
+
+# Skip pre-push hook
+git push --no-verify
+
+# Skip all hooks for a single commit
+git commit --no-verify -m "emergency fix" && git push --no-verify
+```
+
+**⚠️ Important:** Only use `--no-verify` when absolutely necessary. Skipping hooks can introduce:
+
+- Unformatted code (pre-commit)
+- Invalid commit messages (commit-msg)
+- Broken builds on CI (pre-push)
+
+#### Fast Smoke Tests
+
+If the pre-push hook is too slow during development, you can run a quick smoke test instead:
+
+```bash
+# Quick smoke test (builds + runs a subset of tests)
+npm run build:xcfreader && npm run test:xcfreader
+
+# Then push with --no-verify to skip the full test suite
+git push --no-verify
+```
+
+**Best practice:** Let CI run the full test suite on your pull request, but use smoke tests locally for faster iteration.
 
 ### Commit Message Format
 

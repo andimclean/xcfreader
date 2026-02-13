@@ -18,6 +18,10 @@ docs/
 sbom.json
 packages/*/sbom.json
 
+# Bundle analysis
+bundle-analysis.html
+analysis-*.json
+
 # IDE & environment
 .browse*
 .DS_Store

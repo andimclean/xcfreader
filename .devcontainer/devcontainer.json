@@ -32,7 +32,9 @@
         "typescript.enablePromptUseWorkspaceTsdk": true,
         "eslint.workingDirectories": [
           "packages/xcfreader",
-          "packages/ui-xcfimage"
+          "packages/ui-xcfimage",
+          "packages/ha-xcfimage-card",
+          "packages/vscode-xcfviewer"
         ],
         "files.exclude": {
           "**/node_modules": true,
@@ -49,7 +51,7 @@
     }
   },
 
-  "postCreateCommand": "npm install && npx playwright install chromium firefox webkit",
+  "postCreateCommand": "npm install && npx playwright install chromium firefox webkit && npm run build",
 
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 

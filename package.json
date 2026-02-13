@@ -32,6 +32,7 @@
     "bundle-size": "node scripts/check-bundle-size.mjs",
     "bundle-size:baseline": "node scripts/check-bundle-size.mjs --baseline",
     "bundle-size:ci": "node scripts/check-bundle-size.mjs --ci",
+    "analyze:bundles": "node scripts/analyze-bundles.mjs",
     "sbom": "cyclonedx-npm --output-file sbom.json",
     "sbom:all": "npm run sbom && cyclonedx-npm --output-file packages/xcfreader/sbom.json packages/xcfreader && cyclonedx-npm --output-file packages/ui-xcfimage/sbom.json packages/ui-xcfimage && cyclonedx-npm --output-file packages/ha-xcfimage-card/sbom.json packages/ha-xcfimage-card",
     "changeset": "changeset",
@@ -52,6 +53,7 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.3.0",
     "husky": "^9.1.7",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "rollup-plugin-visualizer": "^6.0.5"
   }
 }
