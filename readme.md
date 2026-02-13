@@ -7,6 +7,7 @@ A monorepo for parsing and rendering GIMP XCF files in TypeScript/JavaScript.
 [![npm version](https://img.shields.io/npm/v/@theprogrammingiantpanda/xcfreader.svg)](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)
 [![npm downloads](https://img.shields.io/npm/dm/@theprogrammingiantpanda/xcfreader.svg)](https://www.npmjs.com/package/@theprogrammingiantpanda/xcfreader)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![API Docs](https://img.shields.io/badge/API-Documentation-blue)](https://andimclean.github.io/xcfreader/)
 
 [![Open in CodeSandbox](https://img.shields.io/badge/Open%20in-CodeSandbox-blue?style=flat-square&logo=codesandbox)](https://codesandbox.io/s/github/andimclean/xcfreader)
 [![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-blue?style=flat-square&logo=github)](https://codespaces.new/andimclean/xcfreader)
@@ -169,13 +170,14 @@ Whether you're a first-time contributor or a seasoned developer, your input is v
 
 ## Documentation
 
+- **[API Documentation](https://andimclean.github.io/xcfreader/)** - TypeDoc API reference (auto-generated)
+- **[Architecture Guide](ARCHITECTURE.md)** - System architecture, data flow, and package relationships
 - **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Contributing Guide](.github/CONTRIBUTING.md)** - How to contribute
 - **[xcfreader API](packages/xcfreader/readme.md)** - Core library documentation
 - **[ui-xcfimage Web Component](packages/ui-xcfimage/README.md)** - Web component documentation
 - [CHANGELOG.md](CHANGELOG.md) - Version history and release notes
 - [example-xcf/browser-demo.html](example-xcf/browser-demo.html) - Interactive browser demo
-- [.github/copilot-instructions.md](.github/copilot-instructions.md) - Architecture documentation
 
 ## License
 

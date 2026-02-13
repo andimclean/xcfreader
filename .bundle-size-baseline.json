@@ -1,0 +1,18 @@
+{
+  "ui-xcfimage (IIFE minified)": {
+    "raw": 42986,
+    "gzip": 12796
+  },
+  "ui-xcfimage (ESM)": {
+    "raw": 59436,
+    "gzip": 14160
+  },
+  "ha-xcfimage-card (main)": {
+    "raw": 9947,
+    "gzip": 3117
+  },
+  "ha-xcfimage-card (editor)": {
+    "raw": 19923,
+    "gzip": 3883
+  }
+}
