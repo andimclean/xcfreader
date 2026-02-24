@@ -11,7 +11,7 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "npm run test:xcfreader && npm run test:ui && npm run test:browser && npm run test:vscode",
+    "test": "npm run test:xcfreader && npm run test:ui && npm run test:browser && npm run test:vscode && npm run test:ng",
     "test:xcfreader": "npm test -w @theprogrammingiantpanda/xcfreader",
     "test:ui": "npm test -w @theprogrammingiantpanda/ui-xcfimage",
     "test:browser": "npm run test:browser -w @theprogrammingiantpanda/xcfreader",
@@ -30,7 +30,7 @@
     "format": "prettier --write \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,md,yml,yaml}\"",
     "validate:packages": "node scripts/validate-packages.mjs",
-    "validate:exports": "attw --pack packages/xcfreader && attw --pack packages/ui-xcfimage && attw --pack packages/ha-xcfimage-card",
+    "validate:exports": "attw --pack packages/xcfreader && attw --pack packages/ui-xcfimage && attw --pack packages/ha-xcfimage-card && attw --pack dist/ng-xcfimage",
     "bundle-size": "node scripts/check-bundle-size.mjs",
     "bundle-size:baseline": "node scripts/check-bundle-size.mjs --baseline",
     "bundle-size:ci": "node scripts/check-bundle-size.mjs --ci",

@@ -12,6 +12,10 @@
     "test": "jest",
     "lint": "eslint"
   },
+  "sideEffects": false,
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
   "peerDependencies": {
     "@angular/common": "^19.0.0",
     "@angular/core": "^19.0.0",
@@ -47,5 +51,8 @@
     "component",
     "image-viewer"
   ],
+  "bugs": {
+    "url": "https://github.com/andimclean/xcfreader/issues"
+  },
   "homepage": "https://github.com/andimclean/xcfreader#readme"
 }
