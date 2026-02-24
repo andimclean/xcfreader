@@ -10,7 +10,11 @@ export default [
 
   // Browser files (ui-xcfimage, ha-xcfimage-card) - must come first to override
   {
-    files: ["packages/ui-xcfimage/src/**/*.ts", "packages/ha-xcfimage-card/src/**/*.ts"],
+    files: [
+      "packages/ui-xcfimage/src/**/*.ts",
+      "packages/ha-xcfimage-card/src/**/*.ts",
+      "packages/ng-xcfimage/src/**/*.ts",
+    ],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -91,6 +95,16 @@ export default [
       "no-console": "off", // Allow console in Node.js
       "no-debugger": "warn",
       "prefer-const": "warn",
+    },
+  },
+
+  // Jest test files (ng-xcfimage)
+  {
+    files: ["packages/ng-xcfimage/src/**/*.spec.ts", "packages/ng-xcfimage/src/__mocks__/**/*.ts"],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
     },
   },
 
